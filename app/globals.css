@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================================
+   🎨 DESIGN TOKENS
+========================================================= */
+:root {
+  /* Base */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  /* Surfaces */
+  --card: oklch(0.995 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  /* Brand */
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  /* States */
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  /* UI */
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+
+  /* Feedback */
+  --success: oklch(0.7 0.18 145);
+  --warning: oklch(0.85 0.16 85);
+  --info: oklch(0.7 0.15 250);
+}
+
+/* =========================================================
+   🌙 DARK MODE
+========================================================= */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.32 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+}
+
+/* =========================================================
+   🎯 THEME MAPPING (Tailwind tokens)
+========================================================= */
+@theme inline {
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* =========================================================
+   🧱 BASE STYLES
+========================================================= */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-feature-settings: "liga", "kern";
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 { @apply text-3xl md:text-4xl; }
+  h2 { @apply text-2xl md:text-3xl; }
+  h3 { @apply text-xl md:text-2xl; }
+
+  a {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  button {
+    @apply transition-colors duration-200;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply bg-background text-foreground border border-border;
+  }
+}
+
+/* =========================================================
+   ✨ UTILITIES
+========================================================= */
+@layer utilities {
+  .animate-in-fast {
+    @apply animate-in fade-in zoom-in-95 duration-150;
+  }
+
+  .animate-out-fast {
+    @apply animate-out fade-out zoom-out-95 duration-100;
+  }
+}
+
+/* =========================================================
+   📋 PREDICTION FORM
+========================================================= */
+.prediction-form {
+  @apply bg-card text-card-foreground border border-border rounded-lg;
+}
+
+.prediction-field {
+  @apply space-y-2;
+}
+
+.prediction-feedback-error {
+  @apply border border-destructive/40 bg-destructive/10 text-destructive;
+}
+
+.prediction-feedback-success {
+  @apply border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400;
+}
+
+/* =========================================================
+   📊 DASHBOARD
+========================================================= */
+.dashboard-page {
+  @apply min-h-screen bg-background;
+}
+
+.dashboard-container {
+  @apply container mx-auto px-4 py-8;
+}
+
+.dashboard-widget {
+  @apply bg-card border border-border rounded-lg;
+}
+
+.dashboard-premium {
+  @apply border border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400;
+}
