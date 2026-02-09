@@ -6,6 +6,7 @@ import { formatCOP } from "@/lib/pricingutils"
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { Check } from "lucide-react"
 import { ManualPaymentForm } from "@/components/payments/manual-payment-form"
+import { PageWrapper } from "@/components/layout/page-wrapper"
 
 export default async function PricingPage() {
   const user = await getCurrentUser()
@@ -27,7 +28,8 @@ export default async function PricingPage() {
   })
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
+    <PageWrapper user={{ username: user.username, role: user.role }}>
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4 text-balance">Elige tu Plan Premium</h1>
@@ -115,6 +117,6 @@ export default async function PricingPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   )
 }

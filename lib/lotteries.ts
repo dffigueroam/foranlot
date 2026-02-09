@@ -38,6 +38,12 @@ export const LOTTERIES = [
   { name: "Antioqueñita Dia", country: "Colombia", dias: "todos_dias", digits: [3, 4, 5] },
   { name: "Paisita 3", country: "Colombia", dias: "sabado", digits: [3, 4, 5] },
   { name: "Culona Noche", country: "Colombia", dias: "todos_dias", digits: [3, 4, 5] },
+  { name: "Play Four Noche", country: "Colombia", dias: "todos_dias", digits: [3, 4] },
+  { name: "Play Four Dia", country: "Colombia", dias: "todos_dias", digits: [3, 4] },
+  { name: "Cash Three Dia", country: "Colombia", dias: "todos_dias", digits: [3] },
+  { name: "Cash Three Noche", country: "Colombia", dias: "todos_dias", digits: [3] },
+
+
 
   // Colombia - 4 y Signo
   { name: "Astro Luna", country: "Colombia", dias: "todos_dias", digits: [3, 4] },
@@ -51,10 +57,10 @@ export const LOTTERIES = [
   { name: "TriplexOnce5", country: "España", dias: "todos_dias", digits: [3] },
 
   // USA y Colombia
-  { name: "Play Four Noche", country: "USA y Colombia", dias: "todos_dias", digits: [3, 4] },
-  { name: "Play Four Dia", country: "USA y Colombia", dias: "todos_dias", digits: [3, 4] },
-  { name: "Cash Three Dia", country: "USA y Colombia", dias: "todos_dias", digits: [3] },
-  { name: "Cash Three Noche", country: "USA y Colombia", dias: "todos_dias", digits: [3] },
+  { name: "Play Four Noche", country: "USA", dias: "todos_dias", digits: [3, 4] },
+  { name: "Play Four Dia", country: "USA", dias: "todos_dias", digits: [3, 4] },
+  { name: "Cash Three Dia", country: "USA", dias: "todos_dias", digits: [3] },
+  { name: "Cash Three Noche", country: "USA", dias: "todos_dias", digits: [3] },
 
   // USA
   { name: "Number 3", country: "USA", dias: "todos_dias", digits: [3] },

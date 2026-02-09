@@ -50,6 +50,10 @@ export function Header({ user }: HeaderProps) {
                 <Home size={16} /> <span className="hidden xl:inline">Postear</span>
               </Link>
 
+              <Link href="/results" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+                🎰 <span className="hidden xl:inline">Resultados</span>
+              </Link>
+
               <Link href="/ranking" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
                 <Crown size={16} /> <span>Ranking</span>
               </Link>
@@ -90,6 +94,14 @@ export function Header({ user }: HeaderProps) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Home size={18} /> Postear
+                </Link>
+
+                <Link 
+                  href="/results" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  🎰 Resultados
                 </Link>
 
                 <Link 

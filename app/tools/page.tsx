@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { ToolsClient } from "./tools-client"
+import { PageWrapper } from "@/components/layout/page-wrapper"
 
 export default async function ToolsPage() {
   const user = await getCurrentUser()
@@ -11,17 +12,19 @@ export default async function ToolsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Herramientas de Predicción</h1>
-        <p className="text-muted-foreground">
-          Utiliza herramientas estadísticas avanzadas para mejorar tus pronósticos
-        </p>
-      </div>
+    <PageWrapper user={{ username: user.username, role: user.role }}>
+      <div className="container mx-auto py-8 px-4">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Herramientas de Predicción</h1>
+          <p className="text-muted-foreground">
+            Utiliza herramientas estadísticas avanzadas para mejorar tus pronósticos
+          </p>
+        </div>
 
-      <Suspense fallback={<div>Cargando herramientas...</div>}>
-        <ToolsClient user={user} />
-      </Suspense>
-    </div>
+        <Suspense fallback={<div>Cargando herramientas...</div>}>
+          <ToolsClient user={user} />
+        </Suspense>
+      </div>
+    </PageWrapper>
   )
 }

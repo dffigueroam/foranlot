@@ -6,13 +6,13 @@ import { ArrowLeft } from "lucide-react"
 // Importaciones de lógica y componentes
 import { getCurrentUser } from "@/lib/auth"
 import { getLotteryResults } from "@/lib/verification"
-import { PageWrapper } from "@/components/layout/page-wrapper"
 import { VerificationPanel } from "@/components/admin/verification-panel"
 import { ManualPaymentsPanel } from "@/components/admin/manual-payments-panel"
 import { DropboxSyncPanel } from "@/components/admin/dropbox-sync-panel"
 import { CompensationPanel } from "@/components/admin/compensation-panel"
 import { SyntheticUsersPanel } from "@/components/admin/synthetic-users-panel"
 import { RankingUpdatePanel } from "@/components/admin/ranking-update-panel"
+import { TableStructureChecker } from "@/components/admin/table-structure-checker"
 import { ResultsTable } from "@/components/lottery/results-table"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -97,8 +97,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-black">
         <div className="container mx-auto px-4 py-8">
           
           {/* Navegación y Título */}
@@ -118,8 +117,9 @@ export default async function AdminPage() {
             </p>
           </header>
 
-          <Tabs defaultValue="sync" className="space-y-6">
+          <Tabs defaultValue="debug" className="space-y-6">
             <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+              <TabsTrigger value="debug">🔍 Debug</TabsTrigger>
               <TabsTrigger value="sync">Sincronización</TabsTrigger>
               <TabsTrigger value="ranking">Ranking</TabsTrigger>
               <TabsTrigger value="synthetics">Usuarios AI</TabsTrigger>
@@ -128,6 +128,13 @@ export default async function AdminPage() {
               <TabsTrigger value="verification">Verificación</TabsTrigger>
               <TabsTrigger value="results">Resultados</TabsTrigger>
             </TabsList>
+
+            {/* Tab: Debug - Verificar estructura de tabla */}
+            <TabsContent value="debug" className="outline-hidden">
+              <div className="max-w-4xl space-y-4">
+                <TableStructureChecker />
+              </div>
+            </TabsContent>
 
             {/* Tab: Sincronización Dropbox */}
             <TabsContent value="sync" className="outline-hidden">
@@ -199,6 +206,5 @@ export default async function AdminPage() {
           </Tabs>
         </div>
       </div>
-    </PageWrapper>
   )
 }

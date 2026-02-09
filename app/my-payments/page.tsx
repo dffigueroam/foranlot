@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ArrowLeft, Clock, CheckCircle, XCircle, FileText } from "lucide-react"
+import { PageWrapper } from "@/components/layout/page-wrapper"
 
 export default async function MyPaymentsPage() {
   const user = await getCurrentUser()
@@ -17,7 +18,8 @@ export default async function MyPaymentsPage() {
   const payments = await getUserPaymentRequests(user.id)
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
+    <PageWrapper user={{ username: user.username, role: user.role }}>
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" asChild className="mb-4">
           <Link href="/dashboard">
@@ -135,6 +137,6 @@ export default async function MyPaymentsPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageWrapper>
   )
 }

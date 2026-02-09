@@ -89,8 +89,10 @@ export default function UploadResultsPage() {
                               ⚠️ {result.errors.length} fila(s) con error:
                             </p>
                             <ul className="list-disc list-inside text-sm">
-                              {result.errors.slice(0, 5).map((err: string, i: number) => (
-                                <li key={i}>{err}</li>
+                              {result.errors.slice(0, 5).map((err: any, i: number) => (
+                                <li key={i}>
+                                  Fila {err.row}: {err.detail}
+                                </li>
                               ))}
                               {result.errors.length > 5 && (
                                 <li className="text-xs opacity-75">

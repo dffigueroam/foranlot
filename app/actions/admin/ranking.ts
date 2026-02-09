@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { neon } from "@neondatabase/serverless"
 import { getCurrentUser } from "@/lib/auth"
 import { updateRankings } from "@/lib/ranking"
 import { saveRankingScores, calculateRankingScoresForPeriod } from "@/lib/compensation"

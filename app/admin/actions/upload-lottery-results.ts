@@ -61,27 +61,32 @@ export async function uploadLotteryResultsAction(formData: FormData) {
       const lotteryName = values[col.lottery]
       const drawDate = values[col.date]
       
-      // Helper para limpiar y extraer dígitos
-      const getDigits = (val: any, limit: number) => {
-        if (!val) return null
-        const cleaned = String(val).replace(/\D/g, "")
-        return cleaned ? cleaned.slice(-limit) : null
+      // Tomar winning_number tal como viene (preserva espacio y :)
+      const rawWinning = col.winning !== -1 ? values[col.winning] : null
+      
+      // Extraer 4 dígitos: primero intenta digits_4, luego los primeros 4 de winning_number
+      let winNum: string | null = null
+      if (col.d4 !== -1 && values[col.d4]) {
+        // Usar digits_4 si existe (más confiable)
+        winNum = String(values[col.d4]).replace(/\D/g, "").padStart(4, "0")
+      } else if (rawWinning) {
+        // Si no existe digits_4, extraer primeros 4 dígitos de winning_number
+        const cleaned = String(rawWinning).replace(/\D/g, "").slice(0, 4)
+        winNum = cleaned.padStart(4, "0")
       }
-
-      // Lógica de extracción de números
-      const rawWinning = col.winning !== -1 ? values[col.winning] : values[col.d4]
-      const winNum = getDigits(rawWinning, 4)
       
       if (!lotteryName || !drawDate || !winNum) {
         errors.push({ row: i + 1, detail: "Datos incompletos en esta fila" })
         continue
       }
 
-      const d4 = getDigits(values[col.d4], 4) || winNum
-      const d3 = getDigits(values[col.d3], 3) || winNum.slice(-3)
-      const d2 = getDigits(values[col.d2], 2) || winNum.slice(-2)
+      // Extraer dígitos adicionales para cada formato
+      const d4 = values[col.d4] ? String(values[col.d4]).replace(/\D/g, "").padStart(4, "0") : winNum
+      const d3 = values[col.d3] ? String(values[col.d3]).replace(/\D/g, "").padStart(3, "0") : winNum.slice(-3) || ""
+      const d2 = values[col.d2] ? String(values[col.d2]).replace(/\D/g, "").padStart(2, "0") : winNum.slice(-2) || ""
 
       try {
+        // Guardar winning_number tal como viene (con espacio y :), y digits_4 como valor numérico solo
         await sql`
           INSERT INTO lottery_results (
             lottery_name,
@@ -96,8 +101,8 @@ export async function uploadLotteryResultsAction(formData: FormData) {
           )
           VALUES (
             ${lotteryName},
+            ${rawWinning || winNum},
             ${drawDate},
-            ${winNum},
             ${d4},
             ${d3},
             ${d2},
@@ -127,6 +132,7 @@ export async function uploadLotteryResultsAction(formData: FormData) {
 
     return {
       success: true,
+      message: `✅ Cargados ${inserted} resultados correctamente`,
       inserted,
       total: lines.length - 1,
       errors: errors.length > 0 ? errors : null,

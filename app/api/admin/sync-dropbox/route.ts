@@ -135,13 +135,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Obtener últimas sincronizaciones
-    const lastSyncs = await sql`
-      SELECT * FROM lottery_sync_audit
-      WHERE source LIKE 'dropbox%'
-      ORDER BY synced_at DESC
-      LIMIT 5
-    `
+    // Intentar obtener últimas sincronizaciones
+    let lastSyncs: any[] = []
+    try {
+      lastSyncs = await sql`
+        SELECT * FROM lottery_sync_audit
+        WHERE source LIKE 'dropbox%'
+        ORDER BY synced_at DESC
+        LIMIT 5
+      `
+    } catch (dbError: any) {
+      // Si la tabla no existe, devolver array vacío
+      console.log("[v0] lottery_sync_audit table not found, returning empty syncs")
+    }
 
     const dropboxUrl = "https://www.dropbox.com/scl/fi/txc8lg5lhhiu4wjhf9vt5/UltResultsApp.xlsx?rlkey=4p1xkz3kgv1opuv0xtq449q6b&st=upg2nzb8&dl=0"
 

@@ -19,19 +19,19 @@ interface LotteryResult {
 }
 
 export function LatestResults({ results }: { results: LotteryResult[] }) {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + "T00:00:00")
-    return date.toLocaleDateString("es-CO", {
-      weekday: "short",
-      month: "2-digit",
-      day: "2-digit",
-    })
-  }
-
   const getDayName = (dateStr: string) => {
     const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sab"]
     const date = new Date(dateStr + "T00:00:00")
     return days[date.getDay()]
+  }
+
+  // Detectar tipo de lotería según longitud del número ganador
+  const inferLotteryType = (winningNumber: string): string => {
+    const digits = winningNumber.replace(/\D/g, "").length
+    if (digits === 3) return "3_digits"
+    if (digits === 4) return "4_digits"
+    if (digits === 5) return "5_digits"
+    return "4_digits" // Por defecto
   }
 
   const getLotteryColor = (type?: string): string => {
@@ -61,83 +61,79 @@ export function LatestResults({ results }: { results: LotteryResult[] }) {
     return nameMap[type || ""] || (type || "Resultado")
   }
 
-  // Agrupar por fecha, últimos 2-3 días
-  const sortedByDate = [...results]
-    .sort((a, b) => new Date(b.draw_date).getTime() - new Date(a.draw_date).getTime())
-    .slice(0, 30)
+  // Filtrar y mostrar solo del último día
+  const lastDay = results.length > 0 ? results[0]?.draw_date : null
+  const lastDayResults = lastDay 
+    ? results.filter(r => r.draw_date === lastDay)
+    : []
 
-  const resultsByDate = sortedByDate.reduce(
-    (acc, result) => {
-      const date = result.draw_date
-      if (!acc[date]) {
-        acc[date] = []
-      }
-      acc[date].push(result)
-      return acc
-    },
-    {} as Record<string, LotteryResult[]>
-  )
-
-  const sortedDates = Object.keys(resultsByDate).sort((a, b) => 
-    new Date(b).getTime() - new Date(a).getTime()
-  ).slice(0, 2)
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr + "T00:00:00")
+    return date.toLocaleDateString("es-CO", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    })
+  }
 
   return (
     <Card className="bg-card border border-border sticky top-20">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
-          🎰 Últimos Resultados
+          🎰 Resultados del Día
         </CardTitle>
-        <CardDescription className="text-xs">Resultados oficiales (últimas 24 horas)</CardDescription>
+        <CardDescription className="text-xs">
+          {lastDay ? `${formatDate(lastDay)}` : "No hay resultados disponibles"}
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto space-y-4">
-        {sortedDates.length === 0 ? (
+      <CardContent className="space-y-3">
+        {lastDayResults.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-sm text-muted-foreground">No hay resultados disponibles</p>
           </div>
         ) : (
-          sortedDates.map((date) => (
-            <div key={date} className="space-y-3 pb-4 border-b border-border/50 last:border-0 last:pb-0">
-              {/* Encabezado de fecha */}
-              <div className="flex items-center gap-2 px-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {getDayName(date)} • {formatDate(date)}
-                </div>
-              </div>
-
-              {/* Grid de resultados por fecha */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {resultsByDate[date]
-                  .sort((a, b) => ((a.lottery_type || "") || "").localeCompare(b.lottery_type || ""))
-                  .map((result, idx) => (
+          <div className="space-y-3">
+            {/* Grid de resultados */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {lastDayResults
+                .sort((a, b) => (a.lottery_name || "").localeCompare(b.lottery_name || ""))
+                .map((result, idx) => {
+                  const lotteryType = inferLotteryType(result.winning_number)
+                  return (
                     <div
                       key={idx}
-                      className={`rounded-lg border p-3 backdrop-blur-sm transition-all hover:shadow-md ${getLotteryColor(result.lottery_type)}`}
+                      className={`rounded-lg border p-3 backdrop-blur-sm transition-all hover:shadow-md ${getLotteryColor(lotteryType)}`}
                     >
                       <div className="space-y-2">
+                        {/* Nombre de lotería */}
+                        <div className="text-xs font-semibold text-muted-foreground truncate">
+                          {result.lottery_name}
+                        </div>
+
                         {/* Badge tipo */}
                         <div className="flex items-center justify-between gap-2">
                           <Badge 
                             variant="outline" 
-                            className={`text-xs font-semibold border ${getLotteryBadgeColor(result.lottery_type)}`}
+                            className={`text-xs font-semibold border ${getLotteryBadgeColor(lotteryType)}`}
                           >
-                            {getTypeName(result.lottery_type)}
+                            {getTypeName(lotteryType)}
                           </Badge>
                         </div>
 
                         {/* Número ganador (grande) */}
                         <div className="text-center py-2">
                           <div className="font-mono font-bold text-2xl text-primary">
-                            {result.winning_number.padStart(5, "0")}
+                            {result.winning_number.padStart(result.winning_number.length, "0")}
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-              </div>
+                  )
+                })}
             </div>
-          ))
+          </div>
         )}
 
         {/* Footer */}

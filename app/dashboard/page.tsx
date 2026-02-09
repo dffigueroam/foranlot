@@ -5,13 +5,11 @@ import { getCurrentUser } from "@/lib/auth"
 import { getPredictions } from "@/lib/predictions"
 import { getUserCredits } from "@/lib/credits"
 import { getUserPaymentRequests } from "@/lib/manual-payments"
-import { getLotteryResults } from "@/lib/verification"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
 import { PredictionForm } from "@/components/predictions/prediction-form"
 import { PredictionList } from "@/components/predictions/prediction-list"
 import { PaymentStatusAlert } from "@/components/dashboard/payment-status-alert"
-import { LatestResults } from "@/components/lottery/latest-results"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -44,8 +42,6 @@ export default async function DashboardPage() {
     ...p,
     amountCents: p.amount_cents ?? 0,
   }))
-
-  const lotteryResults = await getLotteryResults(undefined, 30)
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role }}>
@@ -87,10 +83,10 @@ export default async function DashboardPage() {
         </div>
 
         {/* ===== LAYOUT ===== */}
-        <div className="grid lg:grid-cols-12 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
 
           {/* COLUMNA IZQUIERDA - Formulario y Contratos */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="space-y-6">
             <PredictionForm />
 
             {/* CONTRATOS */}
@@ -151,8 +147,8 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* COLUMNA CENTRO - Pronósticos Recientes */}
-          <div className="lg:col-span-4">
+          {/* COLUMNA DERECHA - Pronósticos Recientes */}
+          <div>
             <Card className="bg-card border border-border">
               <CardHeader>
                 <CardTitle>Pronósticos Recientes</CardTitle>
@@ -169,11 +165,6 @@ export default async function DashboardPage() {
                 />
               </CardContent>
             </Card>
-          </div>
-
-          {/* COLUMNA DERECHA - Últimos Resultados */}
-          <div className="lg:col-span-3">
-            <LatestResults results={lotteryResults as any} />
           </div>
 
         </div>

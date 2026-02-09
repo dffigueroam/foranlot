@@ -13,9 +13,9 @@ interface PageWrapperProps {
 
 export function PageWrapper({ children, user }: PageWrapperProps) {
   return (
-    <>
+    <div suppressHydrationWarning>
       <Header user={user} />
       {children}
-    </>
+    </div>
   )
 }
