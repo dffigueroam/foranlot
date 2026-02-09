@@ -87,13 +87,26 @@ export default async function ResultsPage() {
     })
   }
 
+  const isRecentResult = (dateStr: any): boolean => {
+    if (!dateStr) return false
+    try {
+      const resultDate = new Date(dateStr)
+      const today = new Date()
+      const diffTime = Math.abs(today.getTime() - resultDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays === 0
+    } catch {
+      return false
+    }
+  }
+
   const lastDay = resultsByCountry.length > 0 && resultsByCountry[0]?.lotteries.length > 0 
     ? resultsByCountry[0].lotteries[0]?.draw_date 
     : null
 
   const totalResults = resultsByCountry.reduce((sum, group) => sum + group.lotteries.length, 0)
 
-  const countryColumns = ["Colombia", "España"]
+  const countryColumns = ["Colombia", "España", "USA"]
   const resultsByCountryMap = new Map(resultsByCountry.map(group => [group.country, group]))
 
   return (
@@ -112,10 +125,10 @@ export default async function ResultsPage() {
 
             <div>
               <h1 className="text-2xl font-bold mb-2">
-                🎰 Últimos Resultados
+                🎰 Resultados de Loterias
               </h1>
               <p className="text-muted-foreground text-sm">
-                {lastDay ? getFormattedDateHeader(lastDay) : "No hay resultados disponibles"}
+                Últimos resultados disponibles por país
               </p>
             </div>
           </div>
@@ -152,25 +165,34 @@ export default async function ResultsPage() {
                       <table className="w-full text-sm">
                         <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                           <tr>
-                            <th className="px-3 py-2 text-left font-semibold">Loteria</th>
+                            <th className="px-3 py-2 text-left font-semibold">
+                              <span className="mr-2">{flag}</span>Loteria
+                            </th>
                             <th className="px-3 py-2 text-center font-semibold">Numero</th>
                             <th className="px-3 py-2 text-right font-semibold">Fecha</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {lotteries.map((result, idx) => (
-                            <tr key={idx} className="border-t border-slate-200 dark:border-slate-700">
-                              <td className="px-3 py-2 text-slate-800 dark:text-slate-100">
-                                {result.lottery_name}
-                              </td>
-                              <td className="px-3 py-2 text-center font-mono font-semibold text-cyan-600 dark:text-cyan-300">
-                                {result.winning_number.padStart(result.winning_number.length, "0")}
-                              </td>
-                              <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-300">
-                                {getShortDate(result.draw_date)}
-                              </td>
-                            </tr>
-                          ))}
+                          {lotteries.map((result, idx) => {
+                            const isRecent = isRecentResult(result.draw_date)
+                            return (
+                              <tr key={idx} className={`border-t border-slate-200 dark:border-slate-700 ${
+                                isRecent 
+                                  ? "" 
+                                  : "opacity-70 text-amber-600 dark:text-amber-400"
+                              }`}>
+                                <td className="px-3 py-2">
+                                  {result.lottery_name}
+                                </td>
+                                <td className="px-3 py-2 text-center font-mono font-semibold text-cyan-600 dark:text-cyan-300">
+                                  {result.winning_number.padStart(result.winning_number.length, "0")}
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  {getShortDate(result.draw_date)}
+                                </td>
+                              </tr>
+                            )
+                          })}
                         </tbody>
                       </table>
                     </div>

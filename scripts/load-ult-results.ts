@@ -6,9 +6,9 @@ const sql = neon(process.env.DATABASE_URL!)
 
 async function loadResults() {
   try {
-    // Leer el archivo CSV
+    // Leer el archivo CSV con encoding UTF-8 explícito
     const filePath = resolve(__dirname, '../public/UltResultsApp.csv')
-    const content = readFileSync(filePath, 'utf-8')
+    const content = readFileSync(filePath, { encoding: 'utf-8' })
     
     const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
     console.log(`[v0] Leyendo ${lines.length - 1} filas de resultados`)
@@ -19,21 +19,24 @@ async function loadResults() {
     
     let inserted = 0
     let errors = 0
+    const errorDetails: string[] = []
 
     // Procesar cada línea
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(';').map(v => v.trim().replace(/^"|"$/g, ''))
       
-      const lotteryName = values[0]
-      const winningNumber = values[1]
-      const digits4 = values[2]
-      const digits3 = values[3]
-      const digits2 = values[4]
-      const drawDate = values[5]
+      // Preservar caracteres especiales como ñ, á, é, etc.
+      const lotteryName = values[0]?.normalize('NFC') || '' // NFC para composición canónica
+      const winningNumber = values[1] || ''
+      const digits4 = values[2] || ''
+      const digits3 = values[3] || ''
+      const digits2 = values[4] || ''
+      const drawDate = values[5] || ''
       
       if (!lotteryName || !drawDate || !digits4) {
         console.log(`[v0] Línea ${i + 1} incompleta, saltando`)
         errors++
+        errorDetails.push(`Fila ${i + 1}: datos incompletos`)
         continue
       }
 
@@ -72,6 +75,7 @@ async function loadResults() {
         console.log(`[v0] ✅ Insertado: ${lotteryName} (${drawDate})`)
       } catch (err: any) {
         errors++
+        errorDetails.push(`Fila ${i + 1}: ${err.message}`)
         console.error(`[v0] ❌ Error en línea ${i + 1}:`, err.message)
       }
     }
@@ -79,6 +83,15 @@ async function loadResults() {
     console.log(`\n[v0] Carga completada:`)
     console.log(`[v0] ✅ Insertados: ${inserted}`)
     console.log(`[v0] ❌ Errores: ${errors}`)
+    
+    if (errorDetails.length > 0 && errorDetails.length <= 20) {
+      console.log('\n[v0] ⚠️ Detalles de errores:')
+      errorDetails.forEach(detail => console.log(`   ${detail}`))
+    } else if (errorDetails.length > 20) {
+      console.log(`\n[v0] ⚠️ ${errorDetails.length} fila(s) con error:`)
+      errorDetails.slice(0, 5).forEach(detail => console.log(`   ${detail}`))
+      console.log(`   ... y ${errorDetails.length - 5} más`)
+    }
 
   } catch (error) {
     console.error('[v0] Error:', error)
