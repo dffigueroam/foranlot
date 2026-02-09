@@ -1,7 +1,7 @@
 "use server"
 
 import { getCurrentUser } from "@/lib/auth"
-import { createPrediction, getPredictions, getUserPredictions } from "@/lib/predictions"
+import { createPrediction, getPredictions, getUserPredictions, getRemainingDailyLimit } from "@/lib/predictions"
 import { sanitizeInput } from "@/lib/security"
 import { revalidatePath } from "next/cache"
 import { LOTTERIES } from "@/lib/lotteries"
@@ -99,9 +99,8 @@ export async function submitMultiplePredictions(
   notes: string | null
 ) {
   const user = await getCurrentUser()
-
   if (!user) {
-    return { error: "Debes iniciar sesión para publicar pronósticos" }
+    return { error: "Debes iniciar sesión" }
   }
 
   const confidenceValue = Number(confidenceLevel)
@@ -131,6 +130,16 @@ export async function submitMultiplePredictions(
 
   if (validatedLotteries.length === 0) {
     return { error: "No hay loterias válidas para los números ingresados" }
+  }
+
+  // Verificar límites antes de crear
+  for (const lottery of validatedLotteries) {
+    const remaining = await getRemainingDailyLimit(user.id, lottery.name, lotteryType, drawDate)
+    if (remaining < predictedNumbers.length) {
+      return { 
+        error: `Límite excedido para ${lottery.name}: solo puedes agregar ${remaining} números más hoy (máx 10 por lotería por tipo de cifra por día)` 
+      }
+    }
   }
 
   const notesProcessed = notes && notes.trim() !== "" ? notes : undefined

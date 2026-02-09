@@ -23,6 +23,32 @@ export interface Prediction {
 }
 
 /* ======================================================
+   VERIFICAR LÍMITE DIARIO
+====================================================== */
+export async function getRemainingDailyLimit(
+  userId: number,
+  lotteryName: string,
+  lotteryType: string,
+  drawDate: string
+): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT COUNT(*)::int as count
+      FROM predictions
+      WHERE user_id = ${userId}
+        AND lottery_name = ${lotteryName}
+        AND lottery_type = ${lotteryType}
+        AND DATE(draw_date) = DATE(${drawDate})
+    `
+    const current = result[0]?.count || 0
+    return Math.max(0, 10 - current)
+  } catch (error) {
+    console.error("[predictions] Error checking limit:", error)
+    return 0
+  }
+}
+
+/* ======================================================
    DASHBOARD / FEED
    👉 SOLO pronósticos del usuario
 ====================================================== */
@@ -72,6 +98,20 @@ export async function createPrediction(
     const dateObj = new Date(drawDate)
     if (isNaN(dateObj.getTime())) {
       return { error: "Fecha de sorteo inválida" }
+    }
+
+    // Validar límite de 10 números por lotería por tipo de cifra por día
+    const todayCount = await sql`
+      SELECT COUNT(*)::int as count
+      FROM predictions
+      WHERE user_id = ${userId}
+        AND lottery_name = ${lotteryName}
+        AND lottery_type = ${lotteryType}
+        AND DATE(draw_date) = DATE(${drawDate})
+    `
+
+    if (todayCount[0]?.count >= 10) {
+      return { error: "Has alcanzado el límite de 10 pronósticos por lotería por tipo de cifra por día" }
     }
 
     if (lotteryName !== "sin_definir") {

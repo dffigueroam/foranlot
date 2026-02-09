@@ -36,7 +36,22 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
   }
 
   const getResultBadge = (prediction: Prediction) => {
-    return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300">Publicado</Badge>
+    if (!prediction.is_verified) {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
+        >
+          En espera
+        </Badge>
+      )
+    }
+
+    if (prediction.is_correct) {
+      return <Badge className="bg-green-500">Acertado ✓</Badge>
+    }
+
+    return <Badge variant="destructive">Fallado ✗</Badge>
   }
 
   return (
@@ -112,6 +127,19 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                     Confianza: {prediction.confidence_level}/5
                   </span>
                 </div>
+
+                {prediction.is_verified ? (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Resultado: </span>
+                    <span className="font-mono font-semibold text-foreground">
+                      {prediction.actual_number || "-"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    Resultado pendiente de verificación
+                  </div>
+                )}
 
                 {prediction.notes && (
                   <p className="prediction-notes text-sm text-muted-foreground">

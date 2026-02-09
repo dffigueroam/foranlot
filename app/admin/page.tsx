@@ -14,6 +14,7 @@ import { SyntheticUsersPanel } from "@/components/admin/synthetic-users-panel"
 import { RankingUpdatePanel } from "@/components/admin/ranking-update-panel"
 import { TableStructureChecker } from "@/components/admin/table-structure-checker"
 import { ResultsTable } from "@/components/lottery/results-table"
+import { ResultsVerificationButton } from "@/components/admin/results-verification-button"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -187,15 +188,18 @@ export default async function AdminPage() {
             {/* Tab: Resultados con Suspense */}
             <TabsContent value="results" className="outline-hidden">
               <div className="max-w-4xl space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold">Historial de Sorteos</h2>
                     <p className="text-sm text-muted-foreground">Últimos 20 resultados registrados.</p>
                   </div>
-                  {/* Botón para ir a la página de subida que creaste anteriormente */}
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href="/admin/results">Subir CSV</Link>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <ResultsVerificationButton />
+                    {/* Botón para ir a la página de subida que creaste anteriormente */}
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href="/admin/results">Subir CSV</Link>
+                    </Button>
+                  </div>
                 </div>
 
                 <Suspense fallback={<TablePlaceholder />}>

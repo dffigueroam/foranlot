@@ -99,14 +99,15 @@ const recommendedLotteries = LOTTERIES
     setPredictedNumbers(numbers.join(" "))
   }
 
-  const toggleLottery = (name: string) => {
+  const toggleLottery = (name: string, country: string) => {
+    const key = `${name}|${country}`
     const next = new Set(selectedLotteries)
-    next.has(name) ? next.delete(name) : next.add(name)
+    next.has(key) ? next.delete(key) : next.add(key)
     setSelectedLotteries(next)
   }
 
   const selectAllRecommended = () =>
-    setSelectedLotteries(new Set(recommendedLotteries.map(l => l.name)))
+    setSelectedLotteries(new Set(recommendedLotteries.map(l => `${l.name}|${l.country}`)))
 
   const clearAllLotteries = () => setSelectedLotteries(new Set())
 
@@ -145,8 +146,11 @@ const recommendedLotteries = LOTTERIES
       return
     }
 
+    // Convertir las claves con formato "nombre|país" de vuelta a solo nombres
+    const lotteryNames = Array.from(selectedLotteries).map(key => key.split('|')[0])
+    
     const res = await submitMultiplePredictions(
-      Array.from(selectedLotteries),
+      lotteryNames,
       `${selectedDigits}_digits`,
       predictedNumbers,
       drawDate,
@@ -202,6 +206,21 @@ const recommendedLotteries = LOTTERIES
                 {countryOptions.map(c => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tipo de cifra */}
+          <div className="w-full">
+            <Label>Tipo de cifra</Label>
+            <Select value={selectedDigits} onValueChange={setSelectedDigits} disabled={loading}>
+              <SelectTrigger className="w-full">
+                <SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2 cifras</SelectItem>
+                <SelectItem value="3">3 cifras</SelectItem>
+                <SelectItem value="4">4 cifras</SelectItem>
+                <SelectItem value="5">5 cifras</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -332,19 +351,22 @@ const recommendedLotteries = LOTTERIES
                         No se encontraron loterías
                       </p>
                     ) : (
-                      recommendedLotteries.map(l => (
-                        <div key={l.name} className="flex items-center gap-2 p-2 rounded hover:bg-muted">
-                          <Checkbox
-                            checked={selectedLotteries.has(l.name)}
-                            onCheckedChange={() => toggleLottery(l.name)}
-                            disabled={loading}
-                          />
-                          <span className="text-sm font-medium">{l.name}</span>
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {l.country}
-                          </span>
-                        </div>
-                      ))
+                      recommendedLotteries.map(l => {
+                        const key = `${l.name}|${l.country}`
+                        return (
+                          <div key={key} className="flex items-center gap-2 p-2 rounded hover:bg-muted">
+                            <Checkbox
+                              checked={selectedLotteries.has(key)}
+                              onCheckedChange={() => toggleLottery(l.name, l.country)}
+                              disabled={loading}
+                            />
+                            <span className="text-sm font-medium">{l.name}</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {l.country}
+                            </span>
+                          </div>
+                        )
+                      })
                     )}
                   </div>
                 </div>

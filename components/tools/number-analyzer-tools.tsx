@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,9 +35,9 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
   const [activeTool, setActiveTool] = useState<"hot" | "cold" | "patterns" | null>(null)
 
   // Cargar límites al montar
-  useState(() => {
+  useEffect(() => {
     loadLimits()
-  })
+  }, [])
 
   async function loadLimits() {
     const response = await getUserDailyLimitsAction()

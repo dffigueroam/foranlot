@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { getCurrentUser } from "@/lib/auth"
 import { getPredictions } from "@/lib/predictions"
+import { getUserStats } from "@/lib/ranking"
 import { getUserCredits } from "@/lib/credits"
 import { getUserPaymentRequests } from "@/lib/manual-payments"
 import { PageWrapper } from "@/components/layout/page-wrapper"
@@ -20,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import { Crown, TrendingUp } from "lucide-react"
+import { Crown, TrendingUp, Target, Percent } from "lucide-react"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -37,6 +38,8 @@ export default async function DashboardPage() {
   const credits = user.is_premium
     ? await getUserCredits(user.id)
     : null
+
+  const userStats = await getUserStats(user.id)
 
   const payments = (await getUserPaymentRequests(user.id)).map(p => ({
     ...p,
@@ -148,7 +151,49 @@ export default async function DashboardPage() {
           </div>
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
-          <div>
+          <div className="space-y-6">
+            <Card className="bg-card border border-border">
+              <CardHeader>
+                <CardTitle>Resultados y exactitud</CardTitle>
+                <CardDescription>
+                  Resumen privado de tus pronósticos verificados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {userStats && userStats.total_predictions > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Verificados</p>
+                        <p className="text-lg font-semibold">{userStats.total_predictions}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-green-600" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Aciertos</p>
+                        <p className="text-lg font-semibold">{userStats.correct_predictions}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Percent className="w-4 h-4 text-amber-600" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Exactitud</p>
+                        <p className="text-lg font-semibold">
+                          {Number(userStats.accuracy_percentage || 0).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aún no hay resultados verificados para tus pronósticos.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="bg-card border border-border">
               <CardHeader>
                 <CardTitle>Pronósticos Recientes</CardTitle>

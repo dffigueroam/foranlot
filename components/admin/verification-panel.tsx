@@ -117,10 +117,8 @@ export function VerificationPanel() {
         <div className="pt-4 border-t">
           <h3 className="font-semibold mb-2 text-sm">Nota Importante</h3>
           <p className="text-xs text-muted-foreground">
-            Este sistema actualmente usa números simulados para demostración. En producción, debes configurar la
-            integración con una API real de lotería en{" "}
-            <code className="bg-muted px-1 py-0.5 rounded">lib/lottery-api.ts</code>y agregar la variable de entorno{" "}
-            <code className="bg-muted px-1 py-0.5 rounded">LOTTERY_API_KEY</code>.
+            Los resultados oficiales se cargan en la base de datos desde el panel admin (CSV). La verificacion usa esos
+            datos para marcar aciertos y recalcular estadisticas.
           </p>
         </div>
       </CardContent>
