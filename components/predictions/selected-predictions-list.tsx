@@ -100,7 +100,13 @@ export default function SelectedPredictionsList() {
     if (prediction.is_correct) {
       return <Badge className="bg-green-500">Acertado ✓</Badge>
     }
-    return <Badge variant="destructive">Fallado ✗</Badge>
+    const label =
+      prediction.lottery_type === "2_digits"
+        ? "Sin acierto 2 cifras"
+        : prediction.lottery_type === "3_digits"
+          ? "Sin acierto 3 cifras"
+          : "Sin acierto 4 cifras"
+    return <Badge variant="destructive">{label}</Badge>
   }
 
   const getLotteryTypeLabel = (type: string) => {

@@ -1,60 +1,130 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
-import { fetchLotteryResults } from "./lottery-api"
 import { updateRankings } from "./ranking"
 import { LOTTERIES } from "./lotteries"
 
 const sql = neon(process.env.DATABASE_URL!)
+
+/* ======================================================
+   FUNCIÓN AUXILIAR: DETECTAR COMBINACIONES
+====================================================== */
+
+/**
+ * Verifica si dos números son combinaciones/permutaciones entre sí
+ * @param predicted - Número predicho
+ * @param actual - Número resultado oficial
+ * @returns { isMatch: boolean, matchType: string, score: number }
+ */
+function checkCombination(predicted: string, actual: string): { 
+  isMatch: boolean
+  matchType: 'exact' | 'combination' | 'no_match'
+  score: number 
+} {
+  // Normalizar: remover espacios y convertir a string
+  const pred = predicted.trim()
+  const act = actual.trim()
+  
+  // Coincidencia exacta
+  if (pred === act) {
+    // Score = 0 para exactos (se marca is_correct = true)
+    return { isMatch: true, matchType: 'exact', score: 0 }
+  }
+  
+  // Verificar que tengan la misma longitud para ser combinación válida
+  if (pred.length !== act.length) {
+    return { isMatch: false, matchType: 'no_match', score: 0 }
+  }
+  
+  // Ordenar dígitos y comparar (combinación/permutación)
+  const predSorted = pred.split('').sort().join('')
+  const actSorted = act.split('').sort().join('')
+  
+  if (predSorted === actSorted) {
+    // Es una combinación válida
+    const digitCount = pred.length
+    
+    if (digitCount === 4) {
+      return { isMatch: true, matchType: 'combination', score: 4 }
+    } else if (digitCount === 3) {
+      return { isMatch: true, matchType: 'combination', score: 2 }
+    }
+  }
+  
+  return { isMatch: false, matchType: 'no_match', score: 0 }
+}
 
 // Verificar pronósticos para una fecha específica
 export async function verifyPredictionsForDate(date: string) {
   try {
     console.log("[v0] Starting verification for date:", date)
 
-    // Obtener resultados oficiales de lotería
-    const lotteryResults = await fetchLotteryResults(date)
+    // Obtener resultados oficiales desde la base de datos
+    const lotteryResults = await getLotteryResults(date)
 
-    console.log("[v0] Fetched lottery results:", lotteryResults.length)
-
-    // Guardar resultados en la base de datos
-    for (const result of lotteryResults) {
-      // Extraer solo dígitos para digits_4
-      const digitsOnly = (result.winning_number || "").replace(/\D/g, "").slice(0, 4).padStart(4, "0")
-      
-      await sql`
-        INSERT INTO lottery_results (lottery_name, winning_number, digits_4, draw_date)
-        VALUES (${result.lottery_name}, ${result.winning_number}, ${digitsOnly}, ${result.draw_date})
-        ON CONFLICT (lottery_name, draw_date)
-        DO UPDATE SET winning_number = ${result.winning_number}, digits_4 = ${digitsOnly}, verified_at = CURRENT_TIMESTAMP
-      `
+    if (!lotteryResults || lotteryResults.length === 0) {
+      return { error: "No hay resultados cargados para esa fecha" }
     }
+
+    console.log("[v0] Loaded lottery results from DB:", lotteryResults.length)
 
     // Verificar cada pronóstico
     let verifiedCount = 0
     let correctCount = 0
+    let combinationCount = 0
 
     for (const result of lotteryResults) {
-      // Usar digits_4 para la comparación (números limpios)
-      const digitsOnly = (result.winning_number || "").replace(/\D/g, "").slice(0, 4).padStart(4, "0")
+      // Usar digits_4 y digits_3 para la comparacion segun lottery_type
+      const digitsOnly = (result.winning_number || "").replace(/\D/g, "").padStart(4, "0")
+      const digits_4 = (result.digits_4 || "").toString().padStart(4, "0").slice(0, 4) || digitsOnly.slice(0, 4)
+      const digits_3 = (result.digits_3 || "").toString().padStart(3, "0").slice(0, 3) || digitsOnly.slice(0, 3)
       
-      const updatedPredictions = await sql`
-        UPDATE predictions
-        SET 
-          is_verified = true,
-          is_correct = (predicted_number = ${digitsOnly}),
-          actual_number = ${digitsOnly},
-          updated_at = CURRENT_TIMESTAMP
-        WHERE draw_date = ${result.draw_date}
-          AND lottery_name = ${result.lottery_name}
+      // Obtener pronósticos pendientes para esta lotería y fecha
+      const pendingPredictions = await sql`
+        SELECT id, lottery_type, predicted_number
+        FROM predictions
+        WHERE DATE(draw_date) = DATE(${result.draw_date})
+          AND LOWER(TRIM(lottery_name)) = LOWER(TRIM(${result.lottery_name}))
           AND is_verified = false
-        RETURNING id, is_correct
       `
 
-      verifiedCount += updatedPredictions.length
-      correctCount += updatedPredictions.filter((p: any) => p.is_correct).length
+      // Verificar cada pronóstico individualmente con sistema de combinaciones
+      for (const pred of pendingPredictions) {
+        const actualNumber = pred.lottery_type === '3_digits' ? digits_3 : digits_4
+        const predictedNumbers = pred.predicted_number.split(' ')
+        
+        let bestMatch = { isMatch: false, matchType: 'no_match' as const, score: 0 }
+        
+        // Verificar cada número predicho (puede haber varios separados por espacio)
+        for (const predictedNum of predictedNumbers) {
+          const match = checkCombination(predictedNum, actualNumber)
+          
+          // Guardar la mejor coincidencia
+          if (match.isMatch && (match.matchType === 'exact' || match.score > bestMatch.score)) {
+            bestMatch = match
+            if (match.matchType === 'exact') break // Exacto es lo mejor posible
+          }
+        }
+        
+        // Actualizar el pronóstico con el resultado
+        await sql`
+          UPDATE predictions
+          SET 
+            is_verified = true,
+            is_correct = ${bestMatch.matchType === 'exact'},
+            match_type = ${bestMatch.matchType},
+            match_score = ${bestMatch.score},
+            actual_number = ${actualNumber},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${pred.id}
+        `
+        
+        verifiedCount++
+        if (bestMatch.matchType === 'exact') correctCount++
+        if (bestMatch.matchType === 'combination') combinationCount++
+      }
     }
 
-    console.log("[v0] Verified predictions:", verifiedCount, "Correct:", correctCount)
+    console.log("[v0] Verified predictions:", verifiedCount, "Exact:", correctCount, "Combinations:", combinationCount)
 
     // Actualizar rankings
     await updateRankings()
@@ -63,11 +133,92 @@ export async function verifyPredictionsForDate(date: string) {
       success: true,
       verified: verifiedCount,
       correct: correctCount,
+      combinations: combinationCount,
       resultsProcessed: lotteryResults.length,
     }
   } catch (error) {
     console.error("[v0] Error verifying predictions:", error)
     return { error: "Error al verificar pronósticos" }
+  }
+}
+
+// Verificar pronosticos usando resultados ya cargados en la base de datos
+export async function verifyPredictionsFromStoredResults(date: string) {
+  try {
+    console.log("[v0] Starting verification from stored results for date:", date)
+
+    const lotteryResults = await getLotteryResults(date)
+
+    if (!lotteryResults || lotteryResults.length === 0) {
+      return { error: "No hay resultados cargados para esa fecha" }
+    }
+
+    let verifiedCount = 0
+    let correctCount = 0
+    let combinationCount = 0
+
+    for (const result of lotteryResults) {
+      if (!result.winning_number) continue
+
+      const digitsOnly = (result.winning_number || "").replace(/\D/g, "").padStart(4, "0")
+      const digits_4 = (result.digits_4 || "").toString().padStart(4, "0").slice(0, 4) || digitsOnly.slice(0, 4)
+      const digits_3 = (result.digits_3 || "").toString().padStart(3, "0").slice(0, 3) || digitsOnly.slice(0, 3)
+
+      // Obtener pronósticos pendientes
+      const pendingPredictions = await sql`
+        SELECT id, lottery_type, predicted_number
+        FROM predictions
+        WHERE DATE(draw_date) = DATE(${result.draw_date})
+          AND LOWER(TRIM(lottery_name)) = LOWER(TRIM(${result.lottery_name}))
+          AND is_verified = false
+      `
+
+      // Verificar cada pronóstico con sistema de combinaciones
+      for (const pred of pendingPredictions) {
+        const actualNumber = pred.lottery_type === '3_digits' ? digits_3 : digits_4
+        const predictedNumbers = pred.predicted_number.split(' ')
+        
+        let bestMatch = { isMatch: false, matchType: 'no_match' as const, score: 0 }
+        
+        for (const predictedNum of predictedNumbers) {
+          const match = checkCombination(predictedNum, actualNumber)
+          
+          if (match.isMatch && (match.matchType === 'exact' || match.score > bestMatch.score)) {
+            bestMatch = match
+            if (match.matchType === 'exact') break
+          }
+        }
+        
+        await sql`
+          UPDATE predictions
+          SET 
+            is_verified = true,
+            is_correct = ${bestMatch.matchType === 'exact'},
+            match_type = ${bestMatch.matchType},
+            match_score = ${bestMatch.score},
+            actual_number = ${actualNumber},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${pred.id}
+        `
+        
+        verifiedCount++
+        if (bestMatch.matchType === 'exact') correctCount++
+        if (bestMatch.matchType === 'combination') combinationCount++
+      }
+    }
+
+    await updateRankings()
+
+    return {
+      success: true,
+      verified: verifiedCount,
+      correct: correctCount,
+      combinations: combinationCount,
+      resultsProcessed: lotteryResults.length,
+    }
+  } catch (error) {
+    console.error("[v0] Error verifying from stored results:", error)
+    return { error: "Error al verificar pronosticos" }
   }
 }
 

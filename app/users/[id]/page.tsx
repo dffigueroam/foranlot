@@ -22,7 +22,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
 
   return (
     <PageWrapper user={currentUser ? { username: currentUser.username, role: currentUser.role } : null}>
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* HEADER */}
         <h1 className="text-3xl font-bold mb-6">
           Perfil del pronosticador

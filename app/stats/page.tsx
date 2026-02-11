@@ -6,7 +6,7 @@ import { AccuracyByTypeChart } from "@/components/charts/accuracy-by-type-chart"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft, TrendingUp, Target, DollarSign } from "lucide-react"
+import { ArrowLeft, TrendingUp, Target, DollarSign, Zap } from "lucide-react"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
 export default async function StatsPage() {
@@ -39,7 +39,7 @@ export default async function StatsPage() {
           </div>
 
         {userStats && (
-          <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <div className="grid md:grid-cols-5 gap-4 mb-8">
             <Card>
               <CardHeader className="pb-3">
                 <CardDescription>Total Pronósticos</CardDescription>
@@ -74,6 +74,23 @@ export default async function StatsPage() {
                     {Number(userStats.accuracy_percentage || 0).toFixed(1)}%
                   </span>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Score Combinaciones</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-purple-600" />
+                  <span className="text-3xl font-bold text-purple-600">
+                    {(userStats as any).total_score || 0}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Puntos por combinaciones
+                </p>
               </CardContent>
             </Card>
 

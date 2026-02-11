@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { getRanking } from "@/lib/ranking"
+import { getRankingWithWaitlist } from "@/lib/ranking"
 import { getGlobalLastRankingUpdate, formatLastUpdate } from "@/lib/ranking-updates"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 import { RankingTable } from "@/components/ranking/ranking-table"
@@ -16,7 +16,7 @@ export default async function RankingPage() {
     redirect("/login")
   }
 
-  const ranking = await getRanking(50)
+  const { official, waitlist, minAccuracy, minScore } = await getRankingWithWaitlist(50)
   const lastUpdate = await getGlobalLastRankingUpdate()
   const lastUpdateText = formatLastUpdate(lastUpdate)
 
@@ -55,7 +55,29 @@ export default async function RankingPage() {
             )}
           </div>
         </div>
-        <RankingTable users={ranking} currentUser={user} />
+
+        {/* Ranking Oficial */}
+        <div className="mb-8">
+          <RankingTable 
+            users={official} 
+            currentUser={user}
+            title="🏆 Ranking Oficial"
+            description={`Usuarios con ${minAccuracy}% de exactitud o ${minScore} puntos de combinaciones`}
+          />
+        </div>
+
+        {/* Lista de Espera */}
+        {waitlist.length > 0 && (
+          <div>
+            <RankingTable 
+              users={waitlist} 
+              currentUser={user}
+              title="⏳ En Lista de Espera"
+              description={`Alcanza ${minAccuracy}% de exactitud o ${minScore} puntos para ingresar al ranking oficial. ¡Sigue pronosticando!`}
+              showWaitlistBadge={true}
+            />
+          </div>
+        )}
       </div>
     </div>
     </PageWrapper>

@@ -7,27 +7,57 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   createSelectionAction,
   getSelectionsAction,
   cancelSelectionAction,
   getCreditsAction,
+  getRankingUsersAction,
 } from "@/app/actions/credits"
-import { AlertCircle, Sparkles, User, Hash, X, Calendar } from "lucide-react"
+import { AlertCircle, Sparkles, User, X, Calendar, Search, Trophy, Users } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+interface RankingUser {
+  user_id: number
+  username: string
+  total_predictions: number
+  correct_predictions: number
+  accuracy_percentage: number
+  total_score: number
+  rank_position: number
+  subscribers_count?: number
+}
 
 export default function SelectionManager() {
   const [credits, setCredits] = useState<any>(null)
   const [selections, setSelections] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedNumber, setSelectedNumber] = useState("")
-  const [selectedUserId, setSelectedUserId] = useState<number>()
-  const [lotteryType, setLotteryType] = useState("3_digits")
   const [message, setMessage] = useState("")
+  
+  // Filtros
+  const [country, setCountry] = useState<string>("all")
+  const [lotteryType, setLotteryType] = useState<string>("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  
+  // Usuarios del ranking
+  const [rankingUsers, setRankingUsers] = useState<RankingUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
   useEffect(() => {
     loadData()
   }, [])
+
+  // Cargar usuarios del ranking cuando cambian los filtros
+  useEffect(() => {
+    loadRankingUsers()
+  }, [country, lotteryType, searchTerm])
 
   const loadData = async () => {
     const creditsResult = await getCreditsAction()
@@ -41,40 +71,34 @@ export default function SelectionManager() {
     }
   }
 
-  const handleCreateNumberSelection = async () => {
-    if (!selectedNumber) {
-      setMessage("Por favor ingresa un número")
-      return
-    }
+  const loadRankingUsers = async () => {
+    setLoadingUsers(true)
+    const filters: any = {}
+    if (country && country !== "all") filters.country = country
+    if (lotteryType && lotteryType !== "all") filters.lotteryType = lotteryType
+    if (searchTerm.trim()) filters.searchTerm = searchTerm.trim()
 
-    setLoading(true)
-    const result = await createSelectionAction("number", lotteryType, selectedNumber)
-    setLoading(false)
-
-    if (result.error) {
-      setMessage(result.error)
-    } else {
-      setMessage("Selección creada exitosamente")
-      setSelectedNumber("")
-      loadData()
+    const result = await getRankingUsersAction(filters)
+    if (result.users) {
+      setRankingUsers(result.users)
     }
+    setLoadingUsers(false)
   }
 
-  const handleCreateUserSelection = async () => {
-    if (!selectedUserId) {
-      setMessage("Por favor selecciona un usuario")
+  const handleCreateUserSelection = async (userId: number, username: string) => {
+    if (!lotteryType || lotteryType === "all") {
+      setMessage("Por favor selecciona un tipo de lotería específico primero")
       return
     }
 
     setLoading(true)
-    const result = await createSelectionAction("user", lotteryType, undefined, selectedUserId)
+    const result = await createSelectionAction("user", lotteryType, undefined, userId)
     setLoading(false)
 
     if (result.error) {
       setMessage(result.error)
     } else {
-      setMessage("Selección creada exitosamente")
-      setSelectedUserId(undefined)
+      setMessage(`¡Ahora sigues a ${username}!`)
       loadData()
     }
   }
@@ -94,6 +118,12 @@ export default function SelectionManager() {
       month: "short",
       day: "numeric",
     })
+  }
+
+  const handleClearFilters = () => {
+    setCountry("all")
+    setLotteryType("all")
+    setSearchTerm("")
   }
 
   return (
@@ -129,95 +159,137 @@ export default function SelectionManager() {
         </CardContent>
       </Card>
 
-      {/* Create Selections */}
+      {/* Seguir Usuarios del Ranking */}
       <Card>
         <CardHeader>
-          <CardTitle>Crear Nueva Selección</CardTitle>
-          <CardDescription>Selecciona números del ranking o sigue usuarios específicos</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            Seguir Usuarios del Ranking
+          </CardTitle>
+          <CardDescription>Busca y sigue a los mejores pronosticadores</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="number">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="number">
-                <Hash className="h-4 w-4 mr-2" />
-                Por Número
-              </TabsTrigger>
-              <TabsTrigger value="user">
-                <User className="h-4 w-4 mr-2" />
-                Por Usuario
-              </TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-4">
+          {/* Filtros */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-2">
+              <Label>País</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="Colombia">🇨🇴 Colombia</SelectItem>
+                  <SelectItem value="España">🇪🇸 España</SelectItem>
+                  <SelectItem value="USA">🇺🇸 USA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <TabsContent value="number" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="lottery-type-number">Tipo de Lotería</Label>
-                <Select value={lotteryType} onValueChange={setLotteryType}>
-                  <SelectTrigger id="lottery-type-number">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2_digits">2 Cifras (00-99)</SelectItem>
-                    <SelectItem value="3_digits">3 Cifras (000-999)</SelectItem>
-                    <SelectItem value="4_digits">4 Cifras (0000-9999)</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <Label>Tipo de Lotería</Label>
+              <Select value={lotteryType} onValueChange={setLotteryType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="3_digits">3 Cifras</SelectItem>
+                  <SelectItem value="4_digits">4 Cifras</SelectItem>
+                  <SelectItem value="5_digits">5 Cifras</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label>Buscar por nombre o posición</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Ej: 5 o nombre del usuario"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                {(country !== "all" || lotteryType !== "all" || searchTerm) && (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Limpiar
+                  </Button>
+                )}
               </div>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="selected-number">Número</Label>
-                <Input
-                  id="selected-number"
-                  type="text"
-                  placeholder={lotteryType === "2_digits" ? "00" : lotteryType === "3_digits" ? "000" : "0000"}
-                  value={selectedNumber}
-                  onChange={(e) => setSelectedNumber(e.target.value)}
-                  maxLength={lotteryType === "2_digits" ? 2 : lotteryType === "3_digits" ? 3 : 4}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Verás todos los pronósticos de cualquier usuario que publique este número
-                </p>
-              </div>
+          {/* Lista de Usuarios */}
+          {(!lotteryType || lotteryType === "all") && (
+            <div className="text-center py-4 text-muted-foreground">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+              <p>Selecciona un tipo de lotería para ver los usuarios y poder seguirlos</p>
+            </div>
+          )}
 
-              <Button onClick={handleCreateNumberSelection} disabled={loading} className="w-full">
-                {loading ? "Creando..." : "Crear Selección por Número"}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="user" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="lottery-type-user">Tipo de Lotería</Label>
-                <Select value={lotteryType} onValueChange={setLotteryType}>
-                  <SelectTrigger id="lottery-type-user">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2_digits">2 Cifras (00-99)</SelectItem>
-                    <SelectItem value="3_digits">3 Cifras (000-999)</SelectItem>
-                    <SelectItem value="4_digits">4 Cifras (0000-9999)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="selected-user">ID de Usuario</Label>
-                <Input
-                  id="selected-user"
-                  type="number"
-                  placeholder="Ingresa el ID del usuario"
-                  value={selectedUserId || ""}
-                  onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">Verás todos los pronósticos de este usuario específico</p>
-              </div>
-
-              <Button onClick={handleCreateUserSelection} disabled={loading} className="w-full">
-                {loading ? "Creando..." : "Seguir Usuario"}
-              </Button>
-            </TabsContent>
-          </Tabs>
+          {lotteryType && lotteryType !== "all" && (
+            <>
+              {loadingUsers ? (
+                <div className="text-center py-8 text-muted-foreground">Cargando usuarios...</div>
+              ) : rankingUsers.length > 0 ? (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-15">Pos</TableHead>
+                        <TableHead>Usuario</TableHead>
+                        <TableHead className="text-right">Exactitud</TableHead>
+                        <TableHead className="text-right">Score</TableHead>
+                        <TableHead className="text-right">Seguidores</TableHead>
+                        <TableHead className="w-25"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rankingUsers.map((user) => (
+                        <TableRow key={user.user_id}>
+                          <TableCell>
+                            <Badge variant="outline">#{user.rank_position}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{user.username}</TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-mono">{user.accuracy_percentage.toFixed(1)}%</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant="secondary">{user.total_score || 0} pts</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Users className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">{user.subscribers_count || 0}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              onClick={() => handleCreateUserSelection(user.user_id, user.username)}
+                              disabled={loading}
+                            >
+                              Seguir
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No se encontraron usuarios con estos filtros
+                </div>
+              )}
+            </>
+          )}
 
           {message && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm p-3 bg-muted rounded-lg">
               <AlertCircle className="h-4 w-4" />
               {message}
             </div>
@@ -240,19 +312,10 @@ export default function SelectionManager() {
                 <div key={selection.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      {selection.selection_type === "number" ? (
-                        <>
-                          <Hash className="h-4 w-4 text-primary" />
-                          <span className="font-mono font-bold text-lg">{selection.selected_number}</span>
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-4 w-4 text-primary" />
-                          <span className="font-semibold">
-                            {selection.selected_username || `Usuario #${selection.selected_user_id}`}
-                          </span>
-                        </>
-                      )}
+                      <User className="h-4 w-4 text-primary" />
+                      <span className="font-semibold">
+                        {selection.selected_username || `Usuario #${selection.selected_user_id}`}
+                      </span>
                       <Badge variant="outline">{selection.lottery_type.replace("_", " ")}</Badge>
                     </div>
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">

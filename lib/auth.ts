@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { SignJWT, jwtVerify } from "jose"
 import { neon } from "@neondatabase/serverless"
+import { createEmailVerificationToken, sendVerificationEmail } from "./email-verification"
 
 const sql = neon(process.env.DATABASE_URL!)
 const SECRET_KEY = new TextEncoder().encode(
@@ -23,7 +24,7 @@ export interface User {
   role: "user" | "admin"
 }
 
-export interface SessionData {
+export interface SessionData extends Record<string, any> {
   userId: number
   email: string
   username: string
@@ -47,7 +48,7 @@ export async function verifyToken(
 ): Promise<(SessionData & { id: number }) | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY)
-    const sessionData = payload as SessionData
+    const sessionData = payload as unknown as SessionData
 
     const result = await sql`
       SELECT id, role
@@ -80,6 +81,7 @@ export async function registerUser(
     phone?: string | null
     country?: string
     city?: string
+    idDocument?: string | null
   },
 ) {
   try {
@@ -94,6 +96,8 @@ export async function registerUser(
         phone_number,
         city,
         country,
+        id_document,
+        id_document_country,
         registration_method
       )
       VALUES (
@@ -104,6 +108,8 @@ export async function registerUser(
         ${profile?.phone || null},
         ${profile?.city || null},
         ${profile?.country || null},
+        ${profile?.idDocument || null},
+        ${profile?.idDocument ? profile.country : null},
         'email'
       )
       RETURNING id, email, username, is_premium, role, stripe_customer_id, subscription_status
@@ -120,6 +126,15 @@ export async function registerUser(
       VALUES (${user.id}, 0, 0, 0)
       ON CONFLICT (user_id) DO NOTHING
     `
+
+    // Crear token de verificación de email
+    const verificationResult = await createEmailVerificationToken(user.id, user.email)
+    
+    if (verificationResult.token) {
+      // Enviar email de verificación (actualmente mock)
+      await sendVerificationEmail(user.email, verificationResult.token, user.username)
+      console.log(`[v0] Verification email created for user ${user.id}`)
+    }
 
     const sessionData: SessionData = {
       userId: user.id,
@@ -257,5 +272,41 @@ export async function updateUserPremiumStatus(
     return { success: true }
   } catch {
     return { error: "Error al actualizar usuario" }
+  }
+}
+
+/* ======================================================
+   USERNAME AVAILABILITY
+====================================================== */
+
+/**
+ * Verificar si un username está disponible
+ */
+export async function checkUsernameAvailability(username: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM users
+      WHERE LOWER(username) = LOWER(${username})
+    `
+    return result.length === 0
+  } catch (error) {
+    console.log("[v0] Error checking username availability:", error)
+    return false
+  }
+}
+
+/**
+ * Verificar si un email ya está registrado
+ */
+export async function checkEmailAvailability(email: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM users
+      WHERE LOWER(email) = LOWER(${email})
+    `
+    return result.length === 0
+  } catch (error) {
+    console.log("[v0] Error checking email availability:", error)
+    return false
   }
 }

@@ -1,6 +1,11 @@
 "use server"
 
-import { verifyPredictionsForDate, verifyPendingPredictions, getLotteryResults } from "@/lib/verification"
+import {
+  verifyPredictionsForDate,
+  verifyPendingPredictions,
+  getLotteryResults,
+  verifyPredictionsFromStoredResults,
+} from "@/lib/verification"
 import { getCurrentUser } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
@@ -14,6 +19,25 @@ export async function manualVerifyPredictions(date: string) {
   }
 
   const result = await verifyPredictionsForDate(date)
+
+  if (result.success) {
+    revalidatePath("/dashboard")
+    revalidatePath("/predictions")
+    revalidatePath("/ranking")
+    revalidatePath("/stats")
+  }
+
+  return result
+}
+
+export async function manualVerifyPredictionsFromDb(date: string) {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return { error: "Debes iniciar sesión" }
+  }
+
+  const result = await verifyPredictionsFromStoredResults(date)
 
   if (result.success) {
     revalidatePath("/dashboard")

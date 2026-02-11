@@ -1,5 +1,6 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
+import { LOTTERIES } from "./lotteries"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -9,8 +10,10 @@ export interface RankingUser {
   total_predictions: number
   correct_predictions: number
   accuracy_percentage: number
+  total_score: number
   total_earnings_cents: number
   rank_position: number
+  subscribers_count?: number
 }
 
 export interface DailyAccuracy {
@@ -46,11 +49,19 @@ export async function getRanking(limit = 50) {
     const ranking = await sql`
       SELECT 
         us.*,
-        u.username
+        u.username,
+        (
+          SELECT COUNT(*)::int
+          FROM user_selections
+          WHERE selected_user_id = us.user_id AND is_active = true
+        ) as subscribers_count
       FROM user_stats us
       JOIN users u ON us.user_id = u.id
       WHERE us.total_predictions > 0
-      ORDER BY us.accuracy_percentage DESC, us.correct_predictions DESC
+      ORDER BY 
+        us.accuracy_percentage DESC, 
+        us.total_score DESC, 
+        us.correct_predictions DESC
       LIMIT ${limit}
     `
 
@@ -61,10 +72,57 @@ export async function getRanking(limit = 50) {
   }
 }
 
+// Obtener ranking dividido en oficial y en espera
+export async function getRankingWithWaitlist(limit = 50) {
+  try {
+    await updateRankings()
+
+    const MIN_ACCURACY = 30  // Mínimo 30% de exactitud
+    const MIN_SCORE = 5      // O mínimo 5 puntos de combinaciones
+
+    const allUsers = await sql`
+      SELECT 
+        us.*,
+        u.username,
+        (
+          SELECT COUNT(*)::int
+          FROM user_selections
+          WHERE selected_user_id = us.user_id AND is_active = true
+        ) as subscribers_count
+      FROM user_stats us
+      JOIN users u ON us.user_id = u.id
+      WHERE us.total_predictions > 0
+      ORDER BY 
+        us.accuracy_percentage DESC, 
+        us.total_score DESC, 
+        us.correct_predictions DESC
+      LIMIT ${limit}
+    `
+
+    // Filtrar por exactitud O puntos
+    const official = (allUsers as RankingUser[]).filter(u => 
+      u.accuracy_percentage >= MIN_ACCURACY || (u.total_score || 0) >= MIN_SCORE
+    )
+    const waitlist = (allUsers as RankingUser[]).filter(u => 
+      u.accuracy_percentage < MIN_ACCURACY && (u.total_score || 0) < MIN_SCORE
+    )
+
+    return {
+      official,
+      waitlist,
+      minAccuracy: MIN_ACCURACY,
+      minScore: MIN_SCORE
+    }
+  } catch (error) {
+    console.error("[v0] Error getting ranking with waitlist:", error)
+    return { official: [], waitlist: [], minAccuracy: 30, minScore: 5 }
+  }
+}
+
 // Actualizar rankings de todos los usuarios
 export async function updateRankings() {
   try {
-    // Actualizar estadísticas
+    // Actualizar estadísticas incluyendo total_score
     await sql`
       UPDATE user_stats us
       SET 
@@ -78,6 +136,11 @@ export async function updateRankings() {
           FROM predictions 
           WHERE user_id = us.user_id AND is_correct = true
         ),
+        total_score = (
+          SELECT COALESCE(SUM(match_score), 0)
+          FROM predictions
+          WHERE user_id = us.user_id AND is_verified = true
+        ),
         accuracy_percentage = CASE 
           WHEN (SELECT COUNT(*) FROM predictions WHERE user_id = us.user_id AND is_verified = true) > 0 
           THEN (
@@ -89,13 +152,16 @@ export async function updateRankings() {
         last_updated = CURRENT_TIMESTAMP
     `
 
-    // Actualizar posiciones de ranking
+    // Actualizar posiciones de ranking (considerando score además de accuracy)
     await sql`
       WITH ranked_users AS (
         SELECT 
           user_id,
           ROW_NUMBER() OVER (
-            ORDER BY accuracy_percentage DESC, correct_predictions DESC
+            ORDER BY 
+              accuracy_percentage DESC, 
+              total_score DESC,
+              correct_predictions DESC
           ) as new_rank
         FROM user_stats
         WHERE total_predictions > 0
@@ -180,6 +246,88 @@ export async function getUserStats(userId: number) {
   } catch (error) {
     console.error("[v0] Error getting user stats:", error)
     return null
+  }
+}
+
+// Obtener usuarios del ranking con filtros para selecciones
+export async function getRankingForSelection(filters?: {
+  country?: string
+  lotteryType?: string
+  searchTerm?: string
+}) {
+  try {
+    await updateRankings()
+
+    // Primero obtener todos los usuarios del ranking
+    const allUsers = await sql`
+      SELECT 
+        us.*,
+        u.username,
+        (
+          SELECT COUNT(*)::int
+          FROM user_selections
+          WHERE selected_user_id = us.user_id AND is_active = true
+        ) as subscribers_count
+      FROM user_stats us
+      JOIN users u ON us.user_id = u.id
+      WHERE us.total_predictions > 0
+      ORDER BY 
+        us.accuracy_percentage DESC, 
+        us.total_score DESC, 
+        us.correct_predictions DESC
+      LIMIT 100
+    ` as RankingUser[]
+
+    // Aplicar filtros en JavaScript
+    let filtered = allUsers
+
+    // Filtro por país
+    if (filters?.country) {
+      // Obtener lottery_names del país especificado
+      const countryLotteries = LOTTERIES
+        .filter(l => l.country === filters.country)
+        .map(l => l.name)
+
+      // Para cada usuario, verificar si tiene predicciones en alguna lotería de ese país
+      const userIdsWithCountry = await sql`
+        SELECT DISTINCT user_id
+        FROM predictions
+        WHERE lottery_name = ANY(${countryLotteries})
+      `
+      
+      const validUserIds = new Set(userIdsWithCountry.map((r: any) => r.user_id))
+      filtered = filtered.filter(u => validUserIds.has(u.user_id))
+    }
+
+    // Filtro por tipo de lotería
+    if (filters?.lotteryType) {
+      const userIdsWithType = await sql`
+        SELECT DISTINCT user_id
+        FROM predictions
+        WHERE lottery_type = ${filters.lotteryType}
+      `
+      
+      const validUserIds = new Set(userIdsWithType.map((r: any) => r.user_id))
+      filtered = filtered.filter(u => validUserIds.has(u.user_id))
+    }
+
+    // Filtro por búsqueda de nombre o posición
+    if (filters?.searchTerm) {
+      const term = filters.searchTerm.toLowerCase().trim()
+      // Si es un número, buscar por posición; si no, por nombre
+      if (!isNaN(Number(term)) && term !== '') {
+        filtered = filtered.filter(u => u.rank_position === Number(term))
+      } else if (term !== '') {
+        filtered = filtered.filter(u => 
+          u.username.toLowerCase().includes(term)
+        )
+      }
+    }
+
+    return filtered
+  } catch (error) {
+    console.error("[v0] Error getting ranking for selection:", error)
+    return []
   }
 }
 

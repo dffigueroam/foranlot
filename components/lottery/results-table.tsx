@@ -8,6 +8,7 @@ import { es } from "date-fns/locale"
 
 interface LotteryResult {
   id: number
+  lottery_name: string
   lottery_type: string
   winning_number: string
   draw_date: string
@@ -22,10 +23,6 @@ interface ResultsTableProps {
 export function ResultsTable({ results }: ResultsTableProps) {
   const getLotteryTypeLabel = (type: string) => {
     return type === "2_digits" ? "2 Cifras" : type === "3_digits" ? "3 Cifras" : "4 Cifras"
-  }
-
-  const getDrawTimeLabel = (time: string) => {
-    return time === "morning" ? "Mañana" : time === "afternoon" ? "Tarde" : "Noche"
   }
 
   if (results.length === 0) {
@@ -50,7 +47,7 @@ export function ResultsTable({ results }: ResultsTableProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha</TableHead>
-                <TableHead>Horario</TableHead>
+                <TableHead>Lotería</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Número Ganador</TableHead>
                 <TableHead>Verificado</TableHead>
@@ -60,7 +57,7 @@ export function ResultsTable({ results }: ResultsTableProps) {
               {results.map((result) => (
                 <TableRow key={result.id}>
                   <TableCell>{format(new Date(result.draw_date), "dd MMM yyyy", { locale: es })}</TableCell>
-                  <TableCell>{getDrawTimeLabel(result.draw_time)}</TableCell>
+                  <TableCell className="font-medium">{result.lottery_name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{getLotteryTypeLabel(result.lottery_type)}</Badge>
                   </TableCell>

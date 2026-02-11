@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ interface DatePickerProps {
 
 export function DatePicker({ value, onChange, disabled = false, minDate }: DatePickerProps) {
   const selected = value ? new Date(value + "T00:00:00") : undefined
-  const today = minDate || new Date()
+  const today = useMemo(() => minDate || new Date(), [minDate])
 
   const handleSelect = (date: Date | undefined) => {
     if (date) {

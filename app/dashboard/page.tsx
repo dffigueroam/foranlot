@@ -41,6 +41,21 @@ export default async function DashboardPage() {
 
   const userStats = await getUserStats(user.id)
 
+  // Agrupar TODOS los pronósticos por fecha (verificados o no)
+  const groupedByDate = allPredictions.reduce((acc, pred) => {
+    const dateKey = pred.draw_date
+    if (!acc[dateKey]) {
+      acc[dateKey] = []
+    }
+    acc[dateKey].push(pred)
+    return acc
+  }, {} as Record<string, typeof allPredictions>)
+
+  // Tomar solo la última fecha
+  const recentDates = Object.keys(groupedByDate)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+    .slice(0, 1)
+
   const payments = (await getUserPaymentRequests(user.id)).map(p => ({
     ...p,
     amountCents: p.amount_cents ?? 0,
@@ -86,7 +101,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ===== LAYOUT ===== */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
 
           {/* COLUMNA IZQUIERDA - Formulario y Contratos */}
           <div className="space-y-6">
@@ -156,41 +171,86 @@ export default async function DashboardPage() {
               <CardHeader>
                 <CardTitle>Resultados y exactitud</CardTitle>
                 <CardDescription>
-                  Resumen privado de tus pronósticos verificados
+                  Resumen de tus pronósticos y última fecha posteada
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {userStats && userStats.total_predictions > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Verificados</p>
-                        <p className="text-lg font-semibold">{userStats.total_predictions}</p>
+                <div className="space-y-6">
+                  {/* Estadísticas - solo si hay verificados */}
+                  {userStats && userStats.total_predictions > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Verificados</p>
+                          <p className="text-lg font-semibold">{userStats.total_predictions}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-green-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Aciertos</p>
+                          <p className="text-lg font-semibold">{userStats.correct_predictions}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Percent className="w-4 h-4 text-amber-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Exactitud</p>
+                          <p className="text-lg font-semibold">
+                            {Number(userStats.accuracy_percentage || 0).toFixed(1)}%
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-green-600" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Aciertos</p>
-                        <p className="text-lg font-semibold">{userStats.correct_predictions}</p>
+                  )}
+
+                  {/* Pronósticos de la última fecha - siempre mostrar si hay pronósticos */}
+                  {recentDates.length > 0 ? (
+                    <div className={userStats && userStats.total_predictions > 0 ? "border-t pt-4" : ""}>
+                      <h4 className="text-sm font-semibold mb-3 text-muted-foreground">
+                        Última Fecha Posteada
+                      </h4>
+                      <div className="space-y-4">
+                        {recentDates.map(date => {
+                          const datePredictions = groupedByDate[date]
+                          
+                          // Números únicos
+                          const uniqueNumbers = Array.from(new Set(datePredictions.map(p => p.predicted_number)))
+                          
+                          // Loterías únicas
+                          const uniqueLotteries = Array.from(new Set(datePredictions.map(p => p.lottery_name)))
+                          
+                          return (
+                            <div key={date} className="border-l-2 border-blue-500 pl-3 space-y-2">
+                              <p className="text-xs text-muted-foreground font-medium">
+                                {new Date(date).toLocaleDateString('es-CO', { 
+                                  day: '2-digit', 
+                                  month: 'short', 
+                                  year: 'numeric' 
+                                })}
+                              </p>
+                              <div className="space-y-1">
+                                {uniqueNumbers.map((num, idx) => (
+                                  <p key={idx} className="font-mono text-sm font-semibold">
+                                    {num}
+                                  </p>
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-medium">Loterías:</span> {uniqueLotteries.join(' - ')}
+                              </p>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Percent className="w-4 h-4 text-amber-600" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Exactitud</p>
-                        <p className="text-lg font-semibold">
-                          {Number(userStats.accuracy_percentage || 0).toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Aún no hay resultados verificados para tus pronósticos.
-                  </p>
-                )}
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Aún no has creado pronósticos.
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -198,16 +258,16 @@ export default async function DashboardPage() {
               <CardHeader>
                 <CardTitle>Pronósticos Recientes</CardTitle>
                 <CardDescription>
-                  {user.is_premium
-                    ? "Todos los pronósticos de la comunidad"
-                    : "Solo tus pronósticos (hazte Premium para ver más)"}
+                  Estos son mis pronósticos históricos
                 </CardDescription>
               </CardHeader>
-              <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto space-y-6">
-                <PredictionList
-                  predictions={predictions}
-                  isPremium={user.is_premium}
-                />
+              <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+                <div className="mx-auto w-full max-w-[28rem] space-y-6">
+                  <PredictionList
+                    predictions={predictions}
+                    isPremium={user.is_premium}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>

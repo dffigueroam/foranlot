@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { manualVerifyPredictions, runAutoVerification } from "@/app/actions/verification"
+import { manualVerifyPredictions, manualVerifyPredictionsFromDb, runAutoVerification } from "@/app/actions/verification"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,22 @@ export function VerificationPanel() {
     setResult(null)
 
     const res = await manualVerifyPredictions(selectedDate)
+
+    if (res.error) {
+      setError(res.error)
+    } else {
+      setResult(res)
+    }
+
+    setLoading(false)
+  }
+
+  async function handleStoredVerification() {
+    setLoading(true)
+    setError(null)
+    setResult(null)
+
+    const res = await manualVerifyPredictionsFromDb(selectedDate)
 
     if (res.error) {
       setError(res.error)
@@ -79,7 +95,7 @@ export function VerificationPanel() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="verify-date">Verificar fecha específica</Label>
-            <div className="flex gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-2">
               <Input
                 id="verify-date"
                 type="date"
@@ -91,9 +107,12 @@ export function VerificationPanel() {
               <Button onClick={handleManualVerification} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verificar"}
               </Button>
+              <Button onClick={handleStoredVerification} disabled={loading} variant="outline">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verificar con resultados cargados"}
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Verifica pronósticos para una fecha específica usando la API de lotería
+              Verifica pronósticos para una fecha específica usando la API o resultados cargados
             </p>
           </div>
 

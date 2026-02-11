@@ -195,34 +195,86 @@ const recommendedLotteries = LOTTERIES
             </Alert>
           )}
 
-          {/* País */}
-          <div className="w-full">
-            <Label>País</Label>
-            <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loading}>
-              <SelectTrigger className="w-full">
-                <SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {countryOptions.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* FILA 1: País y Tipo de cifra */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>País</Label>
+              <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loading}>
+                <SelectTrigger className="w-full">
+                  <SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {countryOptions.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Tipo de cifra</Label>
+              <Select value={selectedDigits} onValueChange={setSelectedDigits} disabled={loading}>
+                <SelectTrigger className="w-full">
+                  <SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2">2 cifras</SelectItem>
+                  <SelectItem value="3">3 cifras</SelectItem>
+                  <SelectItem value="4">4 cifras</SelectItem>
+                  <SelectItem value="5">5 cifras</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Tipo de cifra */}
-          <div className="w-full">
-            <Label>Tipo de cifra</Label>
-            <Select value={selectedDigits} onValueChange={setSelectedDigits} disabled={loading}>
-              <SelectTrigger className="w-full">
-                <SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">2 cifras</SelectItem>
-                <SelectItem value="3">3 cifras</SelectItem>
-                <SelectItem value="4">4 cifras</SelectItem>
-                <SelectItem value="5">5 cifras</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* FILA 2: Fecha del sorteo, Horario y Grado de confianza */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label>Fecha del sorteo</Label>
+              <Input
+                type="date"
+                value={drawDate}
+                onChange={e => setDrawDate(e.target.value)}
+                disabled={loading}
+              />
+              {drawDayName && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span className="capitalize font-semibold">{drawDayName}</span>
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>Horario</Label>
+              <Select value={drawTime} onValueChange={setDrawTime} disabled={loading}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin horario</SelectItem>
+                  <SelectItem value="morning">Mañana</SelectItem>
+                  <SelectItem value="afternoon">Tarde</SelectItem>
+                  <SelectItem value="night">Noche</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Grado de confianza</Label>
+              <Select
+                value={confidenceLevel}
+                onValueChange={setConfidenceLevel}
+                disabled={loading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Muy baja</SelectItem>
+                  <SelectItem value="2">Baja</SelectItem>
+                  <SelectItem value="3">Media</SelectItem>
+                  <SelectItem value="4">Alta</SelectItem>
+                  <SelectItem value="5">Muy alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Números */}
@@ -263,78 +315,21 @@ const recommendedLotteries = LOTTERIES
           </p>
         </div>
 
-
-
-          {/* Fecha y horario */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Fecha del sorteo</Label>
-              <Input
-                type="date"
-                value={drawDate}
-                onChange={e => setDrawDate(e.target.value)}
-                disabled={loading}
-              />
-              {drawDayName && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Día: <span className="capitalize font-semibold">{drawDayName}</span>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label>Horario</Label>
-              <Select value={drawTime} onValueChange={setDrawTime} disabled={loading}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin horario</SelectItem>
-                  <SelectItem value="morning">Mañana</SelectItem>
-                  <SelectItem value="afternoon">Tarde</SelectItem>
-                  <SelectItem value="night">Noche</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Confianza y comentarios */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Grado de confianza (1/3) */}
-            <div className="md:col-span-1">
-              <Label>Grado de confianza</Label>
-              <Select
-                value={confidenceLevel}
-                onValueChange={setConfidenceLevel}
-                disabled={loading}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Muy baja</SelectItem>
-                  <SelectItem value="2">Baja</SelectItem>
-                  <SelectItem value="3">Media</SelectItem>
-                  <SelectItem value="4">Alta</SelectItem>
-                  <SelectItem value="5">Muy alta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Comentarios (2/3) */}
-            <div className="md:col-span-2">
-              <Label>Comentarios</Label>
-              <Textarea
-                name="notes"
-                placeholder="Explica tu análisis o intuición max.. 40 caracteres"
-                rows={5}
-                disabled={loading}
-                className="w-full"
-              />
-            </div>
+          {/* Comentarios */}
+          <div>
+            <Label>Comentarios</Label>
+            <Textarea
+              name="notes"
+              placeholder="Explica tu análisis o intuición max.. 40 caracteres"
+              rows={3}
+              disabled={loading}
+              className="w-full"
+            />
           </div>
 
 
           {/* Loterías */}
-                    <div className="border rounded-lg p-3 max-h-60 flex flex-col">
+          <div className="border rounded-lg p-3 max-h-96 flex flex-col">
                   {/* Buscador */}
                   <Input
                     placeholder="Buscar lotería..."

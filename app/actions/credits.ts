@@ -11,6 +11,7 @@ import {
   getSelectedPredictions,
   generateAndDownloadPrediction,
 } from "@/lib/credits"
+import { getRankingForSelection } from "@/lib/ranking"
 
 export async function getCreditsAction() {
   const user = await getCurrentUser()
@@ -136,4 +137,23 @@ export async function generatePredictionAction(selectionId: number) {
       error: error.message,
     }
   }
+}
+
+export async function getRankingUsersAction(filters?: {
+  country?: string
+  lotteryType?: string
+  searchTerm?: string
+}) {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  if (!user.is_premium) {
+    return { error: "Solo usuarios premium pueden ver el ranking para selecciones" }
+  }
+
+  const users = await getRankingForSelection(filters)
+  return { users }
 }

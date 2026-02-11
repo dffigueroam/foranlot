@@ -26,10 +26,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface LotteryResult {
   id: number
   lottery_name: string
-  lottery_type: string   // <--- Agregado
+  lottery_type: string
   winning_number: string
   draw_date: string
-  draw_time: string   // <--- Agregado
+  draw_time: string
   digits_4?: string | null
   digits_3?: string | null
   digits_2?: string | null
@@ -40,15 +40,10 @@ async function ResultsList() {
   try {
     const data = await getLotteryResults(undefined, 20)
     
-    /** 
-     * Transformamos los datos de la DB para que tengan lottery_type y draw_time
-     * si es que la base de datos no los devuelve exactamente con esos nombres.
-     */
-    const recentResults = (data as any[]).map(res => ({
-      ...res,
-      lottery_type: res.lottery_type || "No especificado", // Evita el error de propiedad faltante
-      draw_time: res.draw_time || "N/A"                    // Evita el error de propiedad faltante
-    })) as LotteryResult[]
+    // Filtrar solo resultados con datos completos de la BD
+    const recentResults = (data as any[]).filter(res => 
+      res.lottery_name && res.lottery_type && res.draw_time
+    ) as LotteryResult[]
 
     if (!recentResults || recentResults.length === 0) {
       return (

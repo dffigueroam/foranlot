@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, TrendingUp, User } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { LOTTERIES } from "@/lib/lotteries"
 
 interface PredictionListProps {
   predictions: Prediction[]
@@ -29,6 +30,14 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
   const getLotteryNameLabel = (name: string) =>
     name === "sin_definir" ? "Lotería sin definir" : name
 
+  const getCountryLabel = (name: string) => {
+    const match = LOTTERIES.find((lottery) => lottery.name === name)
+    return match?.country || ""
+  }
+
+  const getDrawTimeLabel = (drawTime: string | null | undefined) =>
+    drawTime && drawTime !== "null" ? drawTime : "Sin horario"
+
   const getConfidenceClass = (level: number) => {
     if (level >= 4) return "confidence-high"
     if (level === 3) return "confidence-medium"
@@ -48,10 +57,34 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
     }
 
     if (prediction.is_correct) {
-      return <Badge className="bg-green-500">Acertado ✓</Badge>
+      return (
+        <div className="flex flex-col gap-1 items-end">
+          <Badge className="bg-green-500">Acertado ✓</Badge>
+        </div>
+      )
     }
 
-    return <Badge variant="destructive">Fallado ✗</Badge>
+    // Verificar si hay combinación (score > 0)
+    if (prediction.match_score && prediction.match_score > 0) {
+      return (
+        <div className="flex flex-col gap-1 items-end">
+          <Badge className="bg-yellow-500 dark:bg-yellow-600">
+            Combinación
+          </Badge>
+          <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
+            +{prediction.match_score} pts
+          </span>
+        </div>
+      )
+    }
+
+    const label =
+      prediction.lottery_type === "2_digits"
+        ? "Sin acierto 2 cifras"
+        : prediction.lottery_type === "3_digits"
+          ? "Sin acierto 3 cifras"
+          : "Sin acierto 4 cifras"
+    return <Badge variant="destructive">{label}</Badge>
   }
 
   return (
@@ -76,12 +109,12 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             }`}
           >
             <CardContent
-              className={`prediction-item-content flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${
+              className={`prediction-item-content flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between ${
                 isCompact ? "p-3" : "p-5"
               }`}
             >
               <div
-                className={`prediction-main flex-1 ${
+                className={`prediction-main flex-1 min-w-0 ${
                   isCompact ? "space-y-2" : "space-y-3"
                 }`}
               >
@@ -103,29 +136,39 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                   {prediction.predicted_number}
                 </div>
 
-                <div
-                  className={`prediction-meta flex flex-wrap items-center text-muted-foreground ${
-                    isCompact ? "gap-2 text-xs" : "gap-3 text-sm"
-                  }`}
-                >
-                  <div className="prediction-meta-item inline-flex items-center gap-1">
-                    <Calendar className="prediction-meta-icon h-4 w-4" />
-                    {format(new Date(prediction.draw_date), "dd MMM yyyy", {
-                      locale: es,
-                    })}
+                <div className={`text-muted-foreground ${isCompact ? "text-xs" : "text-sm"}`}>
+                  <div className={`flex flex-wrap items-center ${isCompact ? "gap-2" : "gap-3"}`}>
+                    <span className="font-medium text-foreground">País:</span>
+                    <span>{getCountryLabel(prediction.lottery_name) || "-"}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="font-medium text-foreground">Cantidad Cifras:</span>
+                    <span>{getLotteryTypeLabel(prediction.lottery_type)}</span>
                   </div>
 
-                  <Badge variant="secondary">
-                    {getLotteryNameLabel(prediction.lottery_name)}
-                  </Badge>
+                  <div className={`mt-2 flex flex-wrap items-center ${isCompact ? "gap-2" : "gap-3"}`}>
+                    <div className="inline-flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(prediction.draw_date), "dd MMM yyyy", {
+                        locale: es,
+                      })}
+                    </div>
+                    <span className="text-muted-foreground">·</span>
+                    <span>Horario: {getDrawTimeLabel(prediction.draw_time)}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span
+                      className={`prediction-confidence ${getConfidenceClass(
+                        prediction.confidence_level
+                      )} text-xs font-semibold`}
+                    >
+                      Confianza: {prediction.confidence_level}/5
+                    </span>
+                  </div>
 
-                  <span
-                    className={`prediction-confidence ${getConfidenceClass(
-                      prediction.confidence_level
-                    )} text-xs font-semibold`}
-                  >
-                    Confianza: {prediction.confidence_level}/5
-                  </span>
+                  <div className="mt-2">
+                    <Badge variant="secondary">
+                      {getLotteryNameLabel(prediction.lottery_name)}
+                    </Badge>
+                  </div>
                 </div>
 
                 {prediction.is_verified ? (

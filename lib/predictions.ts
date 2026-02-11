@@ -16,6 +16,8 @@ export interface Prediction {
   is_verified: boolean
   is_correct: boolean | null
   actual_number: string | null
+  match_type?: 'exact' | 'combination' | 'no_match'
+  match_score?: number
   confidence_level: number
   notes?: string | null
   created_at: string

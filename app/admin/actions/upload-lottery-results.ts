@@ -21,7 +21,11 @@ export async function uploadLotteryResultsAction(formData: FormData) {
     const file = formData.get("file") as File
     if (!file || file.size === 0) return { error: "Archivo requerido o vacío" }
 
-    const content = await file.text()
+    // Leer archivo con UTF-8 explícito para preservar ñ y tildes
+    const buffer = await file.arrayBuffer()
+    const decoder = new TextDecoder('utf-8')
+    const content = decoder.decode(buffer)
+    
     const delimiter = content.includes(";") ? ";" : ","
     const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
 
@@ -58,8 +62,9 @@ export async function uploadLotteryResultsAction(formData: FormData) {
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(delimiter).map(v => v.trim().replace(/^"|"$/g, ""))
       
-      const lotteryName = values[col.lottery]
-      const drawDate = values[col.date]
+      // Normalizar nombre de lotería: trim y preservar UTF-8
+      const lotteryName = values[col.lottery]?.trim()
+      const drawDate = values[col.date]?.trim()
       
       // Tomar winning_number tal como viene (preserva espacio y :)
       const rawWinning = col.winning !== -1 ? values[col.winning] : null

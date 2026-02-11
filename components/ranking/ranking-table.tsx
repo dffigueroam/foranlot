@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Trophy, Medal, Award, UserPlus, TrendingUp, Target, Zap, Link } from "lucide-react"
+import { Trophy, Medal, Award, UserPlus, TrendingUp, Target, Zap, Link, Users } from "lucide-react"
 
 
 interface RankingTableProps {
@@ -14,9 +14,12 @@ interface RankingTableProps {
   currentUser?: any
   onFollowUser?: (userId: number, username: string) => void
   showDetailedScores?: boolean
+  title?: string
+  description?: string
+  showWaitlistBadge?: boolean
 }
 
-export function RankingTable({ users, currentUser, onFollowUser, showDetailedScores = false }: RankingTableProps) {
+export function RankingTable({ users, currentUser, onFollowUser, showDetailedScores = false, title, description, showWaitlistBadge = false }: RankingTableProps) {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1:
@@ -40,12 +43,11 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ranking de Pronosticadores</CardTitle>
+        <CardTitle>{title || "Ranking de Pronosticadores"}</CardTitle>
         <CardDescription>
-          {showDetailedScores 
+          {description || (showDetailedScores 
             ? "Ranking con scores detallados de compensación (50% aporte, 30% recurrencia, 20% consistencia)"
-            : "Los mejores usuarios según precisión y aciertos"
-          }
+            : "Los mejores usuarios según precisión y aciertos")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -102,6 +104,32 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                 <TableHead className="text-center">Total</TableHead>
                 <TableHead className="text-center">Aciertos</TableHead>
                 <TableHead className="text-center">Precisión</TableHead>
+                <TableHead className="text-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center justify-center gap-1">
+                        <Zap className="w-4 h-4" />
+                        Score
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Puntos por combinaciones (4 pts = 4 cifras, 2 pts = 3 cifras)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead className="text-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger className="flex items-center justify-center gap-1">
+                        <Users className="w-4 h-4" />
+                        Suscriptores
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Número de usuarios que siguen a este pronosticador</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead className="text-right">Ganancias</TableHead>
                 <TableHead className="text-right">Contrato</TableHead>
               </TableRow>
@@ -111,17 +139,28 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                 const accuracy = Number(user.accuracy_percentage) || 0
                 const earnings = Number(user.total_earnings_cents) || 0
                 const position = user.rank_position || index + 1
+                const isCurrentUser = currentUser?.id === user.user_id
 
                 return (
-                  <TableRow key={user.user_id}>
+                  <TableRow 
+                    key={user.user_id}
+                    className={isCurrentUser ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500" : ""}
+                  >
                     <TableCell className="font-medium">{getRankIcon(position)}</TableCell>                  
                     <TableCell className="font-semibold">
-                      <Link
-                        href={`/users/${user.user_id}`}
-                        className="hover:underline text-primary"
-                      >
-                        {user.username}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/users/${user.user_id}`}
+                          className="hover:underline text-primary"
+                        >
+                          {user.username}
+                        </Link>
+                        {isCurrentUser && (
+                          <Badge variant="secondary" className="bg-blue-500 text-white text-xs">
+                            Tú
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     
                     {showDetailedScores && (
@@ -156,9 +195,20 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                         {accuracy.toFixed(1)}%
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                        {user.total_score || 0} pts
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                        <Users className="w-3 h-3 mr-1" />
+                        {user.subscribers_count || 0}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right font-medium">${(earnings / 100).toFixed(2)}</TableCell>
                   <TableCell className="text-right">
-                      {currentUser?.id === user.user_id ? (
+                      {isCurrentUser ? (
                         <Button size="sm" disabled>
                           Tú
                         </Button>

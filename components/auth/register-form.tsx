@@ -4,14 +4,17 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { register } from "@/app/actions/auth"
+import { register, checkUsername } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Mail, Phone, MapPin, User } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { PasswordStrength } from "@/components/auth/password-strength"
+import { Mail, Phone, MapPin, User, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { useDebounce } from "@/hooks/use-debounce"
 
 interface City {
   id: string
@@ -70,7 +73,14 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [selectedCountry, setSelectedCountry] = useState<string>("")
   const [availableCities, setAvailableCities] = useState<City[]>([])
+  const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("")
+  const [usernameChecking, setUsernameChecking] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const router = useRouter()
+  
+  const debouncedUsername = useDebounce(username, 500)
 
   useEffect(() => {
     if (selectedCountry && CITIES_BY_COUNTRY[selectedCountry]) {
@@ -80,29 +90,67 @@ export function RegisterForm() {
     }
   }, [selectedCountry])
 
+  // Verificar disponibilidad de username
+  useEffect(() => {
+    async function checkUsernameAvailability() {
+      if (debouncedUsername.length < 3) {
+        setUsernameAvailable(null)
+        return
+      }
+
+      setUsernameChecking(true)
+      try {
+        const result = await checkUsername(debouncedUsername)
+        setUsernameAvailable(result.available)
+      } catch (err) {
+        console.error("Error checking username:", err)
+      } finally {
+        setUsernameChecking(false)
+      }
+    }
+
+    checkUsernameAvailability()
+  }, [debouncedUsername])
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const password = formData.get("password") as string
+    const passwordField = formData.get("password") as string
     const confirmPassword = formData.get("confirmPassword") as string
 
-    if (password !== confirmPassword) {
+    if (passwordField !== confirmPassword) {
       setError("Las contraseñas no coinciden")
       setLoading(false)
       return
     }
 
+    if (!acceptedTerms) {
+      setError("Debes aceptar los términos y condiciones")
+      setLoading(false)
+      return
+    }
+
+    // Verificar username disponible
+    if (usernameAvailable === false) {
+      setError("Este nombre de usuario ya está en uso")
+      setLoading(false)
+      return
+    }
+
+    // Agregar aceptación de términos al FormData
+    formData.set("acceptedTerms", acceptedTerms.toString())
+
     // Validar campos requeridos
     const email = formData.get("email") as string
-    const username = formData.get("username") as string
+    const usernameFieldFieldCheck = formData.get("username") as string
     const fullName = formData.get("fullName") as string
     const country = formData.get("country") as string
     const city = formData.get("city") as string
 
-    if (!email || !username || !fullName || !country || !city) {
+    if (!email || !usernameFieldCheck || !fullName || !country || !city) {
       setError("Todos los campos marcados con * son requeridos")
       setLoading(false)
       return
@@ -153,47 +201,71 @@ export function RegisterForm() {
             <User className="w-4 h-4" />
             Nombre de Usuario *
           </Label>
-          <Input
-            id="username"
-            name="username"
-            type="text"
-            placeholder="PronosticadorPro"
-            required
-            disabled={loading}
-            minLength={3}
-            autoComplete="username"
-          />
-          <p className="text-xs text-muted-foreground">Mínimo 3 caracteres. Puede ser igual a tu correo.</p>
+          <div className="relative">
+            <Input
+              id="username"
+              name="username"
+              type="text"
+              placeholder="PronosticadorPro"
+              required
+              disabled={loading}
+              minLength={3}
+              maxLength={30}
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className={usernameAvailable === false ? "border-red-500" : usernameAvailable === true ? "border-green-500" : ""}
+            />
+            {username.length >= 3 && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {usernameChecking ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : usernameAvailable === true ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : usernameAvailable === false ? (
+                  <XCircle className="w-4 h-4 text-red-500" />
+                ) : null}
+              </div>
+            )}
+          </div>
+          {username.length >= 3 && usernameAvailable === false && (
+            <p className="text-xs text-red-500">Este nombre de usuario ya está en uso</p>
+          )}
+          {username.length >= 3 && usernameAvailable === true && (
+            <p className="text-xs text-green-600">¡Nombre de usuario disponible!</p>
+          )}
+          <p className="text-xs text-muted-foreground">3-30 caracteres. Solo letras, números, guiones y guiones bajos.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña *</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              minLength={6}
-              autoComplete="new-password"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Contraseña *</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            required
+            disabled={loading}
+            minLength={8}
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <PasswordStrength password={password} />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar *</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              minLength={6}
-              autoComplete="new-password"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            placeholder="••••••••"
+            required
+            disabled={loading}
+            minLength={8}
+            autoComplete="new-password"
+          />
         </div>
       </div>
 
@@ -234,6 +306,58 @@ export function RegisterForm() {
             disabled={loading}
             autoComplete="tel"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="idDocument">
+            <svg
+              className="w-4 h-4 inline mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
+              />
+            </svg>
+            Cédula / DNI / Pasaporte
+            <span className="text-xs text-muted-foreground ml-2">(Opcional)</span>
+          </Label>
+          <Input
+            id="idDocument"
+            name="idDocument"
+            type="text"
+            placeholder={
+              selectedCountry === "CO"
+                ? "1234567890"
+                : selectedCountry === "ES"
+                ? "12345678A"
+                : selectedCountry === "MX"
+                ? "CURP o RFC"
+                : selectedCountry === "AR"
+                ? "12345678"
+                : selectedCountry === "CL"
+                ? "12345678-9"
+                : selectedCountry === "PE"
+                ? "12345678"
+                : selectedCountry === "VE"
+                ? "V-12345678"
+                : selectedCountry === "EC"
+                ? "1234567890"
+                : "Número de documento"
+            }
+            disabled={loading || !selectedCountry}
+          />
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-2">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <strong>💡 Importante:</strong> Si vas a realizar predicciones y deseas recibir
+              beneficios económicos por tus pronósticos acertados, necesitarás tener tu documento
+              actualizado. Sin documento verificado no podremos procesar pagos.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -289,8 +413,41 @@ export function RegisterForm() {
         </p>
       </div>
 
+      {/* Términos y Condiciones */}
+      <div className="flex items-start space-x-2 rounded-lg border p-3">
+        <Checkbox
+          id="terms"
+          checked={acceptedTerms}
+          onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+          disabled={loading}
+        />
+        <div className="grid gap-1.5 leading-none">
+          <label
+            htmlFor="terms"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          >
+            Acepto los términos y condiciones *
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Al registrarte, aceptas nuestros{" "}
+            <a href="/terms" target="_blank" className="text-primary hover:underline">
+              términos de servicio
+            </a>{" "}
+            y{" "}
+            <a href="/privacy" target="_blank" className="text-primary hover:underline">
+              política de privacidad
+            </a>
+            .
+          </p>
+        </div>
+      </div>
+
       {/* Botón Submit */}
-      <Button type="submit" className="w-full" disabled={loading || !selectedCountry}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={loading || !selectedCountry || !acceptedTerms || usernameAvailable === false}
+      >
         {loading ? "Registrando..." : "Crear Cuenta"}
       </Button>
 
