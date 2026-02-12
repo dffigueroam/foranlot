@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, X, Loader2, FileText } from "lucide-react"
+import { Check, X, Loader2, FileText, CheckCircle, AlertCircle } from "lucide-react"
 
 interface PaymentRequest {
   id: number
@@ -20,6 +20,8 @@ interface PaymentRequest {
   payment_date?: string
   receipt_url?: string
   notes?: string
+  account_validated: boolean
+  account_validated_at?: string
   created_at: string
 }
 
@@ -107,7 +109,20 @@ export function ManualPaymentsPanel() {
               <h3 className="font-semibold text-lg">{payment.username}</h3>
               <p className="text-sm text-muted-foreground">{payment.email}</p>
             </div>
-            <Badge variant="secondary">{payment.plan_type === "monthly" ? "Mensual" : "Anual"}</Badge>
+            <div className="flex gap-2">
+              <Badge variant="secondary">{payment.plan_type === "monthly" ? "Mensual" : "Anual"}</Badge>
+              {payment.account_validated ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Validado
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 flex gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Sin validar
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
@@ -138,6 +153,14 @@ export function ManualPaymentsPanel() {
               <p className="font-semibold">{new Date(payment.created_at).toLocaleDateString("es-ES")}</p>
             </div>
           </div>
+
+          {payment.account_validated && payment.account_validated_at && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-xs text-green-700">
+                ✓ Usuario validó que es su cuenta el {new Date(payment.account_validated_at).toLocaleDateString("es-ES")}
+              </p>
+            </div>
+          )}
 
           {payment.notes && (
             <div className="mb-4 p-3 bg-muted rounded-lg">

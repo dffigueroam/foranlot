@@ -18,6 +18,8 @@ export interface ManualPaymentRequest {
   reviewed_by?: number
   reviewed_at?: string
   rejection_reason?: string
+  account_validated: boolean
+  account_validated_at?: string
   created_at: string
   updated_at: string
   username?: string
@@ -35,17 +37,19 @@ export async function createManualPaymentRequest(data: {
   bankName?: string
   paymentDate?: string
   notes?: string
+  accountValidated?: boolean
 }) {
   const result = await sql`
     INSERT INTO manual_payment_requests (
       user_id, plan_type, amount_cents, credits_to_add, 
       payment_method, receipt_url, reference_number, 
-      bank_name, payment_date, notes
+      bank_name, payment_date, notes, account_validated, account_validated_at
     )
     VALUES (
       ${data.userId}, ${data.planType}, ${data.amountCents}, ${data.creditsToAdd},
       ${data.paymentMethod}, ${data.receiptUrl}, ${data.referenceNumber},
-      ${data.bankName}, ${data.paymentDate}, ${data.notes}
+      ${data.bankName}, ${data.paymentDate}, ${data.notes}, 
+      ${data.accountValidated || false}, ${data.accountValidated ? new Date().toISOString() : null}
     )
     RETURNING *
   `
@@ -167,4 +171,46 @@ export async function rejectPaymentRequest(requestId: number, adminId: number, r
   `
 
   return result[0]
+}
+/**
+ * Valida que el usuario confirme que la cuenta es suya
+ */
+export async function validateAccountOwnership(requestId: number, userId: number) {
+  // Verificar que la solicitud pertenece al usuario
+  const request = await sql`
+    SELECT * FROM manual_payment_requests
+    WHERE id = ${requestId} AND user_id = ${userId}
+  `
+
+  if (request.length === 0) {
+    throw new Error("Solicitud no encontrada")
+  }
+
+  // Marcar como validado
+  const result = await sql`
+    UPDATE manual_payment_requests
+    SET account_validated = true,
+        account_validated_at = CURRENT_TIMESTAMP
+    WHERE id = ${requestId}
+    RETURNING *
+  `
+
+  return result[0]
+}
+
+/**
+ * Obtiene una solicitud de pago por ID
+ */
+export async function getPaymentRequestById(requestId: number): Promise<ManualPaymentRequest | null> {
+  const result = await sql`
+    SELECT 
+      mpr.*,
+      u.username,
+      u.email
+    FROM manual_payment_requests mpr
+    JOIN users u ON u.id = mpr.user_id
+    WHERE mpr.id = ${requestId}
+  `
+
+  return result.length > 0 ? (result[0] as ManualPaymentRequest) : null
 }

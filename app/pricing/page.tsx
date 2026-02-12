@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { MEMBERSHIP_PRODUCTS } from "@/lib/products"
 import { calculateOptimalMembershipPrice } from "@/lib/black-scholes"
 import { formatCOP } from "@/lib/pricingutils"
+import { getPaymentMethods } from "@/lib/payment-methods"
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { Check } from "lucide-react"
 import { ManualPaymentForm } from "@/components/payments/manual-payment-form"
@@ -27,10 +28,13 @@ export default async function PricingPage() {
     year: "numeric",
   })
 
+  // Obtener métodos de pago desencriptados en el servidor
+  const paymentMethods = getPaymentMethods()
+
   return (
     <PageWrapper user={{ username: user.username, role: user.role }}>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
-      <div className="container mx-auto px-4 py-16">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
+        <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4 text-balance">Elige tu Plan Premium</h1>
           <p className="text-lg text-muted-foreground text-balance max-w-2xl mx-auto">
@@ -52,10 +56,7 @@ export default async function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <ManualPaymentForm planType="monthly" />
-            <ManualPaymentForm planType="annual" />
-          </div>
+          <ManualPaymentForm paymentMethods={paymentMethods} username={user.username} />
         </div>
 
         <div className="max-w-3xl mx-auto">
@@ -115,6 +116,7 @@ export default async function PricingPage() {
               </p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </PageWrapper>

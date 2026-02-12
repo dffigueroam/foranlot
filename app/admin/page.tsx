@@ -18,6 +18,8 @@ import { ResultsVerificationButton } from "@/components/admin/results-verificati
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MarketingPanel } from "@/components/admin/marketing-panel"
+
 
 /**
  * INTERFAZ CORREGIDA
@@ -123,6 +125,10 @@ export default async function AdminPage() {
               <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
               <TabsTrigger value="verification">Verificación</TabsTrigger>
               <TabsTrigger value="results">Resultados</TabsTrigger>
+              <TabsTrigger value="marketing">Marketing</TabsTrigger>
+               
+         
+              
             </TabsList>
 
             {/* Tab: Debug - Verificar estructura de tabla */}
@@ -196,12 +202,15 @@ export default async function AdminPage() {
                     </Button>
                   </div>
                 </div>
-
                 <Suspense fallback={<TablePlaceholder />}>
                   <ResultsList />
                 </Suspense>
               </div>
             </TabsContent>
+            <TabsContent value="marketing">
+              <MarketingPanel />
+            </TabsContent>
+
           </Tabs>
         </div>
       </div>

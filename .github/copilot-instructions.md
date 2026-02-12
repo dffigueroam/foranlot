@@ -41,11 +41,24 @@ Example flow for predictions:
 - JWT expiration: 7 days, set during login in [lib/auth.ts#login()](lib/auth.ts)
 
 ### Lottery Model
-- **Lottery definitions**: [lib/lotteries.ts](lib/lotteries.ts) - array of `LOTTERIES` with `name`, `country`, `dias`, `digits[]`
+- **Lottery definitions**: [lib/lotteries.ts](lib/lotteries.ts) - array of `LOTTERIES` with `name`, `country`, `dias`, `digits[]`, and `time` (hora local del sorteo en formato 24h)
 - **Lottery types**: Stored as `lottery_type` = `"3_digits"` | `"4_digits"` | `"5_digits"`
 - **Predictions**: Store `predicted_number` as **string** (space-separated if multiple, e.g., `"123 124 125"`) to preserve leading zeros
 - **Digits validation**: When creating predictions, check `lottery.digits.includes(digitCount)` - each lottery supports specific digit counts
+- **Draw time**: Each lottery has `time` property (0-23) representing local draw hour - automatically used in validation
 - **Verification**: Compare `predicted_number` against official lottery results fetched via API at 9 PM daily
+
+### Timezone Validation & Publishing Rules
+- **Publishing deadline**: Predictions must be submitted **at least 1 hour before** the official draw time
+- **Draw time per lottery**: Each lottery in `LOTTERIES` has a `time` property (0-23) for its local draw hour
+- **Automatic time resolution**: When no `drawTime` provided, system uses `lottery.time` formatted as "HH:00"
+- **Supported timezones**: Colombia (UTC-5), España (UTC+1/+2), USA NY/Florida (UTC-5/-4) - see [lib/timezones.ts](lib/timezones.ts)
+- **Validation function**: `canPublishPrediction(drawDate, drawTime, country)` in [lib/timezones.ts](lib/timezones.ts)
+  - Returns `{ allowed: boolean, message?: string, remainingMinutes?: number }`
+  - Automatically handles DST (daylight saving time) adjustments
+  - Integrated in [app/actions/predictions.ts](app/actions/predictions.ts) before creating predictions
+- **Time calculation**: Uses `Intl.DateTimeFormat` API to get accurate local time in each timezone
+- **Error messages**: Spanish language, explains remaining time or if draw already passed
 
 ### Credit & Selection System
 - **Premium subscription**: Via Stripe checkout → webhook creates user, allocates credits via `initializeUserCredits()` in [lib/credits.ts](lib/credits.ts)
@@ -143,6 +156,7 @@ Define at top of each `lib/*` file. Examples:
 | [lib/ranking.ts](lib/ranking.ts) | User stats | `getUserStats()`, `getRanking()` |
 | [lib/stripe.ts](lib/stripe.ts) | Stripe client & helpers | `createCheckoutSession()`, `initCustomer()` |
 | [lib/lotteries.ts](lib/lotteries.ts) | Lottery definitions | `LOTTERIES` const array |
+| [lib/timezones.ts](lib/timezones.ts) | Timezone validation | `canPublishPrediction()`, `getTimezoneByCountry()` |
 
 ## Development Workflow
 

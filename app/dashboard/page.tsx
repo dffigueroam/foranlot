@@ -4,7 +4,6 @@ import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
 import { getPredictions } from "@/lib/predictions"
 import { getUserStats } from "@/lib/ranking"
-import { getUserCredits } from "@/lib/credits"
 import { getUserPaymentRequests } from "@/lib/manual-payments"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
@@ -21,41 +20,23 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import { Crown, TrendingUp, Target, Percent } from "lucide-react"
+import { Crown, TrendingUp, Target, Percent, Sparkles } from "lucide-react"
+
+
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  // 🔹 Obtener TODAS las predicciones
-  const allPredictions = await getPredictions(user.id)
+  // 🔹 Obtener TODAS las predicciones (hasta 100 registros)
+  const allPredictions = await getPredictions(user.id, 100)
 
   // 🔐 LÓGICA PREMIUM
   const predictions = user.is_premium
     ? allPredictions
     : allPredictions.filter(p => p.user_id === user.id)
 
-  const credits = user.is_premium
-    ? await getUserCredits(user.id)
-    : null
-
   const userStats = await getUserStats(user.id)
-
-  // Agrupar TODOS los pronósticos por fecha (verificados o no)
-  const groupedByDate = allPredictions.reduce((acc, pred) => {
-    const dateKey = pred.draw_date
-    if (!acc[dateKey]) {
-      acc[dateKey] = []
-    }
-    acc[dateKey].push(pred)
-    return acc
-  }, {} as Record<string, typeof allPredictions>)
-
-  // Tomar solo la última fecha
-  const recentDates = Object.keys(groupedByDate)
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-    .slice(0, 1)
-
   const payments = (await getUserPaymentRequests(user.id)).map(p => ({
     ...p,
     amountCents: p.amount_cents ?? 0,
@@ -66,7 +47,22 @@ export default async function DashboardPage() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
 
+       {/* PREMIUM */}
+            {user.is_premium && (
+              <Card className="bg-linear-to-r from-yellow-50 to-orange-50 dark:from-yellow-500/10 dark:to-orange-500/10 border border-yellow-500/30">
+                <CardContent className="py-3 flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                  <span className="font-semibold text-yellow-900 dark:text-yellow-400 text-sm">
+                    Cuenta Premium Activa
+                  </span>
+                </CardContent>
+              </Card>
+            )}  
+
+       
           {/* ===== HEADER ===== */}
+   
+
           <div className="mb-8 space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -79,7 +75,14 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex gap-2">
-              {!user.is_premium && (
+              {user.is_premium ? (
+                <Button asChild>
+                  <Link href="/premium">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Zona Premium
+                  </Link>
+                </Button>
+              ) : (
                 <Button asChild>
                   <Link href="/pricing">
                     <Crown className="w-4 h-4 mr-2" />
@@ -101,68 +104,11 @@ export default async function DashboardPage() {
         </div>
 
         {/* ===== LAYOUT ===== */}
-        <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
+        <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
 
-          {/* COLUMNA IZQUIERDA - Formulario y Contratos */}
+          {/* COLUMNA IZQUIERDA - Formulario */}
           <div className="space-y-6">
             <PredictionForm />
-
-            {/* CONTRATOS */}
-            <Card className="bg-card border border-border">
-              <CardContent className="p-4 space-y-2">
-                <p className="text-sm font-medium">
-                  📄 Contratos de Pronósticos
-                </p>
-
-                <p className="text-xs text-muted-foreground">
-                  Recibe pronósticos diarios de usuarios del ranking
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    Créditos: {credits?.available_credits ?? 0}
-                  </span>
-
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    disabled={
-                      !user.is_premium ||
-                      (credits?.available_credits ?? 0) === 0
-                    }
-                  >
-                    <Link href="/contracts">
-                      Hacer contrato
-                    </Link>
-                  </Button>
-                </div>
-
-                {!user.is_premium && (
-                  <p className="text-xs text-muted-foreground">
-                    🔒 Solo para usuarios Premium
-                  </p>
-                )}
-
-                {user.is_premium && (credits?.available_credits ?? 0) === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    ⚠️ Sin créditos disponibles
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* PREMIUM */}
-            {user.is_premium && (
-              <Card className="bg-linear-to-r from-yellow-50 to-orange-50 dark:from-yellow-500/10 dark:to-orange-500/10 border border-yellow-500/30">
-                <CardContent className="py-3 flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                  <span className="font-semibold text-yellow-900 dark:text-yellow-400 text-sm">
-                    Cuenta Premium Activa
-                  </span>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
@@ -205,50 +151,13 @@ export default async function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Pronósticos de la última fecha - siempre mostrar si hay pronósticos */}
-                  {recentDates.length > 0 ? (
-                    <div className={userStats && userStats.total_predictions > 0 ? "border-t pt-4" : ""}>
-                      <h4 className="text-sm font-semibold mb-3 text-muted-foreground">
-                        Última Fecha Posteada
-                      </h4>
-                      <div className="space-y-4">
-                        {recentDates.map(date => {
-                          const datePredictions = groupedByDate[date]
-                          
-                          // Números únicos
-                          const uniqueNumbers = Array.from(new Set(datePredictions.map(p => p.predicted_number)))
-                          
-                          // Loterías únicas
-                          const uniqueLotteries = Array.from(new Set(datePredictions.map(p => p.lottery_name)))
-                          
-                          return (
-                            <div key={date} className="border-l-2 border-blue-500 pl-3 space-y-2">
-                              <p className="text-xs text-muted-foreground font-medium">
-                                {new Date(date).toLocaleDateString('es-CO', { 
-                                  day: '2-digit', 
-                                  month: 'short', 
-                                  year: 'numeric' 
-                                })}
-                              </p>
-                              <div className="space-y-1">
-                                {uniqueNumbers.map((num, idx) => (
-                                  <p key={idx} className="font-mono text-sm font-semibold">
-                                    {num}
-                                  </p>
-                                ))}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                <span className="font-medium">Loterías:</span> {uniqueLotteries.join(' - ')}
-                              </p>
-                            </div>
-                          )
-                        })}
-                      </div>
+                  {/* Mensaje si no hay pronósticos */}
+                  {userStats && userStats.total_predictions === 0 && (
+                    <div className="border-t pt-4">
+                      <p className="text-sm text-muted-foreground">
+                        Aún no has creado pronósticos.
+                      </p>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Aún no has creado pronósticos.
-                    </p>
                   )}
                 </div>
               </CardContent>
@@ -256,13 +165,13 @@ export default async function DashboardPage() {
 
             <Card className="bg-card border border-border">
               <CardHeader>
-                <CardTitle>Pronósticos Recientes</CardTitle>
+                <CardTitle>Pronósticos Posteados</CardTitle>
                 <CardDescription>
-                  Estos son mis pronósticos históricos
+                  Hasta 100 pronósticos históricos con filtros por estado
                 </CardDescription>
               </CardHeader>
-              <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto">
-                <div className="mx-auto w-full max-w-[28rem] space-y-6">
+              <CardContent className="h-[calc(100vh-10rem)]">
+                <div className="h-full">
                   <PredictionList
                     predictions={predictions}
                     isPremium={user.is_premium}

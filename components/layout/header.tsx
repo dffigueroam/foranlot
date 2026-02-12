@@ -62,8 +62,12 @@ export function Header({ user }: HeaderProps) {
                 <BarChart2 size={16} /> <span className="hidden xl:inline">Estadísticas</span>
               </Link>
 
-              <Link href="/tools" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
-                <Wrench size={16} /> <span className="hidden xl:inline">Herramientas</span>
+              <Link href="/premium" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+                <Crown size={16} /> <span className="hidden xl:inline">Zona Premium</span>
+              </Link>
+
+              <Link href="/pricing" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+                💎 <span className="hidden xl:inline">Precios</span>
               </Link>
 
               {user.role === "admin" && (
@@ -121,11 +125,19 @@ export function Header({ user }: HeaderProps) {
                 </Link>
 
                 <Link 
-                  href="/tools" 
+                  href="/premium" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Wrench size={18} /> Herramientas
+                  <Crown size={18} /> Zona Premium
+                </Link>
+
+                <Link 
+                  href="/pricing" 
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  💎 Precios
                 </Link>
 
                 {user.role === "admin" && (

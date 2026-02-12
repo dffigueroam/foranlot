@@ -54,7 +54,7 @@ export async function getRemainingDailyLimit(
    DASHBOARD / FEED
    👉 SOLO pronósticos del usuario
 ====================================================== */
-export async function getPredictions(userId: number | null) {
+export async function getPredictions(userId: number | null, limit: number = 100) {
   if (!userId) return []
 
   try {
@@ -66,7 +66,7 @@ export async function getPredictions(userId: number | null) {
       JOIN users u ON p.user_id = u.id
       WHERE p.user_id = ${userId}
       ORDER BY p.created_at DESC
-      LIMIT 50
+      LIMIT ${limit}
     `
 
     return predictions as Prediction[]

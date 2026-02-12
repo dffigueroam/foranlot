@@ -9,22 +9,33 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Upload, Loader2 } from "lucide-react"
-import { PAYMENT_METHODS } from "@/lib/payment-methods"
 import { getPlanData } from "@/lib/pricingutils"
 
 type PlanType = "monthly" | "yearly"
 
-export function ManualPaymentForm() {
+interface PaymentMethod {
+  id: string
+  name: string
+  account: string
+  type: string
+}
+
+interface ManualPaymentFormProps {
+  paymentMethods: PaymentMethod[]
+  username?: string
+}
+
+export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [planType, setPlanType] = useState<PlanType>("monthly")
-  const [paymentMethodId, setPaymentMethodId] = useState( PAYMENT_METHODS[0].id)
+  const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id || "")
 
   // 🔥 MONTO VIENE DEL PLAN
   const { priceRaw, priceFormatted, credits } = getPlanData(planType)
 
-  const selectedMethod = PAYMENT_METHODS.find( (m) => m.id === paymentMethodId)
+  const selectedMethod = paymentMethods.find((m) => m.id === paymentMethodId)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -85,7 +96,7 @@ export function ManualPaymentForm() {
           value={paymentMethodId}
           onChange={(e) => setPaymentMethodId(e.target.value)}
         >
-          {PAYMENT_METHODS.map((method) => (
+          {paymentMethods.map((method) => (
             <option key={method.id} value={method.id}>
               {method.name}
             </option>

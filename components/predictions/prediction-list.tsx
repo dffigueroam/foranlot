@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import type { Prediction } from "@/lib/predictions"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, TrendingUp, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Calendar, TrendingUp, User, Filter } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { LOTTERIES } from "@/lib/lotteries"
@@ -13,7 +15,28 @@ interface PredictionListProps {
   isPremium: boolean
 }
 
+type FilterType = "all" | "correct" | "pending" | "incorrect" | "combinations"
+
 export function PredictionList({ predictions, isPremium }: PredictionListProps) {
+  const [filter, setFilter] = useState<FilterType>("all")
+
+  // Aplicar filtro
+  const filteredPredictions = predictions.filter(prediction => {
+    switch (filter) {
+      case "correct":
+        return prediction.is_verified && prediction.is_correct
+      case "pending":
+        return !prediction.is_verified
+      case "incorrect":
+        return prediction.is_verified && !prediction.is_correct && (!prediction.match_score || prediction.match_score === 0)
+      case "combinations":
+        return prediction.is_verified && prediction.match_score && prediction.match_score > 0
+      case "all":
+      default:
+        return true
+    }
+  })
+
   if (predictions.length === 0) {
     return (
       <Card className="prediction-empty">
@@ -88,7 +111,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
   }
 
   return (
-    <div className="prediction-list space-y-4">
+    <div className="prediction-list flex flex-col h-full">
       {!isPremium && (
         <Card className="prediction-warning mb-4">
           <CardContent className="prediction-warning-content">
@@ -98,7 +121,65 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
         </Card>
       )}
 
-      {predictions.map((prediction, index) => {
+      {/* Filtros Fijos */}
+      <div className="shrink-0 mb-4">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={filter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("all")}
+            className="text-xs"
+          >
+            <Filter className="w-3 h-3 mr-1" />
+            Todos ({predictions.length})
+          </Button>
+          <Button
+            variant={filter === "correct" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("correct")}
+            className="text-xs"
+          >
+            Aciertos ({predictions.filter(p => p.is_verified && p.is_correct).length})
+          </Button>
+          <Button
+            variant={filter === "combinations" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("combinations")}
+            className="text-xs"
+          >
+            Combinaciones ({predictions.filter(p => p.is_verified && p.match_score && p.match_score > 0).length})
+          </Button>
+          <Button
+            variant={filter === "pending" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("pending")}
+            className="text-xs"
+          >
+            Pendientes ({predictions.filter(p => !p.is_verified).length})
+          </Button>
+          <Button
+            variant={filter === "incorrect" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("incorrect")}
+            className="text-xs"
+          >
+            Sin acierto ({predictions.filter(p => p.is_verified && !p.is_correct && (!p.match_score || p.match_score === 0)).length})
+          </Button>
+        </div>
+      </div>
+
+      {/* Lista con scroll */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        {/* Mensaje si no hay resultados con el filtro actual */}
+        {filteredPredictions.length === 0 && (
+          <Card className="prediction-empty">
+            <CardContent className="prediction-empty-content">
+              <p>No hay pronósticos en esta categoría</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {filteredPredictions.map((prediction, index) => {
         const isCompact = index < 3
 
         return (
@@ -198,6 +279,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
           </Card>
         )
       })}
+      </div>
     </div>
   )
 }

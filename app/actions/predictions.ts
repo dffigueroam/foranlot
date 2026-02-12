@@ -5,6 +5,7 @@ import { createPrediction, getPredictions, getUserPredictions, getRemainingDaily
 import { sanitizeInput } from "@/lib/security"
 import { revalidatePath } from "next/cache"
 import { LOTTERIES } from "@/lib/lotteries"
+import { canPublishPrediction } from "@/lib/timezones"
 
 
 export async function submitPrediction(formData: FormData) {
@@ -63,10 +64,19 @@ if (invalid) {
 // Derivar fecha y hora desde la lotería
 const resolvedDrawDate = drawDate || new Date().toISOString().split("T")[0]
 
-const resolvedDrawTime =
-  lotteryType === "3_digits" ? "20:00" :
-  lotteryType === "4_digits" ? "21:00" :
-  null
+  // Usar la hora específica de la lotería (lottery.time)
+  const resolvedDrawTime = drawTime || `${lottery.time.toString().padStart(2, "0")}:00`
+
+  // 🕐 VALIDACIÓN DE TIEMPO: Debe publicar al menos 1 hora antes del sorteo
+  const timeValidation = canPublishPrediction(
+    drawDate,
+    resolvedDrawTime,
+    lottery.country
+  )
+
+  if (!timeValidation.allowed) {
+    return { error: timeValidation.message || "No se puede publicar esta predicción" }
+  }
  
   const result = await createPrediction(
     user.id,
@@ -142,6 +152,22 @@ export async function submitMultiplePredictions(
     }
   }
 
+  // 🕐 VALIDACIÓN DE TIEMPO: Verificar al menos una lotería para tiempo
+  if (validatedLotteries.length > 0) {
+    const firstLottery = validatedLotteries[0]
+    const resolvedDrawTime = drawTime || `${firstLottery.time.toString().padStart(2, "0")}:00`
+    
+    const timeValidation = canPublishPrediction(
+      drawDate,
+      resolvedDrawTime,
+      firstLottery.country
+    )
+
+    if (!timeValidation.allowed) {
+      return { error: timeValidation.message || "No se puede publicar esta predicción" }
+    }
+  }
+
   const notesProcessed = notes && notes.trim() !== "" ? notes : undefined
 
   // Crear una predicción por cada número por cada lotería
@@ -184,7 +210,7 @@ export async function submitMultiplePredictions(
 
 export async function fetchPredictions(limit?: number) {
   const user = await getCurrentUser()
-  const predictions = await getPredictions(user?.id || null)
+  const predictions = await getPredictions(user?.id || null, limit)
   return predictions
 }
 

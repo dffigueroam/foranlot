@@ -8,7 +8,9 @@ import {
   getUserPaymentRequests,
   approvePaymentRequest,
   rejectPaymentRequest,
+  getPaymentRequestById,
 } from "@/lib/manual-payments"
+import { notifyAdminNewPayment, notifyUserPaymentApproved, notifyUserPaymentRejected } from "@/lib/email"
 
 export async function submitManualPayment(formData: FormData) {
   const user = await getCurrentUser()
@@ -23,7 +25,38 @@ export async function submitManualPayment(formData: FormData) {
     const bankName = formData.get("bankName") as string
     const paymentDate = formData.get("paymentDate") as string
     const notes = formData.get("notes") as string
-    const receiptUrl = formData.get("receiptUrl") as string
+    const accountValidated = formData.get("accountValidated") === "true"
+
+    // Validar que el usuario confirmó su cuenta
+    if (!accountValidated) {
+      return { success: false, error: "Debes confirmar que la cuenta es tuya" }
+    }
+
+    // Obtener archivo adjunto y convertir a base64
+    const receiptFile = formData.get("receiptFile") as File | null
+    let receiptFileData: { filename: string; content: string } | undefined
+    let receiptUrl = ""
+
+    if (receiptFile && receiptFile.size > 0) {
+      try {
+        const arrayBuffer = await receiptFile.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        const base64Content = buffer.toString("base64")
+        
+        receiptFileData = {
+          filename: receiptFile.name,
+          content: base64Content,
+        }
+        
+        // Guardar URL para referencia en BD
+        receiptUrl = `/uploads/${receiptFile.name}`
+        
+        console.log(`[v0] Archivo procesado: ${receiptFile.name} (${receiptFile.size} bytes)`)
+      } catch (fileError) {
+        console.error("[v0] Error procesando archivo:", fileError)
+        // Continuar sin archivo si hay error
+      }
+    }
 
     // Determinar créditos y precio según el plan
     const amountCents = planType === "monthly" ? 1900 : 19900
@@ -40,6 +73,18 @@ export async function submitManualPayment(formData: FormData) {
       bankName,
       paymentDate,
       notes,
+      accountValidated: true,
+    })
+
+    // Enviar notificación al admin con comprobante adjunto
+    await notifyAdminNewPayment({
+      username: user.username,
+      email: user.email,
+      planType: planType === "monthly" ? "Mensual" : "Anual",
+      amount: `$${amountCents / 100}`,
+      receiptUrl,
+      paymentDate: paymentDate || new Date().toLocaleDateString("es-CO"),
+      receiptFile: receiptFileData,
     })
 
     revalidatePath("/pricing")
@@ -93,6 +138,18 @@ export async function approvePayment(requestId: number) {
 
   try {
     const result = await approvePaymentRequest(requestId, user.id)
+    const paymentData = await getPaymentRequestById(requestId)
+
+    if (paymentData && paymentData.email) {
+      // Enviar email de aprobación
+      await notifyUserPaymentApproved({
+        username: paymentData.username || "Usuario",
+        email: paymentData.email,
+        planType: paymentData.plan_type === "monthly" ? "Mensual" : "Anual",
+        creditsAdded: paymentData.credits_to_add,
+      })
+    }
+
     revalidatePath("/admin")
     return { success: true, data: result }
   } catch (error: any) {
@@ -109,7 +166,18 @@ export async function rejectPayment(requestId: number, reason: string) {
   }
 
   try {
+    const paymentData = await getPaymentRequestById(requestId)
     const result = await rejectPaymentRequest(requestId, user.id, reason)
+
+    if (paymentData && paymentData.email) {
+      // Enviar email de rechazo
+      await notifyUserPaymentRejected({
+        username: paymentData.username || "Usuario",
+        email: paymentData.email,
+        reason,
+      })
+    }
+
     revalidatePath("/admin")
     return { success: true, data: result }
   } catch (error) {
