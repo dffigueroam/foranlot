@@ -7,6 +7,8 @@ export interface PaymentMethod {
   name: string
   account: string
   type: string
+  icon?: string
+  color?: string
 }
 
 // Datos encriptados - se desencriptan bajo demanda
@@ -16,30 +18,40 @@ const ENCRYPTED_PAYMENT_METHODS = [
     name: "Bancolombia Ahorros",
     account: "9dfca7e562a9fb180a6eb88abe4968b6:8900e3c9a63756f96889fc8c31bae8ed",
     type: "Ahorros",
+    icon: "🏦",
+    color: "#FFB81C",
   },
   {
     id: "bancolombia-keys",
     name: "Bancolombia (Llaves)",
     account: "9372f32a80a2222cd3efa0bdd64b4475:18dae54cf49d26fb0361de0b5dd289118053488f69f4a4f0630123e0aab2f422",
     type: "Llaves",
+    icon: "🏦",
+    color: "#FFB81C",
   },
   {
     id: "nu-savings",
     name: "NU",
     account: "252cd3f7bac668c1e2480501a87dbdd7:f6e7806fb6293b491563028437144c21",
     type: "Llaves",
+    icon: "🟣",
+    color: "#8B3DCA",
   },
   {
     id: "nequi",
     name: "Nequi",
     account: "40280c9da8c34dbed6df2ab67dff56b4:9c7a80daa21173c73194f9126c28b106",
     type: "Teléfono",
+    icon: "📱",
+    color: "#FF6B35",
   },
   {
     id: "daviplata",
     name: "Daviplata",
     account: "e52a5c4affe241962518d1faa4d0d5e4:ee929906c2b150c30831918485bbbd16",
     type: "Teléfono",
+    icon: "📱",
+    color: "#1E90FF",
   },
 ]
 

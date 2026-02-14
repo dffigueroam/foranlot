@@ -23,7 +23,7 @@ export default async function StatsPage() {
   ])
 
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
+    <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
       <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">

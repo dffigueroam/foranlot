@@ -8,6 +8,7 @@ interface PageWrapperProps {
   user: {
     username: string
     role: string
+    is_premium?: boolean
   } | null
 }
 

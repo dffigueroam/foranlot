@@ -12,12 +12,15 @@ export default async function ToolsPage() {
   }
 
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
+    <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Herramientas de Predicción</h1>
           <p className="text-muted-foreground">
-            Utiliza herramientas estadísticas avanzadas para mejorar tus pronósticos
+            {user.is_premium 
+              ? "Acceso completo a todas las herramientas avanzadas para optimizar tus pronósticos"
+              : "Usa herramientas gratuitas básicas para analizar números. Actualiza a premium para acceso ilimitado a análisis avanzados"
+            }
           </p>
         </div>
 

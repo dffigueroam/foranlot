@@ -1,8 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
-import { submitMultiplePredictions } from "@/app/actions/predictions"
+import { useState, useRef, useEffect } from "react"
+import { 
+  submitMultiplePredictions, 
+  getLastLotteryCombinations,
+  toggleFavoriteCombinationAction,
+  deleteLotteryCombinationAction,
+  applyCombinationAction
+} from "@/app/actions/predictions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,8 +28,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, RotateCcw, Clock, Star, Trash2, Search, Filter, Calendar } from "lucide-react"
 import { LOTTERIES } from "@/lib/lotteries"
+import { QuickSelectCombinations } from "./quick-select-combinations"
 
 import {
   Tooltip,
@@ -32,20 +40,36 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-
+interface LotteryCombination {
+  id: number
+  lottery_names: string[]
+  digit_type: string
+  created_at: string
+}
 
 const MAX_NUMBERS = 10
 
 export function PredictionForm() {
+  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string>("")
+  const [lastCombinations, setLastCombinations] = useState<LotteryCombination[]>([])
+  const [loadingCombinations, setLoadingCombinations] = useState(true)
+  const [combinationFilter, setCombinationFilter] = useState<string>("")
+  const [showAllCombinations, setShowAllCombinations] = useState(false)
+  
+  // Estado para visualización agrupada de última predicción
+  const [lastPublishedPrediction, setLastPublishedPrediction] = useState<{
+    date: string
+    numbers: string[]
+    lotteries: string[]
+  } | null>(null)
 
   const [selectedLotteries, setSelectedLotteries] = useState<Set<string>>(new Set())
   const [selectedDigits, setSelectedDigits] = useState<string>("3")
   const [confidenceLevel, setConfidenceLevel] = useState<string>("3")
-  const [drawTime, setDrawTime] = useState<string>("none")
   const [drawDate, setDrawDate] = useState<string>("")
   const [selectedCountry, setSelectedCountry] = useState<string>("all")
   const [predictedNumbers, setPredictedNumbers] = useState<string>("")
@@ -56,6 +80,111 @@ export function PredictionForm() {
   const digitsNum = parseInt(selectedDigits)
   const countryOptions = Array.from(new Set(LOTTERIES.map(l => l.country))).sort()
 
+  // Cargar combinaciones último al montar
+  useEffect(() => {
+    setMounted(true)
+    loadCombinations()
+  }, [])
+
+  async function loadCombinations() {
+    try {
+      setLoadingCombinations(true)
+      const result = await getLastLotteryCombinations(5)
+      if (result.success && result.combinations) {
+        setLastCombinations(result.combinations)
+      }
+    } catch (err) {
+      console.error("Error loading combinations:", err)
+    } finally {
+      setLoadingCombinations(false)
+    }
+  }
+
+  // Funciones para aplicar una combinación guardada
+  const applyLotteryCombination = async (combination: LotteryCombination) => {
+    const digitType = parseInt(combination.digit_type.split("_")[0])
+    setSelectedDigits(digitType.toString())
+    
+    // Validar que las loterías aún existen
+    const validLotteryKeys: string[] = []
+    const invalidLotteries: string[] = []
+    
+    for (const name of combination.lottery_names) {
+      const lottery = LOTTERIES.find(l => l.name === name)
+      if (lottery) {
+        validLotteryKeys.push(`${name}|${lottery.country}`)
+      } else {
+        invalidLotteries.push(name)
+      }
+    }
+    
+    setSelectedLotteries(new Set(validLotteryKeys))
+    
+    // Incrementar contador de uso
+    await applyCombinationAction(combination.id)
+    
+    // Mostrar advertencia si hay loterías inválidas
+    if (invalidLotteries.length > 0) {
+      setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
+    }
+  }
+
+  // Aplicar combinación desde nuevo sistema (QuickSelectCombinations)
+  const handleQuickSelectCombination = (lotteryNames: string[], digitType: string) => {
+    const digitNum = parseInt(digitType.split("_")[0])
+    setSelectedDigits(digitNum.toString())
+    
+    // Validar que las loterías aún existen
+    const validLotteryKeys: string[] = []
+    const invalidLotteries: string[] = []
+    
+    for (const name of lotteryNames) {
+      const lottery = LOTTERIES.find(l => l.name === name)
+      if (lottery) {
+        validLotteryKeys.push(`${name}|${lottery.country}`)
+      } else {
+        invalidLotteries.push(name)
+      }
+    }
+    
+    setSelectedLotteries(new Set(validLotteryKeys))
+    
+    // Mostrar advertencia si hay loterías inválidas
+    if (invalidLotteries.length > 0) {
+      setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
+    } else {
+      setError(null)
+    }
+  }
+
+  const handleToggleFavorite = async (combinationId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const result = await toggleFavoriteCombinationAction(combinationId)
+    if (result.success) {
+      await loadCombinations()
+    }
+  }
+
+  const handleDeleteCombination = async (combinationId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm("¿Eliminar esta combinación?")) return
+    
+    const result = await deleteLotteryCombinationAction(combinationId)
+    if (result.success) {
+      await loadCombinations()
+    }
+  }
+
+  // Filtrar combinaciones
+  const filteredCombinations = lastCombinations.filter(combo => {
+    if (!combinationFilter) return true
+    const searchLower = combinationFilter.toLowerCase()
+    return combo.lottery_names.some(name => name.toLowerCase().includes(searchLower))
+  })
+
+  const displayedCombinations = showAllCombinations 
+    ? filteredCombinations 
+    : filteredCombinations.slice(0, 2)
 
   const getDrawDayName = (): string | null => {
     if (!drawDate) return null
@@ -154,7 +283,7 @@ const recommendedLotteries = LOTTERIES
       `${selectedDigits}_digits`,
       predictedNumbers,
       drawDate,
-      drawTime !== "none" ? drawTime : null,
+      null,
       confidenceLevel,
       notesField || null
     )
@@ -163,14 +292,27 @@ const recommendedLotteries = LOTTERIES
     else {
       setSuccess(true)
       setSuccessMessage(res.message || "Pronóstico publicado exitosamente")
+      
+      // Guardar información de la predicción publicada para visualización agrupada
+      setLastPublishedPrediction({
+        date: drawDate,
+        numbers: numbers,
+        lotteries: lotteryNames.map(name => {
+          const lottery = LOTTERIES.find(l => l.name === name)
+          return lottery ? lottery.name : name
+        })
+      })
+      
       formRef.current?.reset()
       setPredictedNumbers("")
       setSelectedLotteries(new Set())
       setSelectedDigits("3")
       setConfidenceLevel("3")
-      setDrawTime("none")
       setDrawDate("")
       setSelectedCountry("all")
+      
+      // Recargar combinaciones guardadas
+      loadCombinations()
     }
 
     setLoading(false)
@@ -181,8 +323,17 @@ const recommendedLotteries = LOTTERIES
       <CardHeader>
         <CardTitle>Publica tu pronóstico</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {!mounted ? (
+        <CardContent className="py-20 text-center">
+          <div className="space-y-4">
+            <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
+            <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
+            <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
+          </div>
+        </CardContent>
+      ) : (
+        <CardContent suppressHydrationWarning>
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning>
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -193,6 +344,254 @@ const recommendedLotteries = LOTTERIES
             <Alert>
               <AlertDescription>{successMessage}</AlertDescription>
             </Alert>
+          )}
+
+          {/* VISUALIZACIÓN AGRUPADA DE ÚLTIMA PREDICCIÓN */}
+          {success && lastPublishedPrediction && (
+            <Card className="border-green-200 dark:border-green-800 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  Pronóstico para el {new Date(lastPublishedPrediction.date + 'T00:00:00').toLocaleDateString('es-ES', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Números */}
+                <div>
+                  <Label className="text-sm font-semibold text-green-800 dark:text-green-200 mb-2 block">
+                    Números:
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {lastPublishedPrediction.numbers.map((num, idx) => (
+                      <Badge 
+                        key={idx}
+                        variant="default"
+                        className="bg-green-600 hover:bg-green-700 text-white font-mono text-lg px-4 py-2"
+                      >
+                        {num}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Loterías */}
+                <div>
+                  <Label className="text-sm font-semibold text-green-800 dark:text-green-200 mb-2 block">
+                    Loterías ({lastPublishedPrediction.lotteries.length}):
+                  </Label>
+                  <div className="bg-white dark:bg-slate-900 rounded-md p-3 border border-green-200 dark:border-green-800">
+                    <p className="text-sm text-green-900 dark:text-green-100 leading-relaxed">
+                      {lastPublishedPrediction.lotteries.map((lottery, idx) => {
+                        const lotteryObj = LOTTERIES.find(l => l.name === lottery)
+                        return (
+                          <span key={idx}>
+                            <span className="font-medium">{lottery}</span>
+                            {lotteryObj && (
+                              <span className="text-xs ml-1 text-muted-foreground">
+                                ({lotteryObj.country})
+                              </span>
+                            )}
+                            {idx < lastPublishedPrediction.lotteries.length - 1 && (
+                              <span className="mx-2 text-green-400">•</span>
+                            )}
+                          </span>
+                        )
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Resumen */}
+                <div className="flex items-center gap-2 pt-2 border-t border-green-200 dark:border-green-800">
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300">
+                    {lastPublishedPrediction.numbers.length} números
+                  </Badge>
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300">
+                    {lastPublishedPrediction.lotteries.length} loterías
+                  </Badge>
+                  <Badge variant="outline" className="bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300">
+                    {lastPublishedPrediction.numbers.length * lastPublishedPrediction.lotteries.length} pronósticos totales
+                  </Badge>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSuccess(false)
+                    setLastPublishedPrediction(null)
+                  }}
+                  className="w-full text-xs"
+                >
+                  Cerrar resumen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ÚLTIMAS COMBINACIONES DE LOTERÍAS */}
+          {!loadingCombinations && lastCombinations.length > 0 && (
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <Label className="font-semibold text-sm">Tus combinaciones guardadas</Label>
+                    <Badge variant="secondary" className="text-xs">
+                      {lastCombinations.length}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground ml-2">💡 Haz click en una para cargarla</span>
+                  </div>
+                  
+                  {lastCombinations.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllCombinations(!showAllCombinations)}
+                      className="text-xs"
+                    >
+                      {showAllCombinations ? "Mostrar menos" : `Ver todas (${lastCombinations.length})`}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Filtro de búsqueda */}
+                {lastCombinations.length > 2 && (
+                  <div className="mb-3">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Buscar por nombre de lotería..."
+                        value={combinationFilter}
+                        onChange={(e) => setCombinationFilter(e.target.value)}
+                        className="pl-8 h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  {displayedCombinations.map((combo) => {
+                    const digitType = combo.digit_type.split("_")[0]
+                    const lotteryNames = combo.lottery_names.slice(0, 3).join(", ")
+                    const moreCount = combo.lottery_names.length - 3
+                    
+                    return (
+                      <div
+                        key={combo.id}
+                        className="group relative border border-blue-200 dark:border-blue-700 rounded-lg p-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+                        onClick={() => applyLotteryCombination(combo)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge 
+                                variant={combo.is_favorite ? "default" : "secondary"} 
+                                className="text-xs"
+                              >
+                                {digitType} cifras
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {combo.lottery_names.length} loterías
+                              </Badge>
+                              {combo.usage_count > 0 && (
+                                <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950">
+                                  ✓ {combo.usage_count} {combo.usage_count === 1 ? "uso" : "usos"}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 truncate">
+                              {lotteryNames}
+                              {moreCount > 0 && ` +${moreCount} más`}
+                            </p>
+                            
+                            {combo.last_used_at && !isNaN(new Date(combo.last_used_at).getTime()) && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Última vez: {new Date(combo.last_used_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => handleToggleFavorite(combo.id, e)}
+                                  >
+                                    <Star 
+                                      className={`w-4 h-4 ${
+                                        combo.is_favorite 
+                                          ? "fill-yellow-400 text-yellow-400" 
+                                          : "text-muted-foreground"
+                                      }`} 
+                                    />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {combo.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                    onClick={(e) => handleDeleteCombination(combo.id, e)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Eliminar combinación
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {filteredCombinations.length === 0 && combinationFilter && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No se encontraron combinaciones con "{combinationFilter}"
+                  </p>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedLotteries(new Set())
+                    setSelectedDigits("3")
+                    setCombinationFilter("")
+                  }}
+                  className="w-full text-xs mt-3"
+                >
+                  Quitar las Seleccion actual de Chances y loterias
+                </Button>
+              </CardContent>
+            </Card>
           )}
 
           {/* FILA 1: País y Tipo de cifra */}
@@ -226,8 +625,8 @@ const recommendedLotteries = LOTTERIES
             </div>
           </div>
 
-          {/* FILA 2: Fecha del sorteo, Horario y Grado de confianza */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* FILA 2: Fecha del sorteo y Grado de confianza */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Fecha del sorteo</Label>
               <Input
@@ -241,19 +640,6 @@ const recommendedLotteries = LOTTERIES
                   <span className="capitalize font-semibold">{drawDayName}</span>
                 </p>
               )}
-            </div>
-
-            <div>
-              <Label>Horario</Label>
-              <Select value={drawTime} onValueChange={setDrawTime} disabled={loading}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin horario</SelectItem>
-                  <SelectItem value="morning">Mañana</SelectItem>
-                  <SelectItem value="afternoon">Tarde</SelectItem>
-                  <SelectItem value="night">Noche</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div>
@@ -379,6 +765,6 @@ const recommendedLotteries = LOTTERIES
           </Button>
         </form>
       </CardContent>
-    </Card>
+      )}    </Card>
   )
 }

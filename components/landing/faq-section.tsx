@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Accordion,
   AccordionContent,
@@ -88,7 +90,7 @@ export function FAQSection() {
           </div>
 
           {/* FAQ Accordion con mejor styling */}
-          <Card className="border-0 shadow-none bg-transparent">
+          <Card className="border-0 shadow-none bg-transparent" suppressHydrationWarning>
             <Accordion type="single" collapsible className="space-y-3">
               {FAQS.map((faq, index) => (
                 <AccordionItem
@@ -103,7 +105,6 @@ export function FAQSection() {
                       ? "bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-300 dark:border-purple-700"
                       : "bg-linear-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-300 dark:border-yellow-700"
                   } hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-purple-500/20`}
-                  suppressHydrationWarning
                 >
                   <AccordionTrigger className="hover:no-underline py-2 text-left font-bold text-gray-900 dark:text-white text-lg">
                     <span className="flex items-start gap-3">

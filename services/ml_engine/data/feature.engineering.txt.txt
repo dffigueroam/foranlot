@@ -1,0 +1,17 @@
+// Ruta: /services/ml_engine/data/feature.engineering.ts
+
+export function createFeatures(row: any) {
+  const digits = row.predicted_number.split("").map(Number);
+
+  const sum = digits.reduce((a: number, b: number) => a + b, 0);
+  const evenCount = digits.filter((d: number) => d % 2 === 0).length;
+  const oddCount = 4 - evenCount;
+
+  return {
+    digit_sum: sum,
+    even_count: evenCount,
+    odd_count: oddCount,
+    confidence_level: row.confidence_level || 3,
+    match_score: row.match_score || 0,
+  };
+}

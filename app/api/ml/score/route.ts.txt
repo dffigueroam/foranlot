@@ -1,0 +1,20 @@
+// Ruta: /app/api/ml/score/route.ts
+
+import { NextResponse } from "next/server";
+import { MLEngine } from "@/components/services/ml_engine";
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+
+    const result = await MLEngine.scorePrediction(body);
+
+    return NextResponse.json(result);
+
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error scoring prediction" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,18 @@
+// Ruta: /services/ml_engine/models/baseline.model.ts
+
+export function baselineProbability(features: any) {
+
+  let score = 0;
+
+  if (features.digit_sum >= 10 && features.digit_sum <= 25) {
+    score += 20;
+  }
+
+  if (features.even_count === 2) {
+    score += 15;
+  }
+
+  score += features.confidence_level * 5;
+
+  return score;
+}

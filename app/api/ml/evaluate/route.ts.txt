@@ -1,0 +1,17 @@
+// Ruta: /app/api/ml/evaluate/route.ts
+
+import { NextResponse } from "next/server";
+import { MLEngine } from "@/components/services/ml_engine";
+
+export async function GET() {
+  try {
+    const result = await MLEngine.evaluate();
+    return NextResponse.json(result);
+
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error evaluating model" },
+      { status: 500 }
+    );
+  }
+}

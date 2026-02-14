@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { SignJWT, jwtVerify } from "jose"
 import { neon } from "@neondatabase/serverless"
 import { createEmailVerificationToken, sendVerificationEmail } from "./email-verification"
+import { setSuggestedAvatar, SUGGESTED_AVATARS } from "./avatars"
 
 const sql = neon(process.env.DATABASE_URL!)
 const SECRET_KEY = new TextEncoder().encode(
@@ -83,6 +84,7 @@ export async function registerUser(
     city?: string
     idDocument?: string | null
   },
+  selectedAvatarId?: string
 ) {
   try {
     const passwordHash = await bcrypt.hash(password, 10)
@@ -126,6 +128,10 @@ export async function registerUser(
       VALUES (${user.id}, 0, 0, 0)
       ON CONFLICT (user_id) DO NOTHING
     `
+
+    // Asignar avatar: usar el seleccionado o uno al azar
+    const avatarId = selectedAvatarId || SUGGESTED_AVATARS[Math.floor(Math.random() * SUGGESTED_AVATARS.length)].id
+    await setSuggestedAvatar(user.id, avatarId)
 
     // Crear token de verificación de email
     const verificationResult = await createEmailVerificationToken(user.id, user.email)

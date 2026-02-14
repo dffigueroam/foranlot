@@ -5,6 +5,7 @@ import {
   setSuggestedAvatar,
   uploadCustomAvatar,
   getUserAvatar,
+  validateAndFixDuplicateAvatars,
 } from "@/lib/avatars"
 import { revalidatePath } from "next/cache"
 
@@ -94,5 +95,41 @@ export async function getCurrentAvatarAction() {
   } catch (error) {
     console.error("[v0] Error getting current avatar:", error)
     return { error: "Error al obtener avatar" }
+  }
+}
+
+/**
+ * Validar y corregir avatares duplicados en el ranking
+ * Solo administradores pueden ejecutar manualmente
+ */
+export async function validateAvatarDuplicatesAction() {
+  const user = await getCurrentUser()
+  
+  if (user && user.role !== "admin") {
+    return { error: "No autorizado" }
+  }
+
+  try {
+    const result = await validateAndFixDuplicateAvatars()
+    
+    if (result.success) {
+      revalidatePath("/ranking")
+      return {
+        success: true,
+        message: `Se corrigieron ${result.duplicatesFixed} avatares duplicados`,
+        details: result.changedUsers
+      }
+    } else {
+      return {
+        success: false,
+        error: result.error
+      }
+    }
+  } catch (error) {
+    console.error("[v0] Error in avatar validation action:", error)
+    return {
+      success: false,
+      error: "Error al validar avatares"
+    }
   }
 }

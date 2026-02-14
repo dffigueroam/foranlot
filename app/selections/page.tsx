@@ -17,7 +17,7 @@ export default async function SelectionsPage() {
   }
 
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
+    <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto space-y-8">
           <div>

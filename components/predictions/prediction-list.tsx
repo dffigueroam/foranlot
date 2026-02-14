@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import type { Prediction } from "@/lib/predictions"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,23 +19,55 @@ type FilterType = "all" | "correct" | "pending" | "incorrect" | "combinations"
 
 export function PredictionList({ predictions, isPremium }: PredictionListProps) {
   const [filter, setFilter] = useState<FilterType>("all")
+  const [filteredPredictions, setFilteredPredictions] = useState<Prediction[]>(predictions)
 
-  // Aplicar filtro
-  const filteredPredictions = predictions.filter(prediction => {
+  const isCorrectTrue = (value: Prediction["is_correct"]) =>
+    value === true || value === "true" || value === "t" || value === 1
+
+  const isCorrectFalse = (value: Prediction["is_correct"]) =>
+    value === false || value === "false" || value === "f" || value === 0
+
+  // Effect para actualizar predicciones filtradas cuando cambia el filtro o las predicciones
+  useEffect(() => {
+    console.log("[PredictionList] Filtering - Current filter:", filter)
+    console.log("[PredictionList] Total predictions available:", predictions.length)
+    
+    let result: Prediction[] = []
+    
     switch (filter) {
       case "correct":
-        return prediction.is_verified && prediction.is_correct
+        result = predictions.filter(
+          p => p.is_verified && (isCorrectTrue(p.is_correct) || p.match_type === "exact")
+        )
+        console.log("[PredictionList] Filtered to CORRECT (exact):", result.length)
+        break
       case "pending":
-        return !prediction.is_verified
+        result = predictions.filter(p => !p.is_verified)
+        console.log("[PredictionList] Filtered to PENDING:", result.length)
+        break
       case "incorrect":
-        return prediction.is_verified && !prediction.is_correct && (!prediction.match_score || prediction.match_score === 0)
+        result = predictions.filter(
+          p =>
+            p.is_verified &&
+            (isCorrectFalse(p.is_correct) || p.match_type === "no_match")
+        )
+        console.log("[PredictionList] Filtered to INCORRECT:", result.length)
+        break
       case "combinations":
-        return prediction.is_verified && prediction.match_score && prediction.match_score > 0
+        result = predictions.filter(
+          p => p.is_verified && p.match_type === "combination"
+        )
+        console.log("[PredictionList] Filtered to COMBINATIONS:", result.length)
+        break
       case "all":
       default:
-        return true
+        result = predictions
+        console.log("[PredictionList] Filtered to ALL:", result.length)
+        break
     }
-  })
+    
+    setFilteredPredictions(result)
+  }, [filter, predictions])
 
   if (predictions.length === 0) {
     return (
@@ -58,9 +90,6 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
     return match?.country || ""
   }
 
-  const getDrawTimeLabel = (drawTime: string | null | undefined) =>
-    drawTime && drawTime !== "null" ? drawTime : "Sin horario"
-
   const getConfidenceClass = (level: number) => {
     if (level >= 4) return "confidence-high"
     if (level === 3) return "confidence-medium"
@@ -79,7 +108,8 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
       )
     }
 
-    if (prediction.is_correct) {
+    // Usar is_correct si existe, con fallback a match_type
+    if (isCorrectTrue(prediction.is_correct) || prediction.match_type === "exact") {
       return (
         <div className="flex flex-col gap-1 items-end">
           <Badge className="bg-green-500">Acertado ✓</Badge>
@@ -87,27 +117,39 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
       )
     }
 
-    // Verificar si hay combinación (score > 0)
-    if (prediction.match_score && prediction.match_score > 0) {
+    // Verificar si hay combinación
+    if (prediction.match_type === "combination") {
       return (
         <div className="flex flex-col gap-1 items-end">
           <Badge className="bg-yellow-500 dark:bg-yellow-600">
             Combinación
           </Badge>
-          <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
-            +{prediction.match_score} pts
-          </span>
+          {prediction.match_score && (
+            <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
+              +{prediction.match_score} pts
+            </span>
+          )}
         </div>
       )
     }
 
-    const label =
-      prediction.lottery_type === "2_digits"
-        ? "Sin acierto 2 cifras"
-        : prediction.lottery_type === "3_digits"
-          ? "Sin acierto 3 cifras"
-          : "Sin acierto 4 cifras"
-    return <Badge variant="destructive">{label}</Badge>
+    // Sin acierto
+    if (isCorrectFalse(prediction.is_correct) || prediction.match_type === "no_match") {
+      const label =
+        prediction.lottery_type === "2_digits"
+          ? "Sin acierto 2 cifras"
+          : prediction.lottery_type === "3_digits"
+            ? "Sin acierto 3 cifras"
+            : "Sin acierto 4 cifras"
+      return <Badge variant="destructive">{label}</Badge>
+    }
+
+    // Fallback (no debería ocurrir)
+    return (
+      <Badge variant="outline" className="text-muted-foreground">
+        Desconocido
+      </Badge>
+    )
   }
 
   return (
@@ -139,7 +181,11 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             onClick={() => setFilter("correct")}
             className="text-xs"
           >
-            Aciertos ({predictions.filter(p => p.is_verified && p.is_correct).length})
+            Aciertos (
+            {predictions.filter(
+              p => p.is_verified && (isCorrectTrue(p.is_correct) || p.match_type === "exact")
+            ).length}
+            )
           </Button>
           <Button
             variant={filter === "combinations" ? "default" : "outline"}
@@ -147,7 +193,9 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             onClick={() => setFilter("combinations")}
             className="text-xs"
           >
-            Combinaciones ({predictions.filter(p => p.is_verified && p.match_score && p.match_score > 0).length})
+            Combinaciones (
+            {predictions.filter(p => p.is_verified && p.match_type === "combination").length}
+            )
           </Button>
           <Button
             variant={filter === "pending" ? "default" : "outline"}
@@ -163,7 +211,11 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             onClick={() => setFilter("incorrect")}
             className="text-xs"
           >
-            Sin acierto ({predictions.filter(p => p.is_verified && !p.is_correct && (!p.match_score || p.match_score === 0)).length})
+            Sin acierto (
+            {predictions.filter(
+              p => p.is_verified && (isCorrectFalse(p.is_correct) || p.match_type === "no_match")
+            ).length}
+            )
           </Button>
         </div>
       </div>
@@ -233,16 +285,6 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                         locale: es,
                       })}
                     </div>
-                    <span className="text-muted-foreground">·</span>
-                    <span>Horario: {getDrawTimeLabel(prediction.draw_time)}</span>
-                    <span className="text-muted-foreground">·</span>
-                    <span
-                      className={`prediction-confidence ${getConfidenceClass(
-                        prediction.confidence_level
-                      )} text-xs font-semibold`}
-                    >
-                      Confianza: {prediction.confidence_level}/5
-                    </span>
                   </div>
 
                   <div className="mt-2">
@@ -270,6 +312,16 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                     {prediction.notes}
                   </p>
                 )}
+
+                <div className="mt-3 pt-3 border-t border-border">
+                  <span
+                    className={`prediction-confidence ${getConfidenceClass(
+                      prediction.confidence_level
+                    )} text-xs font-semibold`}
+                  >
+                    Confianza: {prediction.confidence_level}/5
+                  </span>
+                </div>
               </div>
 
               <div className="prediction-result shrink-0">

@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { register, checkUsername } from "@/app/actions/auth"
+import { SUGGESTED_AVATARS } from "@/lib/avatars"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PasswordStrength } from "@/components/auth/password-strength"
-import { Mail, Phone, MapPin, User, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { Mail, Phone, MapPin, User, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 
 interface City {
@@ -78,6 +79,7 @@ export function RegisterForm() {
   const [usernameChecking, setUsernameChecking] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null)
   const router = useRouter()
   
   const debouncedUsername = useDebounce(username, 500)
@@ -142,6 +144,11 @@ export function RegisterForm() {
 
     // Agregar aceptación de términos al FormData
     formData.set("acceptedTerms", acceptedTerms.toString())
+    
+    // Agregar avatar seleccionado si existe
+    if (selectedAvatar) {
+      formData.set("selectedAvatarId", selectedAvatar)
+    }
 
     // Validar campos requeridos
     const email = formData.get("email") as string
@@ -412,6 +419,47 @@ export function RegisterForm() {
           Usamos esta información para personalizar pronósticos y estadísticas por región.
         </p>
       </div>
+
+      <Separator />
+
+      {/* Sección 4: Selección de Avatar */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="font-semibold text-sm text-muted-foreground mb-3 flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Elige tu Avatar
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Selecciona un avatar que te represente. Si no lo haces, se asignará uno al azar.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {SUGGESTED_AVATARS.map((avatar) => (
+            <button
+              key={avatar.id}
+              type="button"
+              onClick={() => setSelectedAvatar(avatar.id)}
+              disabled={loading}
+              className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                selectedAvatar === avatar.id
+                  ? "border-primary bg-primary/5"
+                  : "border-muted hover:border-primary/50"
+              }`}
+            >
+              <span className="text-3xl">{avatar.emoji}</span>
+              <span className="text-xs font-medium text-center leading-tight">{avatar.name}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          {selectedAvatar 
+            ? `Avatar seleccionado: ${SUGGESTED_AVATARS.find(a => a.id === selectedAvatar)?.name}`
+            : "Sin avatar seleccionado (se asignará uno al azar)"}
+        </p>
+      </div>
+
+      <Separator />
 
       {/* Términos y Condiciones */}
       <div className="flex items-start space-x-2 rounded-lg border p-3">

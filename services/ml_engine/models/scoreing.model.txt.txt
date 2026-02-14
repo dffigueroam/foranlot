@@ -1,0 +1,24 @@
+// Ruta: /services/ml_engine/models/scoring.model.ts
+
+import { createFeatures } from "../data/feature.engineering";
+import { baselineProbability } from "./baseline.model";
+
+export function calculateScore(prediction: any) {
+
+  const features = createFeatures(prediction);
+
+  const score = baselineProbability(features);
+
+  let confidence = 3;
+
+  if (score > 50) confidence = 5;
+  else if (score > 35) confidence = 4;
+  else if (score > 20) confidence = 3;
+  else if (score > 10) confidence = 2;
+  else confidence = 1;
+
+  return {
+    calculated_score: score,
+    suggested_confidence: confidence
+  };
+}

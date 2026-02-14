@@ -43,6 +43,7 @@ export async function register(formData: FormData) {
   const cityRaw = formData.get("city") as string
   const idDocumentRaw = formData.get("idDocument") as string
   const acceptedTerms = formData.get("acceptedTerms") === "true"
+  const selectedAvatarId = formData.get("selectedAvatarId") as string | null
 
   // Validar aceptación de términos
   if (!acceptedTerms) {
@@ -86,7 +87,7 @@ export async function register(formData: FormData) {
     country,
     city,
     idDocument,
-  })
+  }, selectedAvatarId || undefined)
 
   if (result.error) {
     return { error: result.error }

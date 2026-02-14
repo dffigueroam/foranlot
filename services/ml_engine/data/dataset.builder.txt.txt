@@ -1,0 +1,18 @@
+// Ruta: /services/ml_engine/data/dataset.builder.ts
+
+import { getVerifiedPredictions } from "../integration/predictions.adapter";
+import { createFeatures } from "./feature.engineering";
+
+export async function buildDataset() {
+  const data = await getVerifiedPredictions();
+
+  const dataset = data.map((row: any) => {
+    const features = createFeatures(row);
+    return {
+      ...features,
+      is_correct: row.is_correct ? 1 : 0,
+    };
+  });
+
+  return dataset;
+}

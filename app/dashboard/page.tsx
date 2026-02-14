@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 
 import { getCurrentUser } from "@/lib/auth"
-import { getPredictions } from "@/lib/predictions"
+import { getLatestPostedPredictions, getPredictions } from "@/lib/predictions"
 import { getUserStats } from "@/lib/ranking"
 import { getUserPaymentRequests } from "@/lib/manual-payments"
 import { PageWrapper } from "@/components/layout/page-wrapper"
@@ -28,8 +28,10 @@ export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  // 🔹 Obtener TODAS las predicciones (hasta 100 registros)
-  const allPredictions = await getPredictions(user.id, 100)
+  // 🔹 Obtener predicciones de los ultimos 3 dias
+  const allPredictions = await getPredictions(user.id)
+
+  const latestPosted = await getLatestPostedPredictions(user.id)
 
   // 🔐 LÓGICA PREMIUM
   const predictions = user.is_premium
@@ -42,9 +44,37 @@ export default async function DashboardPage() {
     amountCents: p.amount_cents ?? 0,
   }))
 
+  const latestNumbersText = Array.from(
+    new Set(latestPosted.map(p => p.predicted_number))
+  ).join("\n")
+  const latestSummaryDate = latestPosted[0]?.created_at
+    ? new Intl.DateTimeFormat("es-CO", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(latestPosted[0].created_at))
+    : null
+  const latestDrawDate = latestPosted[0]?.draw_date
+    ? new Intl.DateTimeFormat("es-CO", {
+        dateStyle: "medium",
+      }).format(new Date(latestPosted[0].draw_date))
+    : null
+  const latestLotteriesText = Array.from(
+    new Set(
+      latestPosted.map(p =>
+        p.lottery_name === "sin_definir" ? "Lotería sin definir" : p.lottery_name
+      )
+    )
+  ).join(" - ")
+
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
-      <div className="min-h-screen bg-background">
+    <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-green-50/20 dark:via-green-950/10 to-background">
+        {/* Elementos decorativos de fondo */}
+        <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+          <div className="absolute top-20 left-20 w-96 h-96 bg-linear-to-br from-green-400 to-cyan-500 rounded-full blur-3xl"></div>
+          <div className="absolute top-96 right-0 w-96 h-96 bg-linear-to-bl from-yellow-400 to-orange-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-linear-to-t from-pink-400 to-red-500 rounded-full blur-3xl"></div>
+        </div>
         <div className="container mx-auto px-4 py-8">
 
        {/* PREMIUM */}
@@ -66,7 +96,7 @@ export default async function DashboardPage() {
           <div className="mb-8 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">
                   Publica Pronósticos
                 </h1>
                 <p className="text-muted-foreground">
@@ -113,9 +143,9 @@ export default async function DashboardPage() {
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
           <div className="space-y-6">
-            <Card className="bg-card border border-border">
+            <Card className="bg-linear-to-r from-green-50/40 to-cyan-50/40 dark:from-green-900/15 dark:to-cyan-900/15 border-2 border-green-300/40 dark:border-green-500/30 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Resultados y exactitud</CardTitle>
+                <CardTitle className="bg-linear-to-r from-green-700 to-cyan-700 dark:from-green-300 dark:to-cyan-300 bg-clip-text text-transparent">Resultados y exactitud</CardTitle>
                 <CardDescription>
                   Resumen de tus pronósticos y última fecha posteada
                 </CardDescription>
@@ -163,11 +193,46 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border border-border">
+            <Card className="bg-linear-to-br from-green-50/40 to-emerald-50/40 dark:from-green-900/10 dark:to-emerald-900/10 border-l-4 border-l-green-400 dark:border-l-green-500 border border-green-300/30 dark:border-green-500/20 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Pronósticos Posteados</CardTitle>
+                <CardTitle className="bg-linear-to-r from-green-700 to-emerald-700 dark:from-green-300 dark:to-emerald-300 bg-clip-text text-transparent">Resumen de lo último posteado</CardTitle>
                 <CardDescription>
-                  Hasta 100 pronósticos históricos con filtros por estado
+                  Pronósticos recientes publicados por la comunidad
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {latestPosted.length > 0 ? (
+                  <div className="space-y-3">
+                    {latestSummaryDate && (
+                      <p className="text-sm text-muted-foreground">
+                        Fecha de registro: {latestSummaryDate}
+                      </p>
+                    )}
+                    {latestDrawDate && (
+                      <p className="text-sm text-muted-foreground">
+                        Fecha de sorteo: {latestDrawDate}
+                      </p>
+                    )}
+                    <p className="whitespace-pre-line font-mono text-lg">
+                      {latestNumbersText}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Loteria: {latestLotteriesText}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aún no hay pronósticos publicados.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-linear-to-r from-cyan-50/40 to-blue-50/40 dark:from-cyan-900/10 dark:to-blue-900/10 border-t-4 border-t-cyan-400 dark:border-t-cyan-500 border border-cyan-300/30 dark:border-cyan-500/20 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="bg-linear-to-r from-cyan-700 to-blue-700 dark:from-cyan-300 dark:to-blue-300 bg-clip-text text-transparent">Pronósticos Posteados</CardTitle>
+                <CardDescription>
+                  Ultimos 3 dias de predicciones
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[calc(100vh-10rem)]">

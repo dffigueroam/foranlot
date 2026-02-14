@@ -1,0 +1,19 @@
+// Ruta: /services/ml_engine/evaluation/evaluator.ts
+
+import { buildDataset } from "../data/dataset.builder";
+
+export async function evaluateModel() {
+
+  const dataset = await buildDataset();
+
+  const total = dataset.length;
+  const correct = dataset.filter(d => d.is_correct === 1).length;
+
+  const accuracy = total > 0 ? (correct / total) * 100 : 0;
+
+  return {
+    total,
+    correct,
+    accuracy
+  };
+}

@@ -21,9 +21,15 @@ export default async function RankingPage() {
   const lastUpdateText = formatLastUpdate(lastUpdate)
 
   return (
-    <PageWrapper user={{ username: user.username, role: user.role }}>
-      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-950 dark:to-black">
-        <div className="container mx-auto px-4 py-8">
+    <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-purple-50/20 dark:via-purple-950/10 to-background relative">
+        {/* Elementos decorativos de fondo */}
+        <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-linear-to-br from-blue-400 to-purple-500 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/3 right-0 w-96 h-96 bg-linear-to-bl from-cyan-400 to-blue-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-linear-to-t from-purple-400 to-pink-500 rounded-full blur-3xl"></div>
+        </div>
+        <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="mb-8">
           <Button variant="ghost" asChild className="mb-4">
             <Link href="/dashboard">
@@ -34,7 +40,7 @@ export default async function RankingPage() {
 
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Ranking Global</h1>
+              <h1 className="text-3xl font-bold mb-2 bg-linear-to-r from-purple-600 via-blue-600 to-cyan-600 dark:from-purple-400 dark:via-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">Ranking Global</h1>
               <div className="flex items-center gap-2">
                 <p className="text-muted-foreground">
                   Los mejores pronosticadores de la comunidad según precisión y aciertos

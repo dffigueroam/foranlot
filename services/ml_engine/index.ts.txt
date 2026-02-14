@@ -1,0 +1,22 @@
+// Ruta: /services/ml_engine/index.ts
+
+import { buildDataset } from "./data/dataset.builder";
+import { calculateScore } from "./models/scoring.model";
+import { evaluateModel } from "./evaluation/evaluator";
+
+export const MLEngine = {
+
+  async analyze() {
+    const dataset = await buildDataset();
+    return dataset;
+  },
+
+  async scorePrediction(prediction: any) {
+    return calculateScore(prediction);
+  },
+
+  async evaluate() {
+    return evaluateModel();
+  }
+
+};

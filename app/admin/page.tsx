@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MarketingPanel } from "@/components/admin/marketing-panel"
+import { MLClusteringSynthetics } from "@/components/admin/ml-clustering-synthetics"
 
 
 /**
@@ -121,14 +122,13 @@ export default async function AdminPage() {
               <TabsTrigger value="sync">Sincronización</TabsTrigger>
               <TabsTrigger value="ranking">Ranking</TabsTrigger>
               <TabsTrigger value="synthetics">Usuarios AI</TabsTrigger>
+              <TabsTrigger value="ml-clustering">🧬 ML Clustering</TabsTrigger>
               <TabsTrigger value="compensation">Compensación</TabsTrigger>
               <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
               <TabsTrigger value="verification">Verificación</TabsTrigger>
               <TabsTrigger value="results">Resultados</TabsTrigger>
               <TabsTrigger value="marketing">Marketing</TabsTrigger>
-               
-         
-              
+              <TabsTrigger value="ml-utilities">🧠 ML Utilities</TabsTrigger>
             </TabsList>
 
             {/* Tab: Debug - Verificar estructura de tabla */}
@@ -156,6 +156,13 @@ export default async function AdminPage() {
             <TabsContent value="synthetics" className="outline-hidden">
               <div className="max-w-6xl space-y-4">
                 <SyntheticUsersPanel />
+              </div>
+            </TabsContent>
+
+            {/* Tab: ML Clustering para Sintéticos */}
+            <TabsContent value="ml-clustering" className="outline-hidden">
+              <div className="max-w-6xl space-y-4">
+                <MLClusteringSynthetics />
               </div>
             </TabsContent>
 
@@ -209,6 +216,15 @@ export default async function AdminPage() {
             </TabsContent>
             <TabsContent value="marketing">
               <MarketingPanel />
+            </TabsContent>
+
+            {/* Tab: ML Utilities */}
+            <TabsContent value="ml-utilities" className="outline-hidden">
+              <div className="max-w-6xl space-y-4">
+                <Button asChild className="mb-4">
+                  <Link href="/admin/ml-utilities">Ver ML Utilities Completo →</Link>
+                </Button>
+              </div>
             </TabsContent>
 
           </Tabs>

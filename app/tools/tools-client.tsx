@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sparkles, Wrench, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Sparkles, Wrench, Plus, X, AlertCircle, CheckCircle2, Crown, Target } from "lucide-react"
 import { ToolCard } from "@/components/tools/tool-card"
 import { ToolResultDisplay } from "@/components/tools/tool-result-display"
 import { DataUploadForm } from "@/components/tools/data-upload-form"
@@ -416,61 +417,104 @@ export function ToolsClient({ user }: { user: User }) {
         </Card>
       )}
 
-      <Tabs defaultValue="analyzers" className="w-full">
+      <Tabs defaultValue={user.is_premium ? "premium" : "analyzers"} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="analyzers">Analizadores</TabsTrigger>
-          <TabsTrigger value="free">Herramientas Gratis</TabsTrigger>
-          <TabsTrigger value="premium">Herramientas Premium</TabsTrigger>
+          <TabsTrigger value="analyzers">
+            Analizadores Básicos
+            {!user.is_premium && <Badge className="ml-2 bg-green-600">Gratis</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="free">
+            Herramientas Gratis
+            <Badge variant="outline" className="ml-2">{freeTools.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="premium">
+            {user.is_premium ? "Herramientas Premium" : "Mejora a Premium"}
+            {user.is_premium && <Badge className="ml-2 bg-purple-600">{premiumTools.length}</Badge>}
+          </TabsTrigger>
           <TabsTrigger value="data">Mis Datos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analyzers" className="space-y-4">
+          {!user.is_premium && (
+            <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950 mb-4">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <Target className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Herramientas Básicas Gratuitas</h4>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                      Tienes <strong>{limitsInfo?.dailyLimit || 3} usos diarios</strong> en estas herramientas. Ingresa tus números y déjame analizarlos.
+                    </p>
+                    <Button variant="outline" size="sm" asChild className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900">
+                      <Link href="/pricing">Más herramientas en Premium →</Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <NumberAnalyzerTools isPremium={user.is_premium} />
         </TabsContent>
 
         <TabsContent value="free" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {freeTools.map((tool) => (
-              <ToolCard
-                key={tool.id}
-                tool={tool}
-                isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
-                onUse={handleUseTool}
-                userIsPremium={user.is_premium}
-                accessInfo={toolAccessMap[tool.id]}
-                isLimitReached={limitsInfo?.remainingUses === 0}
-              />
-            ))}
-          </div>
+          {freeTools.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-muted-foreground mb-4">No hay herramientas gratuitas disponibles en este momento.</p>
+                <Button asChild>
+                  <Link href="/pricing">Explorar Plan Premium</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {freeTools.map((tool) => (
+                <ToolCard
+                  key={tool.id}
+                  tool={tool}
+                  isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
+                  onUse={handleUseTool}
+                  userIsPremium={user.is_premium}
+                  accessInfo={toolAccessMap[tool.id]}
+                  isLimitReached={limitsInfo?.remainingUses === 0}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="premium" className="space-y-4">
           {!user.is_premium && (
-            <Card className="bg-yellow-50 dark:bg-yellow-950 border-yellow-500">
+            <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-500">
               <CardContent className="pt-6">
-                <p className="text-center">
-                  Necesitas una membresía premium para acceder a estas herramientas avanzadas.
-                  <br />
-                  <Button variant="link" asChild className="mt-2">
-                    <a href="/pricing">Ver Planes Premium</a>
+                <div className="text-center">
+                  <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+                  <p className="text-lg font-semibold mb-2">Desbloquea Herramientas Avanzadas</p>
+                  <p className="text-muted-foreground mb-4">
+                    Acceso a análisis de patrones avanzados, predicciones por Machine Learning y mucho más.
+                  </p>
+                  <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+                    <Link href="/pricing">Ver Planes Premium</Link>
                   </Button>
-                </p>
+                </div>
               </CardContent>
             </Card>
           )}
-          <div className="grid md:grid-cols-2 gap-4">
-            {premiumTools.map((tool) => (
-              <ToolCard
-                key={tool.id}
-                tool={tool}
-                isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
-                onUse={handleUseTool}
-                userIsPremium={user.is_premium}
-                accessInfo={toolAccessMap[tool.id]}
-                isLimitReached={limitsInfo?.remainingUses === 0}
-              />
-            ))}
-          </div>
+          {premiumTools.length > 0 && (
+            <div className="grid md:grid-cols-2 gap-4">
+              {premiumTools.map((tool) => (
+                <ToolCard
+                  key={tool.id}
+                  tool={tool}
+                  isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
+                  onUse={handleUseTool}
+                  userIsPremium={user.is_premium}
+                  accessInfo={toolAccessMap[tool.id]}
+                  isLimitReached={limitsInfo?.remainingUses === 0}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="data" className="space-y-4">

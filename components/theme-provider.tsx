@@ -8,7 +8,14 @@ import {
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
-    <NextThemesProvider {...props} suppressHydrationWarning>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+      suppressHydrationWarning
+    >
       <div suppressHydrationWarning>{children}</div>
     </NextThemesProvider>
   )

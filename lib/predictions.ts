@@ -1,6 +1,7 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { LOTTERIES } from "./lotteries"
+import { saveLotteryCombination } from "./lottery-combinations"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -54,24 +55,85 @@ export async function getRemainingDailyLimit(
    DASHBOARD / FEED
    👉 SOLO pronósticos del usuario
 ====================================================== */
-export async function getPredictions(userId: number | null, limit: number = 100) {
+export async function getPredictions(userId: number | null, limit?: number) {
   if (!userId) return []
 
   try {
-    const predictions = await sql`
-      SELECT 
-        p.*,
-        u.username
-      FROM predictions p
-      JOIN users u ON p.user_id = u.id
-      WHERE p.user_id = ${userId}
-      ORDER BY p.created_at DESC
-      LIMIT ${limit}
-    `
+    const predictions = typeof limit === "number"
+      ? await sql`
+          SELECT 
+            p.*,
+            u.username
+          FROM predictions p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.user_id = ${userId}
+          AND p.draw_date >= (CURRENT_DATE - INTERVAL '3 days')
+          ORDER BY p.draw_date DESC, p.created_at DESC
+          LIMIT ${limit}
+        `
+      : await sql`
+          SELECT 
+            p.*,
+            u.username
+          FROM predictions p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.user_id = ${userId}
+          AND p.draw_date >= (CURRENT_DATE - INTERVAL '3 days')
+          ORDER BY p.draw_date DESC, p.created_at DESC
+        `
+
+    // Debug: Log first 3 records
+    if (predictions.length > 0) {
+      console.log(`[getPredictions] Found ${predictions.length} predictions for user ${userId}`)
+      console.log("[getPredictions] First 3 records:", predictions.slice(0, 3).map(p => ({
+        id: p.id,
+        match_type: p.match_type,
+        is_verified: p.is_verified,
+        predicted_number: p.predicted_number,
+        actual_number: p.actual_number
+      })))
+    }
 
     return predictions as Prediction[]
   } catch (error) {
     console.error("[predictions] Error getting predictions:", error)
+    return []
+  }
+}
+
+/* ======================================================
+   RESUMEN ÚLTIMO POSTEADO (global)
+====================================================== */
+export interface LatestPostedPrediction {
+  predicted_number: string
+  lottery_name: string
+  created_at: string
+  draw_date: string
+  draw_time: string | null
+}
+
+export async function getLatestPostedPredictions(userId: number) {
+  try {
+    const result = await sql`
+      SELECT
+        p.predicted_number,
+        p.lottery_name,
+        p.created_at,
+        p.draw_date,
+        p.draw_time
+      FROM predictions p
+      WHERE p.user_id = ${userId}
+      AND DATE(p.created_at) = (
+        SELECT DATE(MAX(created_at))
+        FROM predictions
+        WHERE user_id = ${userId}
+      )
+      ORDER BY p.created_at DESC
+    `
+
+    return result as LatestPostedPrediction[]
+  } catch (error) {
+    console.error("[predictions] Error getting latest posted predictions:", error)
     return []
   }
 }
@@ -164,6 +226,11 @@ export async function createPrediction(
       RETURNING *
     `
 
+    // Guardar la combinación de loterías para reutilización rápida
+    if (result.length > 0) {
+      await saveLotteryCombination(userId, [lotteryName], lotteryType)
+    }
+
     return { prediction: result[0] }
   } catch (error: any) {
     console.error("[v0] Error creating prediction:", error)
@@ -223,5 +290,77 @@ export async function getPredictionStatsByType(userId: number) {
   } catch (error) {
     console.error("[predictions] Error getting prediction stats:", error)
     return []
+  }
+}
+
+/* ======================================================
+   COMBINACIONES DE LOTERÍAS (últimas usadas)
+====================================================== */
+export interface LotteryCombination {
+  id: number
+  lottery_names: string[]
+  digit_type: string
+  usage_count: number
+  is_favorite: boolean
+  created_at: string
+  last_used_at: string
+}
+
+export async function toggleFavoriteCombination(
+  combinationId: number,
+  userId: number
+): Promise<{ success: boolean; isFavorite?: boolean; error?: string }> {
+  try {
+    const result = await sql`
+      SELECT * FROM toggle_favorite_combination(${combinationId}, ${userId})
+    `
+
+    if (result.length > 0 && result[0].success) {
+      return {
+        success: true,
+        isFavorite: result[0].is_favorite
+      }
+    }
+
+    return { success: false, error: "No se pudo actualizar favorito" }
+  } catch (error) {
+    console.error("[predictions] Error toggling favorite:", error)
+    return { success: false, error: "Error al actualizar favorito" }
+  }
+}
+
+export async function deleteLotteryCombination(
+  combinationId: number,
+  userId: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await sql`
+      SELECT * FROM delete_lottery_combination(${combinationId}, ${userId})
+    `
+
+    if (result.length > 0 && result[0].success) {
+      return { success: true }
+    }
+
+    return { success: false, error: "No se pudo eliminar la combinación" }
+  } catch (error) {
+    console.error("[predictions] Error deleting combination:", error)
+    return { success: false, error: "Error al eliminar combinación" }
+  }
+}
+
+export async function incrementCombinationUsage(
+  combinationId: number,
+  userId: number
+): Promise<{ success: boolean }> {
+  try {
+    const result = await sql`
+      SELECT * FROM increment_combination_usage(${combinationId}, ${userId})
+    `
+
+    return { success: result.length > 0 && result[0].success }
+  } catch (error) {
+    console.error("[predictions] Error incrementing usage:", error)
+    return { success: false }
   }
 }

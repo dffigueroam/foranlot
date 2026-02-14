@@ -91,22 +91,48 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
       {/* MEDIO DE PAGO */}
       <div className="mb-6">
         <Label>Medio de pago *</Label>
-        <select
-          className="w-full border rounded-md p-2 mt-1"
-          value={paymentMethodId}
-          onChange={(e) => setPaymentMethodId(e.target.value)}
-        >
+        <div className="grid grid-cols-2 gap-3 mt-2">
           {paymentMethods.map((method) => (
-            <option key={method.id} value={method.id}>
-              {method.name}
-            </option>
+            <button
+              key={method.id}
+              type="button"
+              onClick={() => setPaymentMethodId(method.id)}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                paymentMethodId === method.id
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                  : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+              }`}
+            >
+              <div className="text-2xl mb-1">{method.icon || "💳"}</div>
+              <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                {method.name}
+              </div>
+            </button>
           ))}
-        </select>
+        </div>
 
         {selectedMethod && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-            <p><strong>Cuenta:</strong> {selectedMethod.account}</p>
-            <p><strong>Tipo:</strong> {selectedMethod.type}</p>
+          <div
+            className="mt-4 p-4 rounded-lg border-l-4 text-sm"
+            style={{
+              backgroundColor: (selectedMethod.color || "#3B82F6") + "15",
+              borderLeftColor: selectedMethod.color || "#3B82F6",
+            }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{selectedMethod.icon || "💳"}</span>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {selectedMethod.name}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {selectedMethod.type}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-700 dark:text-gray-300 mt-2">
+              <strong>Cuenta:</strong> {selectedMethod.account}
+            </p>
           </div>
         )}
       </div>
@@ -148,14 +174,17 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
           </div>
         )}
 
-        <Button type="submit" disabled={loading} className="w-full">
+        <Button type="submit" disabled={loading} className="w-full bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold">
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Enviando...
             </>
           ) : (
-            "Enviar comprobante"
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Enviar comprobante
+            </>
           )}
         </Button>
       </form>

@@ -11,7 +11,7 @@ export default async function HomePage() {
   const user = await getCurrentUser()
 
   return (
-    <PageWrapper user={user ? { username: user.username, role: user.role } : null}>
+    <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
       <div className="min-h-screen bg-white dark:bg-linear-to-br dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 text-foreground dark:text-white">
         
         {/* Hero Section Mejorado */}
@@ -27,8 +27,8 @@ export default async function HomePage() {
             <div className="text-center max-w-5xl mx-auto relative z-10">
               <div className="space-y-4 mb-10">
                 <div className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-linear-to-r from-green-100 to-cyan-100 dark:from-green-900/40 dark:to-cyan-900/40 border border-green-400/50 dark:border-green-500/50 backdrop-blur">
-                  <span className="text-2xl">🎰</span>
-                  <span className="font-medium text-green-900 dark:text-green-200">Predice. Gana. Cambia tu vida.</span>
+                  <span className="text-2xl">�</span>
+                  <span className="font-medium text-green-900 dark:text-green-200">Pronósticos Inteligentes. Dinero Real. Comunidad Confiable.</span>
                 </div>
               </div>
 

@@ -1,0 +1,23 @@
+// Ruta: /services/ml_engine/training/trainer.ts
+
+import { buildDataset } from "../data/dataset.builder";
+
+export async function retrain() {
+
+  const dataset = await buildDataset();
+
+  if (dataset.length < 50) {
+    return { message: "Not enough data to retrain." };
+  }
+
+  // Aquí luego puedes integrar:
+  // TensorFlow
+  // Python microservice
+  // Random Forest
+  // LSTM
+
+  return {
+    message: "Dataset ready for training.",
+    samples: dataset.length
+  };
+}

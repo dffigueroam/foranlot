@@ -1,7 +1,16 @@
 "use server"
 
 import { getCurrentUser } from "@/lib/auth"
-import { createPrediction, getPredictions, getUserPredictions, getRemainingDailyLimit } from "@/lib/predictions"
+import { 
+  createPrediction, 
+  getPredictions, 
+  getUserPredictions, 
+  getRemainingDailyLimit,
+  toggleFavoriteCombination,
+  deleteLotteryCombination,
+  incrementCombinationUsage
+} from "@/lib/predictions"
+import { saveLotteryCombination, getUserLastCombinations } from "@/lib/lottery-combinations"
 import { sanitizeInput } from "@/lib/security"
 import { revalidatePath } from "next/cache"
 import { LOTTERIES } from "@/lib/lotteries"
@@ -199,6 +208,9 @@ export async function submitMultiplePredictions(
     return { error: `No se pudieron crear pronósticos. ${errors.join(" | ")}` }
   }
 
+  // Guardar combinación de loterías para uso futuro
+  await saveLotteryCombination(user.id, lotteryNames, lotteryType)
+
   revalidatePath("/dashboard")
   revalidatePath("/predictions")
 
@@ -217,4 +229,58 @@ export async function fetchPredictions(limit?: number) {
 export async function fetchUserPredictions(userId: number) {
   const predictions = await getUserPredictions(userId)
   return predictions
+}
+
+export async function getLastLotteryCombinations(limit?: number) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  const combinations = await getUserLastCombinations(user.id, limit || 5)
+  
+  return { success: true, combinations }
+}
+
+export async function toggleFavoriteCombinationAction(combinationId: number) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  const result = await toggleFavoriteCombination(combinationId, user.id)
+  
+  if (result.success) {
+    revalidatePath("/dashboard")
+    return { success: true, isFavorite: result.isFavorite }
+  }
+
+  return { error: result.error || "Error al actualizar favorito" }
+}
+
+export async function deleteLotteryCombinationAction(combinationId: number) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  const result = await deleteLotteryCombination(combinationId, user.id)
+  
+  if (result.success) {
+    revalidatePath("/dashboard")
+    return { success: true }
+  }
+
+  return { error: result.error || "Error al eliminar combinación" }
+}
+
+export async function applyCombinationAction(combinationId: number) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return { error: "No autenticado" }
+  }
+
+  const result = await incrementCombinationUsage(combinationId, user.id)
+  
+  return result
 }

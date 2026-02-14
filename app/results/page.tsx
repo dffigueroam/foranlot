@@ -110,7 +110,7 @@ export default async function ResultsPage() {
   const resultsByCountryMap = new Map(resultsByCountry.map(group => [group.country, group]))
 
   return (
-    <PageWrapper user={user ? { username: user.username, role: user.role } : null}>
+    <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           
