@@ -330,7 +330,7 @@ INFORMACIÓN DEL PRONÓSTICO:
 Número: ${prediction.predicted_number}
 Lotería: ${sel.lottery_type}
 Fecha del sorteo: ${new Date(prediction.draw_date).toLocaleDateString("es-CO")}
-Nivel de confianza: ${prediction.confidence_level || "Medio"}
+Nivel de confianza: ${prediction.confidence_level ? (prediction.confidence_level / 5 * 100) + '%' : "60%"}
 
 DATOS DEL PRONOSTICADOR:
 --------------------------

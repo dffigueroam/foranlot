@@ -73,35 +73,35 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
 export async function notifyAdminNewPayment(data: {
   username: string
   email: string
+  userId: number
   planType: string
-  amount: string
-  receiptUrl?: string
-  paymentDate: string
+  referenceNumber: string
+  reportDate: string
+  paymentMethod?: string
   receiptFile?: {
     filename: string
     content: string // base64
   }
 }): Promise<{ success: boolean; error?: string }> {
-  const adminEmail = process.env.ADMIN_EMAIL || "dffigueroam@gmail.com"
+  const adminEmail = process.env.ADMIN_EMAIL || "foralotiq@gmail.com"
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #2563eb;">Nueva Solicitud de Pago Recibida</h2>
       
       <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Usuario:</strong> ${data.username}</p>
+        <p><strong>ID Usuario:</strong> ${data.userId}</p>
+        <p><strong>Nombre de Usuario:</strong> ${data.username}</p>
         <p><strong>Email:</strong> ${data.email}</p>
-        <p><strong>Plan:</strong> ${data.planType === "monthly" ? "Mensual" : "Anual"}</p>
-        <p><strong>Monto:</strong> ${data.amount}</p>
-        <p><strong>Fecha de Pago:</strong> ${data.paymentDate}</p>
+        <p><strong>Plan:</strong> ${data.planType}</p>
+        <p><strong>Número de Referencia:</strong> ${data.referenceNumber}</p>
+        <p><strong>Fecha del Reporte:</strong> ${data.reportDate}</p>
+        ${data.paymentMethod ? `<p><strong>Método de Pago:</strong> ${data.paymentMethod}</p>` : ""}
         ${data.receiptFile ? `<p><strong>Comprobante:</strong> Ver archivo adjunto (${data.receiptFile.filename})</p>` : ""}
       </div>
 
       <p style="margin-top: 30px; color: #666;">
-        <strong>Acción requerida:</strong> 
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/payments" style="color: #2563eb; text-decoration: none;">
-          Revisar en el panel de admin
-        </a>
+        <strong>Acción requerida:</strong> Revisar en el panel de admin
       </p>
 
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
@@ -119,7 +119,7 @@ export async function notifyAdminNewPayment(data: {
 
   return sendEmail({
     to: adminEmail,
-    subject: `[ForanLot] Nuevo pago de ${data.username}`,
+    subject: `[ForanLot] Nuevo pago de ${data.username} (ID: ${data.userId})`,
     html,
     attachments: attachments.length > 0 ? attachments : undefined,
   })

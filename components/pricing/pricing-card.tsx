@@ -44,9 +44,13 @@ export function PricingCard({ product, userIsPremium }: PricingCardProps) {
 
   return (
     <Card className={isYearly ? "border-primary shadow-lg" : ""}>
-      <CardHeader>
-        <CardTitle className="text-2xl">{product.name}</CardTitle>
-        <CardDescription>{product.description}</CardDescription>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <CardTitle className="text-2xl">{product.name}</CardTitle>
+            <CardDescription>{product.description}</CardDescription>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
   

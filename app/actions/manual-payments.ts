@@ -20,22 +20,26 @@ export async function submitManualPayment(formData: FormData) {
   }
 
   try {
-    const planType = formData.get("planType") as "monthly" | "annual"
+    const planType = formData.get("planType") as string
     const referenceNumber = formData.get("referenceNumber") as string
-    const bankName = formData.get("bankName") as string
-    const paymentDate = formData.get("paymentDate") as string
-    const notes = formData.get("notes") as string
-    const accountValidated = formData.get("accountValidated") === "true"
-
-    // Validar que el usuario confirmó su cuenta
-    if (!accountValidated) {
-      return { success: false, error: "Debes confirmar que la cuenta es tuya" }
+    
+    console.log("[v0] submitManualPayment - planType:", planType)
+    console.log("[v0] submitManualPayment - referenceNumber:", referenceNumber)
+    console.log("[v0] submitManualPayment - user.id:", user.id)
+    
+    // Validaciones simples
+    if (!planType || (planType !== "monthly" && planType !== "yearly" && planType !== "annual")) {
+      return { success: false, error: "Plan inválido" }
+    }
+    
+    if (!referenceNumber || referenceNumber.trim() === "") {
+      return { success: false, error: "El número de referencia es obligatorio" }
     }
 
-    // Obtener archivo adjunto y convertir a base64
+    // Procesar archivo si existe
     const receiptFile = formData.get("receiptFile") as File | null
+    const paymentMethodId = formData.get("paymentMethodId") as string
     let receiptFileData: { filename: string; content: string } | undefined
-    let receiptUrl = ""
 
     if (receiptFile && receiptFile.size > 0) {
       try {
@@ -48,47 +52,47 @@ export async function submitManualPayment(formData: FormData) {
           content: base64Content,
         }
         
-        // Guardar URL para referencia en BD
-        receiptUrl = `/uploads/${receiptFile.name}`
-        
         console.log(`[v0] Archivo procesado: ${receiptFile.name} (${receiptFile.size} bytes)`)
       } catch (fileError) {
         console.error("[v0] Error procesando archivo:", fileError)
-        // Continuar sin archivo si hay error
+        return { success: false, error: "Error al procesar el comprobante" }
       }
     }
 
-    // Determinar créditos y precio según el plan
-    const amountCents = planType === "monthly" ? 1900 : 19900
-    const creditsToAdd = planType === "monthly" ? 30 : 365
+    // Normalizar planType a "monthly" o "annual"
+    const normalizedPlanType = planType === "yearly" ? "annual" : "monthly"
+    
+    // Fecha del reporte = hoy
+    const reportDate = new Date().toISOString().split('T')[0]
+    
+    console.log("[v0] Guardando en BD - userId:", user.id, "planType:", normalizedPlanType, "reportDate:", reportDate, "referenceNumber:", referenceNumber)
 
     const result = await createManualPaymentRequest({
       userId: user.id,
-      planType,
-      amountCents,
-      creditsToAdd,
-      paymentMethod: "transfer",
-      receiptUrl,
+      planType: normalizedPlanType,
+      reportDate,
       referenceNumber,
-      bankName,
-      paymentDate,
-      notes,
-      accountValidated: true,
     })
+
+    console.log(`[v0] Solicitud de pago creada: ID=${result.id}, Usuario=${user.username}, Plan=${normalizedPlanType}`)
 
     // Enviar notificación al admin con comprobante adjunto
     await notifyAdminNewPayment({
       username: user.username,
       email: user.email,
-      planType: planType === "monthly" ? "Mensual" : "Anual",
-      amount: `$${amountCents / 100}`,
-      receiptUrl,
-      paymentDate: paymentDate || new Date().toLocaleDateString("es-CO"),
+      userId: user.id,
+      planType: normalizedPlanType,
+      referenceNumber,
+      reportDate,
+      paymentMethod: paymentMethodId,
       receiptFile: receiptFileData,
     })
 
+    console.log(`[v0] Email de notificación enviado a admin`)
+
     revalidatePath("/pricing")
     revalidatePath("/dashboard")
+    revalidatePath("/my-payments")
 
     return { success: true, data: result }
   } catch (error) {

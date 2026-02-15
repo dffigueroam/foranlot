@@ -5,9 +5,15 @@ import crypto from "crypto"
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "default-key-32-chars-minimum!!!!!"
 const IV_LENGTH = 16
 
+// Log para debugging - muestra información sobre la clave cargada (solo en desarrollo)
+if (process.env.NODE_ENV === "development") {
+  console.log(`[v0] ENCRYPTION_KEY cargada: ${ENCRYPTION_KEY.substring(0, 10)}... (${ENCRYPTION_KEY.length} caracteres)`)
+}
+
 // Validar que la clave tenga al menos 32 caracteres
 if (ENCRYPTION_KEY.length < 32) {
   console.warn("[v0] ENCRYPTION_KEY debe tener al menos 32 caracteres")
+  console.warn(`[v0] ENCRYPTION_KEY actual: ${ENCRYPTION_KEY}`)
 }
 
 // Generar hash de 32 bytes de la clave

@@ -102,39 +102,39 @@ export default async function DashboardPage() {
                 <p className="text-muted-foreground">
                 Comparte tus predicciones y gana dinero
               </p>
-            </div>
+              </div>
 
-            <div className="flex gap-2">
-              {user.is_premium ? (
-                <Button asChild>
-                  <Link href="/premium">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Zona Premium
+              <div className="flex gap-2">
+                {user.is_premium ? (
+                  <Button asChild>
+                    <Link href="/premium">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Zona Premium
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/pricing">
+                      <Crown className="w-4 h-4 mr-2" />
+                      Hazte Premium
+                    </Link>
+                  </Button>
+                )}
+
+                <Button variant="outline" asChild>
+                  <Link href="/ranking">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Ver Ranking
                   </Link>
                 </Button>
-              ) : (
-                <Button asChild>
-                  <Link href="/pricing">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Hazte Premium
-                  </Link>
-                </Button>
-              )}
-
-              <Button variant="outline" asChild>
-                <Link href="/ranking">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Ver Ranking
-                </Link>
-              </Button>
+              </div>
             </div>
           </div>
 
           <PaymentStatusAlert payments={payments} />
-        </div>
 
-        {/* ===== LAYOUT ===== */}
-        <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+          {/* ===== LAYOUT ===== */}
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
 
           {/* COLUMNA IZQUIERDA - Formulario */}
           <div className="space-y-6">
@@ -143,6 +143,7 @@ export default async function DashboardPage() {
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
           <div className="space-y-6">
+            {/* Mostrar "Resultados y exactitud" cuando hay estadísticas */}
             <Card className="bg-linear-to-r from-green-50/40 to-cyan-50/40 dark:from-green-900/15 dark:to-cyan-900/15 border-2 border-green-300/40 dark:border-green-500/30 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="bg-linear-to-r from-green-700 to-cyan-700 dark:from-green-300 dark:to-cyan-300 bg-clip-text text-transparent">Resultados y exactitud</CardTitle>
@@ -193,15 +194,16 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-linear-to-br from-green-50/40 to-emerald-50/40 dark:from-green-900/10 dark:to-emerald-900/10 border-l-4 border-l-green-400 dark:border-l-green-500 border border-green-300/30 dark:border-green-500/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="bg-linear-to-r from-green-700 to-emerald-700 dark:from-green-300 dark:to-emerald-300 bg-clip-text text-transparent">Resumen de lo último posteado</CardTitle>
-                <CardDescription>
-                  Pronósticos recientes publicados por la comunidad
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {latestPosted.length > 0 ? (
+            {/* Mostrar "Resumen de lo último posteado" siempre que haya posts recientes */}
+            {latestPosted.length > 0 && (
+              <Card className="bg-linear-to-br from-green-50/40 to-emerald-50/40 dark:from-green-900/10 dark:to-emerald-900/10 border-l-4 border-l-green-400 dark:border-l-green-500 border border-green-300/30 dark:border-green-500/20 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="bg-linear-to-r from-green-700 to-emerald-700 dark:from-green-300 dark:to-emerald-300 bg-clip-text text-transparent">Resumen de lo último posteado</CardTitle>
+                  <CardDescription>
+                    Pronósticos recientes publicados
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-3">
                     {latestSummaryDate && (
                       <p className="text-sm text-muted-foreground">
@@ -220,13 +222,9 @@ export default async function DashboardPage() {
                       Loteria: {latestLotteriesText}
                     </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Aún no hay pronósticos publicados.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="bg-linear-to-r from-cyan-50/40 to-blue-50/40 dark:from-cyan-900/10 dark:to-blue-900/10 border-t-4 border-t-cyan-400 dark:border-t-cyan-500 border border-cyan-300/30 dark:border-cyan-500/20 backdrop-blur-sm">
               <CardHeader>
@@ -235,7 +233,7 @@ export default async function DashboardPage() {
                   Ultimos 3 dias de predicciones
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[calc(100vh-10rem)]">
+              <CardContent className="h-[calc(100vh-1.5rem)]">
                 <div className="h-full">
                   <PredictionList
                     predictions={predictions}
@@ -245,10 +243,9 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-
+        </div>
         </div>
       </div>
-    </div>
     </PageWrapper>
   )
 }

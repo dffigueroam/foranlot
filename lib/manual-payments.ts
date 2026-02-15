@@ -29,31 +29,31 @@ export interface ManualPaymentRequest {
 export async function createManualPaymentRequest(data: {
   userId: number
   planType: "monthly" | "annual"
-  amountCents: number
-  creditsToAdd: number
-  paymentMethod: string
-  receiptUrl?: string
-  referenceNumber?: string
-  bankName?: string
-  paymentDate?: string
-  notes?: string
-  accountValidated?: boolean
+  reportDate: string
+  referenceNumber: string
 }) {
-  const result = await sql`
-    INSERT INTO manual_payment_requests (
-      user_id, plan_type, amount_cents, credits_to_add, 
-      payment_method, receipt_url, reference_number, 
-      bank_name, payment_date, notes, account_validated, account_validated_at
-    )
-    VALUES (
-      ${data.userId}, ${data.planType}, ${data.amountCents}, ${data.creditsToAdd},
-      ${data.paymentMethod}, ${data.receiptUrl}, ${data.referenceNumber},
-      ${data.bankName}, ${data.paymentDate}, ${data.notes}, 
-      ${data.accountValidated || false}, ${data.accountValidated ? new Date().toISOString() : null}
-    )
-    RETURNING *
-  `
-  return result[0]
+  try {
+    console.log("[v0] createManualPaymentRequest - datos:", data)
+    
+    // Determinar amount_cents y credits según plan
+    const amountCents = data.planType === "monthly" ? 25995 : 195000
+    const creditsToAdd = data.planType === "monthly" ? 30 : 365
+    
+    const result = await sql`
+      INSERT INTO manual_payment_requests (
+        user_id, plan_type, amount_cents, credits_to_add, payment_date, reference_number, payment_method
+      )
+      VALUES (
+        ${data.userId}, ${data.planType}, ${amountCents}, ${creditsToAdd}, ${data.reportDate}, ${data.referenceNumber}, 'transfer'
+      )
+      RETURNING *
+    `
+    console.log("[v0] Inserción exitosa en BD:", result[0])
+    return result[0]
+  } catch (error) {
+    console.error("[v0] Error en createManualPaymentRequest:", error)
+    throw error
+  }
 }
 
 export async function getPendingPaymentRequests(): Promise<ManualPaymentRequest[]> {

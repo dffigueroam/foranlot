@@ -30,6 +30,7 @@ export default async function PricingPage() {
 
   // Obtener métodos de pago desencriptados en el servidor
   const paymentMethods = getPaymentMethods()
+  console.log("[v0] PricingPage: paymentMethods =", paymentMethods.length, "methods")
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>

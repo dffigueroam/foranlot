@@ -446,6 +446,19 @@ const recommendedLotteries = LOTTERIES
                       {lastCombinations.length}
                     </Badge>
                     <span className="text-xs text-muted-foreground ml-2">💡 Haz click en una para cargarla</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedLotteries(new Set())
+                        setSelectedDigits("3")
+                        setCombinationFilter("")
+                      }}
+                      className="text-xs ml-2"
+                    >
+                      Quitar selección
+                    </Button>
                   </div>
                   
                   {lastCombinations.length > 2 && (
@@ -577,19 +590,7 @@ const recommendedLotteries = LOTTERIES
                   </p>
                 )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedLotteries(new Set())
-                    setSelectedDigits("3")
-                    setCombinationFilter("")
-                  }}
-                  className="w-full text-xs mt-3"
-                >
-                  Quitar las Seleccion actual de Chances y loterias
-                </Button>
+
               </CardContent>
             </Card>
           )}
@@ -653,11 +654,11 @@ const recommendedLotteries = LOTTERIES
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Muy baja</SelectItem>
-                  <SelectItem value="2">Baja</SelectItem>
-                  <SelectItem value="3">Media</SelectItem>
-                  <SelectItem value="4">Alta</SelectItem>
-                  <SelectItem value="5">Muy alta</SelectItem>
+                  <SelectItem value="1">20% - Muy baja</SelectItem>
+                  <SelectItem value="2">40% - Baja</SelectItem>
+                  <SelectItem value="3">60% - Media</SelectItem>
+                  <SelectItem value="4">80% - Alta</SelectItem>
+                  <SelectItem value="5">100% - Muy alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -93,6 +93,16 @@ export default function SelectedPredictionsList() {
     return "text-orange-500"
   }
 
+  const getConfidencePercentage = (level: number) => {
+    return (level / 5) * 100
+  }
+
+  const getConfidenceColorClass = (level: number) => {
+    if (level >= 4) return "bg-green-500 dark:bg-green-600"
+    if (level >= 3) return "bg-yellow-500 dark:bg-yellow-600"
+    return "bg-orange-500 dark:bg-orange-600"
+  }
+
   const getStatusBadge = (prediction: any) => {
     if (!prediction.is_verified) {
       return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">En espera</Badge>
@@ -162,18 +172,9 @@ export default function SelectedPredictionsList() {
                         <Hash className="h-4 w-4 text-primary" />
                         <span className="font-mono font-bold text-2xl">{prediction.predicted_number}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < prediction.confidence_level
-                                ? getConfidenceColor(prediction.confidence_level) + " fill-current"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      <Badge className={`${getConfidenceColorClass(prediction.confidence_level)} text-white`}>
+                        Confianza: {getConfidencePercentage(prediction.confidence_level)}%
+                      </Badge>
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">

@@ -96,12 +96,16 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
     return "confidence-low"
   }
 
+  const getConfidencePercentage = (level: number) => {
+    return (level / 5) * 100
+  }
+
   const getResultBadge = (prediction: Prediction) => {
     if (!prediction.is_verified) {
       return (
         <Badge
           variant="outline"
-          className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300"
+          className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 text-xs py-0.5"
         >
           En espera
         </Badge>
@@ -112,7 +116,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
     if (isCorrectTrue(prediction.is_correct) || prediction.match_type === "exact") {
       return (
         <div className="flex flex-col gap-1 items-end">
-          <Badge className="bg-green-500">Acertado ✓</Badge>
+          <Badge className="bg-green-500 text-xs py-0.5">Acertado ✓</Badge>
         </div>
       )
     }
@@ -121,7 +125,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
     if (prediction.match_type === "combination") {
       return (
         <div className="flex flex-col gap-1 items-end">
-          <Badge className="bg-yellow-500 dark:bg-yellow-600">
+          <Badge className="bg-yellow-500 dark:bg-yellow-600 text-xs py-0.5">
             Combinación
           </Badge>
           {prediction.match_score && (
@@ -141,12 +145,12 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
           : prediction.lottery_type === "3_digits"
             ? "Sin acierto 3 cifras"
             : "Sin acierto 4 cifras"
-      return <Badge variant="destructive">{label}</Badge>
+      return <Badge variant="destructive" className="text-xs py-0.5">{label}</Badge>
     }
 
     // Fallback (no debería ocurrir)
     return (
-      <Badge variant="outline" className="text-muted-foreground">
+      <Badge variant="outline" className="text-muted-foreground text-xs py-0.5">
         Desconocido
       </Badge>
     )
@@ -221,7 +225,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
       </div>
 
       {/* Lista con scroll */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-2">
         {/* Mensaje si no hay resultados con el filtro actual */}
         {filteredPredictions.length === 0 && (
           <Card className="prediction-empty">
@@ -232,7 +236,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
         )}
 
         {filteredPredictions.map((prediction, index) => {
-        const isCompact = index < 3
+        const isCompact = true
 
         return (
           <Card
@@ -242,35 +246,35 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             }`}
           >
             <CardContent
-              className={`prediction-item-content flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between ${
-                isCompact ? "p-3" : "p-5"
+              className={`prediction-item-content flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between ${
+                isCompact ? "p-2" : "p-5"
               }`}
             >
               <div
                 className={`prediction-main flex-1 min-w-0 ${
-                  isCompact ? "space-y-2" : "space-y-3"
+                  isCompact ? "space-y-1" : "space-y-3"
                 }`}
               >
-                <div className="prediction-header flex flex-wrap items-center gap-2 text-sm">
-                  <User className="prediction-user-icon h-4 w-4 text-muted-foreground" />
+                <div className="prediction-header flex flex-wrap items-center gap-1.5 text-xs">
+                  <User className="prediction-user-icon h-3.5 w-3.5 text-muted-foreground" />
                   <span className="prediction-username font-medium">
                     {prediction.username}
                   </span>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="text-xs py-0">
                     {getLotteryTypeLabel(prediction.lottery_type)}
                   </Badge>
                 </div>
 
                 <div
                   className={`prediction-number font-bold tracking-tight ${
-                    isCompact ? "text-2xl" : "text-3xl"
+                    isCompact ? "text-xl" : "text-3xl"
                   }`}
                 >
                   {prediction.predicted_number}
                 </div>
 
                 <div className={`text-muted-foreground ${isCompact ? "text-xs" : "text-sm"}`}>
-                  <div className={`flex flex-wrap items-center ${isCompact ? "gap-2" : "gap-3"}`}>
+                  <div className={`flex flex-wrap items-center ${isCompact ? "gap-1.5" : "gap-3"}`}>
                     <span className="font-medium text-foreground">País:</span>
                     <span>{getCountryLabel(prediction.lottery_name) || "-"}</span>
                     <span className="text-muted-foreground">·</span>
@@ -278,24 +282,24 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                     <span>{getLotteryTypeLabel(prediction.lottery_type)}</span>
                   </div>
 
-                  <div className={`mt-2 flex flex-wrap items-center ${isCompact ? "gap-2" : "gap-3"}`}>
+                  <div className={`mt-1 flex flex-wrap items-center ${isCompact ? "gap-1.5" : "gap-3"}`}>
                     <div className="inline-flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
+                      <Calendar className="h-3.5 w-3.5" />
                       {format(new Date(prediction.draw_date), "dd MMM yyyy", {
                         locale: es,
                       })}
                     </div>
                   </div>
 
-                  <div className="mt-2">
-                    <Badge variant="secondary">
+                  <div className="mt-1">
+                    <Badge variant="secondary" className="text-xs py-0">
                       {getLotteryNameLabel(prediction.lottery_name)}
                     </Badge>
                   </div>
                 </div>
 
                 {prediction.is_verified ? (
-                  <div className="text-sm">
+                  <div className="text-xs">
                     <span className="text-muted-foreground">Resultado: </span>
                     <span className="font-mono font-semibold text-foreground">
                       {prediction.actual_number || "-"}
@@ -308,18 +312,18 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                 )}
 
                 {prediction.notes && (
-                  <p className="prediction-notes text-sm text-muted-foreground">
+                  <p className="prediction-notes text-xs text-muted-foreground">
                     {prediction.notes}
                   </p>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-border">
+                <div className="mt-1 pt-1 border-t border-border">
                   <span
                     className={`prediction-confidence ${getConfidenceClass(
                       prediction.confidence_level
                     )} text-xs font-semibold`}
                   >
-                    Confianza: {prediction.confidence_level}/5
+                    Confianza: {getConfidencePercentage(prediction.confidence_level)}%
                   </span>
                 </div>
               </div>
