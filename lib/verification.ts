@@ -2,6 +2,11 @@ import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { updateRankings } from "./ranking"
 import { LOTTERIES } from "./lotteries"
+import { 
+  notifyOfficialResults, 
+  notifyPredictionHit,
+  notifyPaymentReceived 
+} from "./notifications"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -239,21 +244,120 @@ export async function verifyPendingPredictions() {
 
     let totalVerified = 0
     let totalCorrect = 0
+    let notificationsCount = 0
 
     for (const row of pendingDates) {
       const date = (row as any).date
-      const result = await verifyPredictionsForDate(date)
+      
+      // Obtener resultados oficiales para esta fecha
+      const lotteryResults = await getLotteryResults(date)
 
-      if (result.success) {
-        totalVerified += result.verified || 0
-        totalCorrect += result.correct || 0
+      if (!lotteryResults || lotteryResults.length === 0) continue
+
+      // Notificar a TODOS los usuarios sobre los resultados
+      for (const result of lotteryResults) {
+        const winningNumber = result.winning_number || result.digits_4 || result.digits_3 || ""
+        await notifyOfficialResults(
+          result.lottery_name,
+          date,
+          winningNumber
+        )
+      }
+
+      // Procesar predicciones y enviar notificaciones de aciertos
+      for (const result of lotteryResults) {
+        const digitsOnly = (result.winning_number || "").replace(/\D/g, "").padStart(4, "0")
+        const digits_4 = (result.digits_4 || "").toString().padStart(4, "0").slice(0, 4) || digitsOnly.slice(0, 4)
+        const digits_3 = (result.digits_3 || "").toString().padStart(3, "0").slice(0, 3) || digitsOnly.slice(0, 3)
+        
+        // Obtener pronósticos pendientes
+        const pendingPredictions = await sql`
+          SELECT p.id, p.user_id, p.lottery_type, p.predicted_number, p.lottery_name
+          FROM predictions p
+          WHERE DATE(p.draw_date) = DATE(${result.draw_date})
+            AND LOWER(TRIM(p.lottery_name)) = LOWER(TRIM(${result.lottery_name}))
+            AND p.is_verified = false
+        `
+
+        // Verificar y notificar cada predicción
+        for (const pred of pendingPredictions) {
+          const actualNumber = pred.lottery_type === '3_digits' ? digits_3 : digits_4
+          const predictedNumbers = pred.predicted_number.split(' ')
+          
+          let bestMatch = { isMatch: false, matchType: 'no_match' as const, score: 0 }
+          let matchedNumber = ""
+          
+          for (const predictedNum of predictedNumbers) {
+            const match = checkCombination(predictedNum, actualNumber)
+            
+            if (match.isMatch && (match.matchType === 'exact' || match.score > bestMatch.score)) {
+              bestMatch = match
+              matchedNumber = predictedNum
+              if (match.matchType === 'exact') break
+            }
+          }
+          
+          // Actualizar predicción
+          await sql`
+            UPDATE predictions
+            SET 
+              is_verified = true,
+              is_correct = ${bestMatch.matchType === 'exact'},
+              match_type = ${bestMatch.matchType},
+              match_score = ${bestMatch.score},
+              actual_number = ${actualNumber},
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${pred.id}
+          `
+          
+          totalVerified++
+          
+          // SI HAY ACIERTO, NOTIFICAR AL USUARIO
+          if (bestMatch.isMatch) {
+            if (bestMatch.matchType === 'exact') totalCorrect++
+            
+            // Calcular ganancias (20% de las ganancias)
+            // Suponemos una paga base de $10,000 COP y 20% van al predictor
+            const basePayout = 1000000 // $10,000 COP en centavos
+            const predictorEarnings = Math.floor(basePayout * 0.2)
+            
+            await notifyPredictionHit(
+              pred.user_id,
+              result.lottery_name,
+              matchedNumber,
+              actualNumber,
+              bestMatch.matchType as "exact" | "combination",
+              predictorEarnings
+            )
+            
+            // Registrar las ganancias en la cuenta del usuario
+            await sql`
+              UPDATE users
+              SET total_earnings = COALESCE(total_earnings, 0) + ${predictorEarnings}
+              WHERE id = ${pred.user_id}
+            `
+            
+            // Notificar sobre el pago recibido
+            await notifyPaymentReceived(
+              pred.user_id,
+              predictorEarnings,
+              `acierto en ${result.lottery_name}`
+            )
+            
+            notificationsCount++
+          }
+        }
       }
     }
+
+    // Actualizar rankings después de verificar
+    await updateRankings()
 
     return {
       success: true,
       totalVerified,
       totalCorrect,
+      notificationsSent: notificationsCount,
       datesProcessed: pendingDates.length,
     }
   } catch (error) {

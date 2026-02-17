@@ -7,7 +7,8 @@ import {
   getLastLotteryCombinations,
   toggleFavoriteCombinationAction,
   deleteLotteryCombinationAction,
-  applyCombinationAction
+  applyCombinationAction,
+  getAvailableLotteriesForDate
 } from "@/app/actions/predictions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,9 +72,14 @@ export function PredictionForm() {
   const [selectedDigits, setSelectedDigits] = useState<string>("3")
   const [confidenceLevel, setConfidenceLevel] = useState<string>("3")
   const [drawDate, setDrawDate] = useState<string>("")
-  const [selectedCountry, setSelectedCountry] = useState<string>("all")
+  const [selectedCountry, setSelectedCountry] = useState<string>("Colombia")
   const [predictedNumbers, setPredictedNumbers] = useState<string>("")
   const [lotterySearch, setLotterySearch] = useState("")
+  
+  // NUEVO: Estados para loterias disponibles por fecha
+  const [availableLotteries, setAvailableLotteries] = useState<any[]>([])
+  const [loadingLotteries, setLoadingLotteries] = useState(false)
+  const [dayType, setDayType] = useState<string>("")
   
   const formRef = useRef<HTMLFormElement | null>(null)
 
@@ -85,6 +91,39 @@ export function PredictionForm() {
     setMounted(true)
     loadCombinations()
   }, [])
+
+  // NUEVO: Cargar loterias disponibles cuando cambien fecha o país
+  useEffect(() => {
+    async function loadAvailableLotteries() {
+      if (!drawDate || !selectedCountry || selectedCountry === "all") {
+        setAvailableLotteries([])
+        setDayType("")
+        return
+      }
+
+      setLoadingLotteries(true)
+      try {
+        const result = await getAvailableLotteriesForDate(drawDate, selectedCountry)
+        if (result.success && result.lotteries) {
+          setAvailableLotteries(result.lotteries)
+          // Obtener el tipo de día del primer resultado
+          if (result.lotteries.length > 0) {
+            setDayType(result.lotteries[0].dayType)
+          }
+        } else {
+          setAvailableLotteries([])
+          setError(result.error || "No hay loterias disponibles para esta fecha")
+        }
+      } catch (err) {
+        console.error("Error loading lotteries:", err)
+        setAvailableLotteries([])
+      } finally {
+        setLoadingLotteries(false)
+      }
+    }
+
+    loadAvailableLotteries()
+  }, [drawDate, selectedCountry])
 
   async function loadCombinations() {
     try {
@@ -595,10 +634,41 @@ const recommendedLotteries = LOTTERIES
             </Card>
           )}
 
-          {/* FILA 1: País y Tipo de cifra */}
+          {/* FILA 1: FECHA DEL SORTEO (PRIMER CAMPO - MUY IMPORTANTE) */}
+          <div className="border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+            <Label className="text-base font-semibold flex items-center gap-2 mb-2">
+              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              1. Selecciona la fecha del sorteo
+            </Label>
+            <Input
+              type="date"
+              value={drawDate}
+              onChange={e => setDrawDate(e.target.value)}
+              disabled={loading}
+              className="text-base h-10"
+              required
+            />
+            {drawDayName && (
+              <div className="mt-2 p-2 bg-white dark:bg-slate-900 rounded border border-blue-200 dark:border-blue-700">
+                <p className="text-sm">
+                  <span className="font-semibold capitalize text-blue-700 dark:text-blue-300">{drawDayName}</span>
+                  {dayType && (
+                    <>
+                      <span className="text-muted-foreground mx-2">•</span>
+                      <Badge variant="outline" className="text-xs ml-2">
+                        Tipo de día: <span className="font-semibold capitalize">{dayType}</span>
+                      </Badge>
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* FILA 2: País y Tipo de cifra */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>País</Label>
+              <Label>2. País</Label>
               <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loading}>
                 <SelectTrigger className="w-full">
                   <SelectValue /></SelectTrigger>
@@ -626,42 +696,25 @@ const recommendedLotteries = LOTTERIES
             </div>
           </div>
 
-          {/* FILA 2: Fecha del sorteo y Grado de confianza */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Fecha del sorteo</Label>
-              <Input
-                type="date"
-                value={drawDate}
-                onChange={e => setDrawDate(e.target.value)}
-                disabled={loading}
-              />
-              {drawDayName && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className="capitalize font-semibold">{drawDayName}</span>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label>Grado de confianza</Label>
-              <Select
-                value={confidenceLevel}
-                onValueChange={setConfidenceLevel}
-                disabled={loading}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">20% - Muy baja</SelectItem>
-                  <SelectItem value="2">40% - Baja</SelectItem>
-                  <SelectItem value="3">60% - Media</SelectItem>
-                  <SelectItem value="4">80% - Alta</SelectItem>
-                  <SelectItem value="5">100% - Muy alta</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* FILA 3: Grado de confianza */}
+          <div>
+            <Label>Grado de confianza</Label>
+            <Select
+              value={confidenceLevel}
+              onValueChange={setConfidenceLevel}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">20% - Muy baja</SelectItem>
+                <SelectItem value="2">40% - Baja</SelectItem>
+                <SelectItem value="3">60% - Media</SelectItem>
+                <SelectItem value="4">80% - Alta</SelectItem>
+                <SelectItem value="5">100% - Muy alta</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Números */}
@@ -716,42 +769,98 @@ const recommendedLotteries = LOTTERIES
 
 
           {/* Loterías */}
-          <div className="border rounded-lg p-3 max-h-96 flex flex-col">
-                  {/* Buscador */}
-                  <Input
-                    placeholder="Buscar lotería..."
-                    value={lotterySearch}
-                    onChange={(e) => setLotterySearch(e.target.value)}
-                    className="mb-3"
-                    disabled={loading}
-                  />
+          <div className="border-2 border-green-300 dark:border-green-700 rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+            <Label className="text-base font-semibold flex items-center gap-2 mb-3">
+              <Filter className="w-5 h-5 text-green-600 dark:text-green-400" />
+              3. Selecciona loterias disponibles
+            </Label>
 
-                  {/* Lista */}
-                  <div className="space-y-2 overflow-y-auto">
-                    {recommendedLotteries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No se encontraron loterías
-                      </p>
-                    ) : (
-                      recommendedLotteries.map(l => {
-                        const key = `${l.name}|${l.country}`
+            {loadingLotteries && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-green-600 mr-2" />
+                <span className="text-sm text-muted-foreground">Cargando loterías disponibles...</span>
+              </div>
+            )}
+
+            {!loadingLotteries && availableLotteries.length === 0 && drawDate && selectedCountry && selectedCountry !== "all" && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  No hay loterías disponibles para {selectedCountry} en {drawDate}. 
+                  {dayType && ` (${dayType})`}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!loadingLotteries && availableLotteries.length > 0 && (
+              <>
+                <div className="mb-3 p-2 bg-white dark:bg-slate-900 rounded border border-green-200 dark:border-green-700">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    <strong>{availableLotteries.length}</strong> loterías disponibles para este día
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {Array.from(new Set(availableLotteries.map(l => `${l.name}|${l.availableHour}`)))
+                      .slice(0, 5)
+                      .map((item) => {
+                        const [name, hour] = item.split("|")
                         return (
-                          <div key={key} className="flex items-center gap-2 p-2 rounded hover:bg-muted">
-                            <Checkbox
-                              checked={selectedLotteries.has(key)}
-                              onCheckedChange={() => toggleLottery(l.name, l.country)}
-                              disabled={loading}
-                            />
-                            <span className="text-sm font-medium">{l.name}</span>
-                            <span className="ml-auto text-xs text-muted-foreground">
-                              {l.country}
-                            </span>
-                          </div>
+                          <Badge key={item} variant="outline" className="text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {hour}:00 - {name}
+                          </Badge>
                         )
-                      })
+                      })}
+                    {availableLotteries.length > 5 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{availableLotteries.length - 5} más
+                      </Badge>
                     )}
                   </div>
                 </div>
+
+                {/* Buscador */}
+                <Input
+                  placeholder="Buscar lotería..."
+                  value={lotterySearch}
+                  onChange={(e) => setLotterySearch(e.target.value)}
+                  className="mb-3"
+                  disabled={loading}
+                />
+
+                {/* Lista de loterias disponibles */}
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {availableLotteries
+                    .filter(l => l.name.toLowerCase().includes(lotterySearch.toLowerCase()))
+                    .map(l => {
+                      const key = `${l.name}|${l.country}`
+                      return (
+                        <div key={key} className="flex items-center gap-2 p-2 rounded hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-green-200 dark:hover:border-green-700">
+                          <Checkbox
+                            checked={selectedLotteries.has(key)}
+                            onCheckedChange={() => toggleLottery(l.name, l.country)}
+                            disabled={loading}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium">{l.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">({l.country})</span>
+                          </div>
+                          <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {l.availableHour}:00
+                          </Badge>
+                        </div>
+                      )
+                    })}
+                </div>
+              </>
+            )}
+
+            {/* Alternativa si no hay fecha seleccionada */}
+            {!drawDate && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-700 rounded text-sm text-yellow-800 dark:text-yellow-200">
+                💡 Selecciona primero una fecha para ver las loterías disponibles
+              </div>
+            )}
+          </div>
 
 
           <Button type="submit" disabled={loading} className="w-full">

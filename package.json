@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "start": "next start",
     "load-results": "tsx scripts/load-ult-results.ts",
-    "fix-csv": "powershell -ExecutionPolicy Bypass -File scripts/fix-csv-encoding.ps1"
+    "fix-csv": "powershell -ExecutionPolicy Bypass -File scripts/fix-csv-encoding.ps1",
+    "sync-holidays": "tsx scripts/parse-holidays-excel.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

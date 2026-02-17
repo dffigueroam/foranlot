@@ -3,13 +3,14 @@ import Link from "next/link"
 
 import { getCurrentUser } from "@/lib/auth"
 import { getLatestPostedPredictions, getPredictions } from "@/lib/predictions"
+import { fetchVerifiedCorrectPredictions } from "@/app/actions/dashboard"
+import { PredictionListWithFilter } from "@/components/dashboard/prediction-list-with-filter"
 import { getUserStats } from "@/lib/ranking"
-import { getUserPaymentRequests } from "@/lib/manual-payments"
 import { PageWrapper } from "@/components/layout/page-wrapper"
+import { getLotteriesForDay, LOTTERIES } from "@/lib/lotteries"
 
 import { PredictionForm } from "@/components/predictions/prediction-form"
 import { PredictionList } from "@/components/predictions/prediction-list"
-import { PaymentStatusAlert } from "@/components/dashboard/payment-status-alert"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,25 +25,21 @@ import { Crown, TrendingUp, Target, Percent, Sparkles } from "lucide-react"
 
 
 
+
+
 export default async function DashboardPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
   // 🔹 Obtener predicciones de los ultimos 3 dias
   const allPredictions = await getPredictions(user.id)
-
   const latestPosted = await getLatestPostedPredictions(user.id)
+  const userStats = await getUserStats(user.id)
 
-  // 🔐 LÓGICA PREMIUM
+
   const predictions = user.is_premium
     ? allPredictions
     : allPredictions.filter(p => p.user_id === user.id)
-
-  const userStats = await getUserStats(user.id)
-  const payments = (await getUserPaymentRequests(user.id)).map(p => ({
-    ...p,
-    amountCents: p.amount_cents ?? 0,
-  }))
 
   const latestNumbersText = Array.from(
     new Set(latestPosted.map(p => p.predicted_number))
@@ -65,6 +62,14 @@ export default async function DashboardPage() {
       )
     )
   ).join(" - ")
+
+  // === NUEVO: Resumen de loterías disponibles hoy ===
+  // Determinar día actual y país por defecto (Colombia)
+  const today = new Date()
+  const days = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]
+  const todayName = days[today.getDay()]
+  const defaultCountry = "Colombia"
+  const availableLotteriesToday = getLotteriesForDay(todayName, defaultCountry)
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
@@ -131,8 +136,6 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <PaymentStatusAlert payments={payments} />
-
           {/* ===== LAYOUT ===== */}
           <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
 
@@ -143,6 +146,12 @@ export default async function DashboardPage() {
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
           <div className="space-y-6">
+            {/* Botón y lista de predicciones con filtro de aciertos */}
+            <PredictionListWithFilter
+              initialPredictions={predictions}
+              isPremium={user.is_premium}
+              fetchVerifiedCorrectPredictions={fetchVerifiedCorrectPredictions}
+            />
             {/* Mostrar "Resultados y exactitud" cuando hay estadísticas */}
             <Card className="bg-linear-to-r from-green-50/40 to-cyan-50/40 dark:from-green-900/15 dark:to-cyan-900/15 border-2 border-green-300/40 dark:border-green-500/30 backdrop-blur-sm">
               <CardHeader>

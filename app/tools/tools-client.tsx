@@ -446,7 +446,7 @@ export function ToolsClient({ user }: { user: User }) {
                       Tienes <strong>{limitsInfo?.dailyLimit || 3} usos diarios</strong> en estas herramientas. Ingresa tus números y déjame analizarlos.
                     </p>
                     <Button variant="outline" size="sm" asChild className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900">
-                      <Link href="/pricing">Más herramientas en Premium →</Link>
+                      <Link href="/premium">Más herramientas en Premium →</Link>
                     </Button>
                   </div>
                 </div>
@@ -485,7 +485,7 @@ export function ToolsClient({ user }: { user: User }) {
 
         <TabsContent value="premium" className="space-y-4">
           {!user.is_premium && (
-            <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-500">
+            <Card className="bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-500">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-3" />

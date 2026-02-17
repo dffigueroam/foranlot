@@ -164,7 +164,13 @@ export async function submitMultiplePredictions(
   // 🕐 VALIDACIÓN DE TIEMPO: Verificar al menos una lotería para tiempo
   if (validatedLotteries.length > 0) {
     const firstLottery = validatedLotteries[0]
-    const resolvedDrawTime = drawTime || `${firstLottery.time.toString().padStart(2, "0")}:00`
+    // Usar dayTypeHours o time según la definición de la lotería
+    let lotteryHour = firstLottery.time;
+    if (lotteryHour === undefined && firstLottery.dayTypeHours) {
+      // Tomar la hora laboral por defecto
+      lotteryHour = firstLottery.dayTypeHours.laboral || Object.values(firstLottery.dayTypeHours)[0];
+    }
+    const resolvedDrawTime = drawTime || `${lotteryHour?.toString().padStart(2, "0")}:00`
     
     const timeValidation = canPublishPrediction(
       drawDate,
@@ -283,4 +289,42 @@ export async function applyCombinationAction(combinationId: number) {
   const result = await incrementCombinationUsage(combinationId, user.id)
   
   return result
+}
+
+/**
+ * Obtiene las loterias disponibles para una fecha específica
+ * Filtra por país y verifica que tengan hora configurada para ese tipo de día
+ */
+export async function getAvailableLotteriesForDate(date: string, country: string) {
+  const { getAvailableLotteriesForPosting } = await import("@/lib/lotteries")
+  
+  if (!date || !country) {
+    return { error: "Fecha y país son requeridos", lotteries: [] }
+  }
+
+  // Validar formato de fecha
+  const dateObj = new Date(date + "T00:00:00")
+  if (isNaN(dateObj.getTime())) {
+    return { error: "Formato de fecha inválido (YYYY-MM-DD)", lotteries: [] }
+  }
+
+  const lotteries = getAvailableLotteriesForPosting(date, country)
+  
+  if (lotteries.length === 0) {
+    return { 
+      error: `No hay loterias disponibles para ${country} en esa fecha`,
+      lotteries: [] 
+    }
+  }
+
+  return {
+    success: true,
+    lotteries: lotteries.map(l => ({
+      name: l.name,
+      country: l.country,
+      digits: l.digits,
+      availableHour: l.availableHour,
+      dayType: l.dayType
+    }))
+  }
 }

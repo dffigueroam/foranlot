@@ -1,5 +1,6 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
+import { notifyServiceUsed, notifyNewFollower } from "./notifications"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -163,7 +164,13 @@ export async function createContract(
       }
     }
 
-    // 5. Crear contrato
+    // 5. Obtener info del suscriptor
+    const subscriberInfo = await sql`
+      SELECT username FROM users WHERE id = ${subscriberId}
+    `
+    const subscriberUsername = subscriberInfo[0]?.username || "Usuario anónimo"
+
+    // 6. Crear contrato
     const expiryDate = new Date()
     expiryDate.setDate(expiryDate.getDate() + durationDays)
 
@@ -199,21 +206,33 @@ export async function createContract(
 
     const selectionId = result[0].id
 
-    // 6. Crear notificación de contrato creado
+    // 7. NOTIFICAR AL PREDICTOR que alguien está usando sus servicios
+    await notifyServiceUsed(
+      targetUserId,
+      subscriberUsername,
+      contractDuration === 'weekly' ? 'contrato semanal' : 'contrato mensual',
+      lotteryType
+    )
+
+    // 8. NOTIFICAR AL PREDICTOR que tiene un nuevo follower
+    await notifyNewFollower(
+      targetUserId,
+      subscriberUsername
+    )
+
+    // 9. Crear notificación de contrato creado para el suscriptor
     await sql`
       INSERT INTO notifications (
         user_id,
-        notification_type,
+        type,
         title,
-        message,
-        related_selection_id
+        message
       )
       VALUES (
         ${subscriberId},
-        'contract_created',
+        'contract_recommendations',
         'Contrato activado',
-        ${`Contrato ${contractDuration === 'weekly' ? 'semanal' : 'mensual'} con ${targetUser[0].username} activo hasta ${expiryDate.toLocaleDateString('es-CO')}`},
-        ${selectionId}
+        ${`Contrato ${contractDuration === 'weekly' ? 'semanal' : 'mensual'} con ${targetUser[0].username} activo hasta ${expiryDate.toLocaleDateString('es-CO')}`}
       )
     `
 

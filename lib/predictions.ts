@@ -1,3 +1,21 @@
+/* ======================================================
+   ACERTOS VERIFICADOS (para dashboard)
+====================================================== */
+export async function getVerifiedCorrectPredictionsWithUser() {
+  try {
+    const result = await sql`
+      SELECT p.*, u.username
+      FROM predictions p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.is_verified = TRUE AND p.is_correct = TRUE
+      ORDER BY p.created_at DESC
+    `;
+    return result as Prediction[];
+  } catch (error) {
+    console.error("[predictions] Error getting verified correct predictions:", error);
+    return [];
+  }
+}
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { LOTTERIES } from "./lotteries"

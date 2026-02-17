@@ -80,7 +80,22 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Features con Iconos de Lotería - Section Mejorada */}
+        {/* Filosofía de Meritocracia y Calificación */}
+        <div className="relative py-16 bg-linear-to-b from-transparent via-green-50/40 dark:via-green-900/20 to-transparent">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center mb-10">
+              <h2 className="text-3xl sm:text-4xl font-black mb-4 text-green-900 dark:text-green-200">
+                Solo los mejores pronosticadores se mantienen
+              </h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300 font-medium mb-4">
+                En Lotiq, la comunidad califica y sigue a quienes demuestran resultados consistentes. El sistema de ranking premia la precisión, la recurrencia y la constancia, no los golpes de suerte. Así, la comunidad se beneficia de los verdaderos expertos y se filtran los "chispazos" de casualidad.
+              </p>
+              <p className="text-base text-gray-600 dark:text-gray-400">
+                Si eres bueno, tu historial lo demostrará y ganarás seguidores y recompensas reales. Si no, la comunidad lo notará. Aquí, la meritocracia es real y transparente.
+              </p>
+            </div>
+          </div>
+        </div>
         <div className="relative py-20 bg-linear-to-b from-transparent via-purple-50/30 dark:via-purple-900/20 to-transparent">
           <div className="container mx-auto px-4">
             <div className="text-center mb-14">

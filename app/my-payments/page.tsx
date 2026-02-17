@@ -137,6 +137,7 @@ export default async function MyPaymentsPage() {
           </div>
         )}
       </div>
+      </div>
     </PageWrapper>
   )
 }

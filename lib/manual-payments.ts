@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless"
+import { createNotification } from "./notifications"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -49,6 +50,22 @@ export async function createManualPaymentRequest(data: {
       RETURNING *
     `
     console.log("[v0] Inserción exitosa en BD:", result[0])
+    
+    // ✨ CREAR NOTIFICACIÓN de pago pendiente
+    const planText = data.planType === "monthly" ? "mensual" : "anual"
+    await createNotification(
+      data.userId,
+      "warning",
+      "Pago en Revisión",
+      `Tu solicitud de pago ${planText} está siendo revisada por un administrador. Te notificaremos cuando sea aprobada.`,
+      {
+        paymentRequestId: result[0].id,
+        planType: data.planType,
+        amountCents: amountCents,
+        referenceNumber: data.referenceNumber
+      }
+    )
+    
     return result[0]
   } catch (error) {
     console.error("[v0] Error en createManualPaymentRequest:", error)
@@ -96,7 +113,7 @@ export async function approvePaymentRequest(requestId: number, adminId: number) 
     throw new Error("Esta solicitud ya fue procesada")
   }
 
-  // Iniciar transacción
+  // Iniciar transacción SQL para actualizar pago y créditos
   const result = await sql`
     WITH updated_request AS (
       UPDATE manual_payment_requests
@@ -123,52 +140,63 @@ export async function approvePaymentRequest(requestId: number, adminId: number) 
         ${paymentRequest.credits_to_add},
         'manual_purchase',
         'Compra de créditos por ' || ${paymentRequest.plan_type} || ' - Pago manual',
-        (SELECT available_credits FROM user_credits WHERE user_id = ${paymentRequest.user_id})
-      RETURNING *
-    ),
-    notification AS (
-      INSERT INTO notifications (
-        user_id, notification_type, title, message
-      )
-      VALUES (
-        ${paymentRequest.user_id},
-        'payment_approved',
-        'Pago Aprobado',
-        'Tu pago de ' || ${paymentRequest.credits_to_add} || ' créditos ha sido aprobado y está disponible.'
-      )
+        (SELECT total_credits FROM user_credits WHERE user_id = ${paymentRequest.user_id})
       RETURNING *
     )
     SELECT * FROM updated_request
   `
+
+  // ✨ Crear notificación de aprobación (por separado)
+  await createNotification(
+    paymentRequest.user_id,
+    "success",
+    "Pago Aprobado",
+    `Tu pago de ${paymentRequest.credits_to_add} créditos ha sido aprobado y está disponible. ¡Comienza a seleccionar pronósticos!`,
+    {
+      paymentRequestId: requestId,
+      creditsAdded: paymentRequest.credits_to_add,
+      planType: paymentRequest.plan_type
+    }
+  )
 
   return result[0]
 }
 
 export async function rejectPaymentRequest(requestId: number, adminId: number, reason: string) {
-  const result = await sql`
-    WITH updated_request AS (
-      UPDATE manual_payment_requests
-      SET status = 'rejected',
-          reviewed_by = ${adminId},
-          reviewed_at = CURRENT_TIMESTAMP,
-          rejection_reason = ${reason}
-      WHERE id = ${requestId}
-      RETURNING *
-    ),
-    notification AS (
-      INSERT INTO notifications (
-        user_id, notification_type, title, message
-      )
-      SELECT 
-        user_id,
-        'payment_rejected',
-        'Pago Rechazado',
-        'Tu solicitud de pago ha sido rechazada. Razón: ' || ${reason}
-      FROM updated_request
-      RETURNING *
-    )
-    SELECT * FROM updated_request
+  const request = await sql`
+    SELECT * FROM manual_payment_requests
+    WHERE id = ${requestId}
   `
+
+  if (request.length === 0) {
+    throw new Error("Solicitud no encontrada")
+  }
+
+  const paymentRequest = request[0] as ManualPaymentRequest
+
+  // Actualizar estado del pago
+  const result = await sql`
+    UPDATE manual_payment_requests
+    SET status = 'rejected',
+        reviewed_by = ${adminId},
+        reviewed_at = CURRENT_TIMESTAMP,
+        rejection_reason = ${reason}
+    WHERE id = ${requestId}
+    RETURNING *
+  `
+
+  // ✨ Crear notificación de rechazo
+  await createNotification(
+    paymentRequest.user_id,
+    "error",
+    "Pago Rechazado",
+    `Tu solicitud de pago ha sido rechazada. Razón: ${reason}. Por favor, revisa los detalles y envía una nueva solicitud si es necesario.`,
+    {
+      paymentRequestId: requestId,
+      rejectionReason: reason,
+      planType: paymentRequest.plan_type
+    }
+  )
 
   return result[0]
 }

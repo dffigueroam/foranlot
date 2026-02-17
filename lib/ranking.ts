@@ -1,8 +1,58 @@
-import "server-only"
-import { neon } from "@neondatabase/serverless"
-import { LOTTERIES } from "./lotteries"
+// Ranking por usuario filtrado por lotería
+import { neon } from "@neondatabase/serverless";
+const sql = neon(process.env.DATABASE_URL!);
+export interface LoteriaRankingRow {
+  user_id: number;
+  username: string;
+  score: number;
+  aciertos: number;
+  inversion: number;
+  beneficio: number;
+}
 
-const sql = neon(process.env.DATABASE_URL!)
+/**
+ * Calcula ranking de usuarios para una lotería específica
+ * @param lotteryName Nombre de la lotería
+ * @param country País de la lotería
+ * @param date Fecha (opcional, por defecto hoy)
+ */
+export async function getLoteriaRanking(lotteryName: string, country: string, date?: string): Promise<LoteriaRankingRow[]> {
+  try {
+    // Si no hay fecha, usar hoy
+    const today = date || new Date().toISOString().slice(0, 10);
+    // Obtener todos los pronósticos validados para esa lotería y fecha
+    const rows = await sql`
+      SELECT p.user_id, u.username,
+        COUNT(*) FILTER (WHERE p.is_correct = true) AS aciertos,
+        SUM(p.inversion) AS inversion,
+        SUM(p.beneficio) AS beneficio
+      FROM predictions p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.lottery_name = ${lotteryName}
+        AND p.country = ${country}
+        AND p.draw_date = ${today}
+        AND p.is_validated = true
+      GROUP BY p.user_id, u.username
+      ORDER BY aciertos DESC, beneficio DESC
+    `;
+    // Calcular score usando función existente (simulación: score = aciertos * 10 + beneficio - inversion)
+    const result = (rows as any[]).map((r) => ({
+      user_id: r.user_id,
+      username: r.username,
+      aciertos: Number(r.aciertos) || 0,
+      inversion: Number(r.inversion) || 0,
+      beneficio: Number(r.beneficio) || 0,
+      score: (Number(r.aciertos) || 0) * 10 + (Number(r.beneficio) || 0) - (Number(r.inversion) || 0),
+    }));
+    return result;
+  } catch (e) {
+    console.log("[v0] getLoteriaRanking error", e);
+    return [];
+  }
+}
+import "server-only"
+import { LOTTERIES } from "./lotteries"
+import { notifyRankingChange } from "./notifications"
 
 export interface RankingUser {
   user_id: number
@@ -122,7 +172,18 @@ export async function getRankingWithWaitlist(limit = 50) {
 // Actualizar rankings de todos los usuarios
 export async function updateRankings() {
   try {
-    // Actualizar estadísticas incluyendo total_score
+    // PASO 1: Obtener ranking anterior de todos los usuarios
+    const previousRanks = await sql`
+      SELECT user_id, rank_position
+      FROM user_stats
+      WHERE rank_position IS NOT NULL
+    ` as any[]
+    
+    const previousRankMap = new Map(
+      previousRanks.map(row => [row.user_id, row.rank_position])
+    )
+
+    // PASO 2: Actualizar estadísticas incluyendo total_score
     await sql`
       UPDATE user_stats us
       SET 
@@ -152,7 +213,7 @@ export async function updateRankings() {
         last_updated = CURRENT_TIMESTAMP
     `
 
-    // Actualizar posiciones de ranking (considerando score además de accuracy)
+    // PASO 3: Actualizar posiciones de ranking (considerando score además de accuracy)
     await sql`
       WITH ranked_users AS (
         SELECT 
@@ -171,6 +232,35 @@ export async function updateRankings() {
       FROM ranked_users ru
       WHERE us.user_id = ru.user_id
     `
+
+    // PASO 4: Obtener nuevos rankings y notificar cambios
+    const newRanks = await sql`
+      SELECT 
+        us.user_id,
+        us.rank_position,
+        us.accuracy_percentage
+      FROM user_stats us
+      WHERE us.rank_position IS NOT NULL
+    ` as any[]
+
+    for (const user of newRanks) {
+      const previousRank = previousRankMap.get(user.user_id)
+      const newRank = user.rank_position
+      
+      // Si es la primera vez que aparece en el ranking o si se movió, notificar
+      if (previousRank !== newRank) {
+        try {
+          await notifyRankingChange(
+            user.user_id,
+            newRank,
+            previousRank || null,
+            user.accuracy_percentage
+          )
+        } catch (error) {
+          console.log("[v0] Error notifying ranking change for user", user.user_id, error)
+        }
+      }
+    }
 
     return { success: true }
   } catch (error) {
