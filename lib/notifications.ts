@@ -1,7 +1,6 @@
-import "server-only"
-import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+// ===== SERVER-ONLY FUNCTIONS MOVED TO lib/notifications.server.ts =====
+// (see lib/notifications.server.ts for server-only functions)
 
 /**
  * Tipos de notificaciones del sistema:

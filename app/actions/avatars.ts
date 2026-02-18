@@ -4,9 +4,9 @@ import { getCurrentUser } from "@/lib/auth"
 import {
   setSuggestedAvatar,
   uploadCustomAvatar,
-  getUserAvatar,
   validateAndFixDuplicateAvatars,
 } from "@/lib/avatars"
+import { getUserAvatar } from "@/lib/avatars.server"
 import { revalidatePath } from "next/cache"
 
 /**

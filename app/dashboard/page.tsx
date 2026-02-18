@@ -146,13 +146,7 @@ export default async function DashboardPage() {
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
           <div className="space-y-6">
-            {/* Botón y lista de predicciones con filtro de aciertos */}
-            <PredictionListWithFilter
-              initialPredictions={predictions}
-              isPremium={user.is_premium}
-              fetchVerifiedCorrectPredictions={fetchVerifiedCorrectPredictions}
-            />
-            {/* Mostrar "Resultados y exactitud" cuando hay estadísticas */}
+            {/* Resultados y exactitud */}
             <Card className="bg-linear-to-r from-green-50/40 to-cyan-50/40 dark:from-green-900/15 dark:to-cyan-900/15 border-2 border-green-300/40 dark:border-green-500/30 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="bg-linear-to-r from-green-700 to-cyan-700 dark:from-green-300 dark:to-cyan-300 bg-clip-text text-transparent">Resultados y exactitud</CardTitle>
@@ -162,7 +156,6 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Estadísticas - solo si hay verificados */}
                   {userStats && userStats.total_predictions > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="flex items-center gap-2">
@@ -190,8 +183,6 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Mensaje si no hay pronósticos */}
                   {userStats && userStats.total_predictions === 0 && (
                     <div className="border-t pt-4">
                       <p className="text-sm text-muted-foreground">
@@ -202,8 +193,7 @@ export default async function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Mostrar "Resumen de lo último posteado" siempre que haya posts recientes */}
+            {/* Resumen de lo último posteado (única instancia) */}
             {latestPosted.length > 0 && (
               <Card className="bg-linear-to-br from-green-50/40 to-emerald-50/40 dark:from-green-900/10 dark:to-emerald-900/10 border-l-4 border-l-green-400 dark:border-l-green-500 border border-green-300/30 dark:border-green-500/20 backdrop-blur-sm">
                 <CardHeader>
@@ -234,27 +224,16 @@ export default async function DashboardPage() {
                 </CardContent>
               </Card>
             )}
-
-            <Card className="bg-linear-to-r from-cyan-50/40 to-blue-50/40 dark:from-cyan-900/10 dark:to-blue-900/10 border-t-4 border-t-cyan-400 dark:border-t-cyan-500 border border-cyan-300/30 dark:border-cyan-500/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="bg-linear-to-r from-cyan-700 to-blue-700 dark:from-cyan-300 dark:to-blue-300 bg-clip-text text-transparent">Pronósticos Posteados</CardTitle>
-                <CardDescription>
-                  Ultimos 3 dias de predicciones
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[calc(100vh-1.5rem)]">
-                <div className="h-full">
-                  <PredictionList
-                    predictions={predictions}
-                    isPremium={user.is_premium}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            {/* Filtro de aciertos al final */}
+            <PredictionListWithFilter
+              initialPredictions={predictions}
+              isPremium={user.is_premium}
+              fetchVerifiedCorrectPredictions={fetchVerifiedCorrectPredictions}
+            />
           </div>
-        </div>
+          </div>
         </div>
       </div>
     </PageWrapper>
-  )
+  );
 }

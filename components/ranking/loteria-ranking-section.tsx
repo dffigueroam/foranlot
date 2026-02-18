@@ -42,7 +42,9 @@ export function LoteriaRankingSection({ currentUser, initialRanking, initialCoun
         <div>
           <label className="block text-sm font-medium mb-1">País</label>
           <Select value={country} onValueChange={handleCountryChange}>
-            <SelectTrigger className="w-32" />
+            <SelectTrigger className="w-32">
+              {country}
+            </SelectTrigger>
             <SelectContent>
               {countries.map(c => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -53,7 +55,9 @@ export function LoteriaRankingSection({ currentUser, initialRanking, initialCoun
         <div>
           <label className="block text-sm font-medium mb-1">Lotería</label>
           <Select value={lottery} onValueChange={handleLotteryChange}>
-            <SelectTrigger className="w-48" />
+            <SelectTrigger className="w-48">
+              {lottery}
+            </SelectTrigger>
             <SelectContent>
               {lotteries.map(l => (
                 <SelectItem key={l.name} value={l.name}>{l.name}</SelectItem>

@@ -128,7 +128,7 @@ export function ManualPaymentsPanel() {
           <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
             <div>
               <p className="text-muted-foreground">Monto</p>
-              <p className="font-semibold">${(payment.amount_cents / 100).toFixed(2)}</p>
+              <p className="font-semibold">${payment.amount_cents.toLocaleString("es-CO")}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Créditos</p>

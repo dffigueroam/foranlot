@@ -97,138 +97,134 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-black">
-        <div className="container mx-auto px-4 py-8">
-          
-          {/* Navegación y Título */}
-          <header className="mb-8">
-            <Button variant="ghost" asChild className="mb-4 group">
-              <Link href="/dashboard">
-                <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
-                Volver al Dashboard
-              </Link>
-            </Button>
-
-            <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Panel de Administración
-            </h1>
-            <p className="text-muted-foreground">
-              Gestión de verificación, pagos y sincronización de resultados.
-            </p>
-          </header>
-
-          <Tabs defaultValue="debug" className="space-y-6">
-            <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-              <TabsTrigger value="debug">🔍 Debug</TabsTrigger>
-              <TabsTrigger value="sync">Sincronización</TabsTrigger>
-              <TabsTrigger value="ranking">Ranking</TabsTrigger>
-              <TabsTrigger value="synthetics">Usuarios AI</TabsTrigger>
-              <TabsTrigger value="ml-clustering">🧬 ML Clustering</TabsTrigger>
-              <TabsTrigger value="compensation">Compensación</TabsTrigger>
-              <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
-              <TabsTrigger value="verification">Verificación</TabsTrigger>
-              <TabsTrigger value="results">Resultados</TabsTrigger>
-              <TabsTrigger value="marketing">Marketing</TabsTrigger>
-              <TabsTrigger value="ml-utilities">🧠 ML Utilities</TabsTrigger>
-            </TabsList>
-
-            {/* Tab: Debug - Verificar estructura de tabla */}
-            <TabsContent value="debug" className="outline-hidden">
-              <div className="max-w-4xl space-y-4">
-                <TableStructureChecker />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Sincronización Dropbox */}
-            <TabsContent value="sync" className="outline-hidden">
-              <div className="max-w-4xl space-y-4">
-                <DropboxSyncPanel />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Actualización Manual del Ranking */}
-            <TabsContent value="ranking" className="outline-hidden">
-              <div className="max-w-6xl space-y-4">
-                <RankingUpdatePanel />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Usuarios Sintéticos */}
-            <TabsContent value="synthetics" className="outline-hidden">
-              <div className="max-w-6xl space-y-4">
-                <SyntheticUsersPanel />
-              </div>
-            </TabsContent>
-
-            {/* Tab: ML Clustering para Sintéticos */}
-            <TabsContent value="ml-clustering" className="outline-hidden">
-              <div className="max-w-6xl space-y-4">
-                <MLClusteringSynthetics />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Compensación */}
-            <TabsContent value="compensation" className="outline-hidden">
-              <div className="max-w-4xl space-y-4">
-                <CompensationPanel />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Pagos */}
-            <TabsContent value="payments" className="outline-hidden">
-              <div className="max-w-4xl space-y-4">
-                <div className="bg-card p-6 rounded-xl border shadow-xs">
-                  <h2 className="text-xl font-semibold mb-1">Solicitudes de Pago Manual</h2>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Valida los comprobantes de transferencia subidos por los usuarios.
-                  </p>
-                  <ManualPaymentsPanel />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Tab: Verificación */}
-            <TabsContent value="verification" className="outline-hidden">
-              <div className="max-w-4xl">
-                <VerificationPanel />
-              </div>
-            </TabsContent>
-
-            {/* Tab: Resultados con Suspense */}
-            <TabsContent value="results" className="outline-hidden">
-              <div className="max-w-4xl space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold">Historial de Sorteos</h2>
-                    <p className="text-sm text-muted-foreground">Últimos 20 resultados registrados.</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ResultsVerificationButton />
-                    {/* Botón para ir a la página de subida que creaste anteriormente */}
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href="/admin/results">Subir CSV</Link>
-                    </Button>
+      <div className="container mx-auto px-4 py-8">
+        {/* Navegación y Título */}
+        <header className="mb-8">
+          <Button variant="ghost" asChild className="mb-4 group">
+            <Link href="/dashboard">
+              <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
+              Volver al Dashboard
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Panel de Administración</h1>
+          <p className="text-muted-foreground">Gestión de verificación, pagos y sincronización de resultados.</p>
+        </header>
+        <Tabs defaultValue="clientes" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="clientes">Clientes</TabsTrigger>
+            <TabsTrigger value="ml">Machine Learning</TabsTrigger>
+            <TabsTrigger value="sync">Sincronización</TabsTrigger>
+            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsTrigger value="debug">Debug</TabsTrigger>
+          </TabsList>
+          {/* Clientes */}
+          <TabsContent value="clientes">
+            <Tabs defaultValue="payments">
+              <TabsList>
+                <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
+                <TabsTrigger value="compensation">Compensación</TabsTrigger>
+              </TabsList>
+              <TabsContent value="payments">
+                <div className="max-w-4xl space-y-4">
+                  <div className="bg-card p-6 rounded-xl border shadow-xs">
+                    <h2 className="text-xl font-semibold mb-1">Solicitudes de Pago Manual</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Valida los comprobantes de transferencia subidos por los usuarios.</p>
+                    <ManualPaymentsPanel />
                   </div>
                 </div>
-                <Suspense fallback={<TablePlaceholder />}>
-                  <ResultsList />
-                </Suspense>
-              </div>
-            </TabsContent>
-            <TabsContent value="marketing">
-              <MarketingPanel />
-            </TabsContent>
-
-            {/* Tab: ML Utilities */}
-            <TabsContent value="ml-utilities" className="outline-hidden">
-              <div className="max-w-6xl space-y-4">
-                <Button asChild className="mb-4">
-                  <Link href="/admin/ml-utilities">Ver ML Utilities Completo →</Link>
-                </Button>
-              </div>
-            </TabsContent>
-
-          </Tabs>
-        </div>
+              </TabsContent>
+              <TabsContent value="compensation">
+                <div className="max-w-4xl space-y-4">
+                  <CompensationPanel />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+          {/* Machine Learning */}
+          <TabsContent value="ml">
+            <Tabs defaultValue="ml-clustering">
+              <TabsList>
+                <TabsTrigger value="ml-clustering">ML Clustering</TabsTrigger>
+                <TabsTrigger value="ml-utilities">ML Utilities</TabsTrigger>
+                <TabsTrigger value="synthetics">Usuarios AI</TabsTrigger>
+              </TabsList>
+              <TabsContent value="ml-clustering">
+                <div className="max-w-6xl space-y-4">
+                  <MLClusteringSynthetics />
+                </div>
+              </TabsContent>
+              <TabsContent value="ml-utilities">
+                <div className="max-w-6xl space-y-4">
+                  <Button asChild className="mb-4">
+                    <Link href="/admin/ml-utilities">Ver ML Utilities Completo →</Link>
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="synthetics">
+                <div className="max-w-6xl space-y-4">
+                  <SyntheticUsersPanel />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+          {/* Sincronización */}
+          <TabsContent value="sync">
+            <Tabs defaultValue="dropbox">
+              <TabsList>
+                <TabsTrigger value="dropbox">Sincronización Dropbox</TabsTrigger>
+                <TabsTrigger value="verification">Verificación</TabsTrigger>
+                <TabsTrigger value="results">Resultados</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dropbox">
+                <div className="max-w-4xl space-y-4">
+                  <DropboxSyncPanel />
+                </div>
+              </TabsContent>
+              <TabsContent value="verification">
+                <div className="max-w-4xl">
+                  <VerificationPanel />
+                </div>
+              </TabsContent>
+              <TabsContent value="results">
+                <div className="max-w-4xl space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-semibold">Historial de Sorteos</h2>
+                      <p className="text-sm text-muted-foreground">Últimos 20 resultados registrados.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ResultsVerificationButton />
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href="/admin/results">Subir CSV</Link>
+                      </Button>
+                    </div>
+                  </div>
+                  <Suspense fallback={<TablePlaceholder />}>
+                    <ResultsList />
+                  </Suspense>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+          {/* Marketing */}
+          <TabsContent value="marketing">
+            <MarketingPanel />
+          </TabsContent>
+          {/* Ranking */}
+          <TabsContent value="ranking">
+            <div className="max-w-6xl space-y-4">
+              <RankingUpdatePanel />
+            </div>
+          </TabsContent>
+          {/* Debug */}
+          <TabsContent value="debug">
+            <div className="max-w-4xl space-y-4">
+              <TableStructureChecker />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+    </div>
   )
 }

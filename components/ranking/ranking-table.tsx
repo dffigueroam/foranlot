@@ -130,7 +130,7 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                     </Tooltip>
                   </TooltipProvider>
                 </TableHead>
-                <TableHead className="text-right">Ganancias</TableHead>
+                <TableHead className="text-right">Ganado/Perdido</TableHead>
                 <TableHead className="text-right">Contrato</TableHead>
               </TableRow>
             </TableHeader>
@@ -206,7 +206,19 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                         {user.subscribers_count || 0}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">${(earnings / 100).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      <span
+                        className={
+                          earnings > 0
+                            ? "text-green-600 dark:text-green-400"
+                            : earnings < 0
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-gray-700 dark:text-gray-300"
+                        }
+                      >
+                        ${(earnings / 100).toFixed(2)}
+                      </span>
+                    </TableCell>
                   <TableCell className="text-right">
                       {isCurrentUser ? (
                         <Button size="sm" disabled>

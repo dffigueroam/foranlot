@@ -82,33 +82,10 @@ export function renderAvatar(avatar: UserAvatar | null): string {
   return suggested?.emoji || "👤"
 }
 
-// ===== SERVER-ONLY FUNCTIONS BELOW =====
-
-import "server-only"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
-
-/**
- * Obtener avatar del usuario
- */
-export async function getUserAvatar(userId: number) {
-  try {
-    const result = await sql`
-      SELECT * FROM user_avatars
-      WHERE user_id = ${userId}
-    `
+// ===== SERVER-ONLY FUNCTIONS MOVED TO lib/avatars.server.ts =====
+// (see lib/avatars.server.ts for server-only functions)
     
-    if (result.length > 0) {
-      return result[0] as UserAvatar
-    }
-    
-    return null
-  } catch (error) {
-    console.error("[v0] Error getting user avatar:", error)
-    return null
-  }
-}
+// (all server-only code removed; see lib/avatars.server.ts)
 
 /**
  * Establecer avatar sugerido

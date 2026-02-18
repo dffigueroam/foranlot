@@ -1,3 +1,52 @@
+// Obtener contratos activos con tarifa pactada y predictor
+export interface ActiveContract {
+  id: number;
+  subscriberId: number;
+  predictorId: number;
+  tarifaPactada: number;
+  startDate: string;
+  endDate: string;
+}
+
+/**
+ * Devuelve todos los contratos activos con tarifa pactada y predictor
+ */
+export async function getActiveContractsWithTariff(): Promise<ActiveContract[]> {
+  const result = await sql`
+    SELECT id, subscriber_id, selected_user_id, tarifa_creditos_pactada, start_date, expiry_date
+    FROM user_selections
+    WHERE is_active = true AND tarifa_creditos_pactada IS NOT NULL
+  `;
+  return result.map((row: any) => ({
+    id: row.id,
+    subscriberId: row.subscriber_id,
+    predictorId: row.selected_user_id,
+    tarifaPactada: row.tarifa_creditos_pactada,
+    startDate: row.start_date,
+    endDate: row.expiry_date,
+  }));
+}
+
+/**
+ * Calcula la compensación para cada predictor contratado usando el 20% de la tarifa pactada
+ * Devuelve un array con predictorId, contratos y totalCompensacion
+ */
+export async function calculateContractCompensation(): Promise<Array<{ predictorId: number, contratos: number, totalCompensacion: number }>> {
+  const contracts = await getActiveContractsWithTariff();
+  const percent = 0.20;
+  // Agrupar por predictor
+  const map = new Map<number, { contratos: number, totalCompensacion: number }>();
+  for (const c of contracts) {
+    const comp = Math.round(c.tarifaPactada * percent);
+    if (!map.has(c.predictorId)) {
+      map.set(c.predictorId, { contratos: 1, totalCompensacion: comp });
+    } else {
+      const prev = map.get(c.predictorId)!;
+      map.set(c.predictorId, { contratos: prev.contratos + 1, totalCompensacion: prev.totalCompensacion + comp });
+    }
+  }
+  return Array.from(map.entries()).map(([predictorId, v]) => ({ predictorId, ...v }));
+}
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { ENVIRONMENT_CONFIG } from "@/lib/environment-config"
