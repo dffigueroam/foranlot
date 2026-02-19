@@ -53,27 +53,27 @@ export function Header({ user }: HeaderProps) {
           {/* CENTRO – MENÚ DESKTOP (solo en lg) */}
           {user && (
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-xs xl:text-sm text-muted-foreground flex-1 justify-center px-4" suppressHydrationWarning>
-              <Link href="/dashboard" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href="/dashboard" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 <Home size={16} /> <span className="hidden xl:inline">Postear</span>
               </Link>
 
-              <Link href="/results" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href="/results" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 🎰 <span className="hidden xl:inline">Resultados</span>
               </Link>
 
-              <Link href="/ranking" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href="/ranking" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 <Crown size={16} /> <span>Ranking</span>
               </Link>
 
-              <Link href="/stats" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href="/stats" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 <BarChart2 size={16} /> <span className="hidden xl:inline">Estadísticas</span>
               </Link>
 
-              <Link href={user.is_premium ? "/premium" : "/tools"} className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href={user.is_premium ? "/premium" : "/tools"} className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 <Crown size={16} /> <span className="hidden xl:inline">{user.is_premium ? "Zona Premium" : "Herramientas Gratis"}</span>
               </Link>
 
-              <Link href="/pricing" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5">
+              <Link href="/pricing" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 💎 <span className="hidden xl:inline">Precios</span>
               </Link>
 
@@ -81,6 +81,7 @@ export function Header({ user }: HeaderProps) {
                 <Link
                   href="/admin"
                   className="px-3 py-2 rounded font-medium text-primary hover:bg-primary/10"
+                  target="_blank" rel="noopener noreferrer"
                 >
                   Admin
                 </Link>
@@ -103,6 +104,7 @@ export function Header({ user }: HeaderProps) {
                   href="/dashboard" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   <Home size={18} /> Postear
                 </Link>
@@ -111,6 +113,7 @@ export function Header({ user }: HeaderProps) {
                   href="/results" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   🎰 Resultados
                 </Link>
@@ -119,6 +122,7 @@ export function Header({ user }: HeaderProps) {
                   href="/ranking" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   <Crown size={18} /> Ranking
                 </Link>
@@ -127,6 +131,7 @@ export function Header({ user }: HeaderProps) {
                   href="/stats" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   <BarChart2 size={18} /> Estadísticas
                 </Link>
@@ -135,6 +140,7 @@ export function Header({ user }: HeaderProps) {
                   href={user.is_premium ? "/premium" : "/tools"} 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   <Crown size={18} /> {user.is_premium ? "Zona Premium" : "Herramientas Gratis"}
                 </Link>
@@ -143,6 +149,7 @@ export function Header({ user }: HeaderProps) {
                   href="/pricing" 
                   className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => setMobileMenuOpen(false)}
+                  target="_blank" rel="noopener noreferrer"
                 >
                   💎 Precios
                 </Link>
@@ -154,6 +161,7 @@ export function Header({ user }: HeaderProps) {
                       href="/admin"
                       className="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/10 text-primary font-medium text-sm"
                       onClick={() => setMobileMenuOpen(false)}
+                      target="_blank" rel="noopener noreferrer"
                     >
                       Panel Admin
                     </Link>

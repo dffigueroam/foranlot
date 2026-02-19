@@ -56,7 +56,7 @@ export function ToolsTab({ user }: ToolsTabProps) {
               </li>
             </ul>
             <Button asChild className="w-full">
-              <Link href="/tools">
+                <Link href="/tools" target="_blank" rel="noopener noreferrer">
                 <Wrench className="w-4 h-4 mr-2" />
                 Abrir Herramientas
               </Link>
@@ -90,7 +90,7 @@ export function ToolsTab({ user }: ToolsTabProps) {
               </li>
             </ul>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/tools">
+                <Link href="/tools" target="_blank" rel="noopener noreferrer">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Gestionar Datos
               </Link>

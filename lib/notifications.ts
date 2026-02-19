@@ -1,3 +1,23 @@
+import { neon } from "@neondatabase/serverless"
+const sql = neon(process.env.DATABASE_URL!)
+
+// Filtra usuarios por segmento usando login_count (top 30)
+export async function getUsersBySegment(segment: string, limit: number = 30): Promise<{ id: number }[]> {
+  try {
+    // Todos los segmentos usan login_count descendente
+    const users = await sql`
+      SELECT u.id FROM users u
+      JOIN user_stats s ON u.id = s.user_id
+      WHERE u.is_active = true
+      ORDER BY s.login_count DESC NULLS LAST
+      LIMIT ${limit}
+    `
+    return users as { id: number }[]
+  } catch (error) {
+    console.log("[v0] Error getUsersBySegment:", error)
+    return []
+  }
+}
 
 // ===== SERVER-ONLY FUNCTIONS MOVED TO lib/notifications.server.ts =====
 // (see lib/notifications.server.ts for server-only functions)

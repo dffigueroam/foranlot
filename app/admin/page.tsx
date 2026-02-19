@@ -19,7 +19,9 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MarketingPanel } from "@/components/admin/marketing-panel"
+import { AdminNotificationsPanel } from "@/components/admin/notifications-panel"
 import { MLClusteringSynthetics } from "@/components/admin/ml-clustering-synthetics"
+import AdminDashboardSummary from "@/components/admin/dashboard-summary"
 
 
 /**
@@ -109,6 +111,7 @@ export default async function AdminPage() {
           <h1 className="text-3xl font-bold tracking-tight mb-2">Panel de Administración</h1>
           <p className="text-muted-foreground">Gestión de verificación, pagos y sincronización de resultados.</p>
         </header>
+        <AdminDashboardSummary />
         <Tabs defaultValue="clientes" className="space-y-6">
           <TabsList>
             <TabsTrigger value="clientes">Clientes</TabsTrigger>
@@ -116,8 +119,16 @@ export default async function AdminPage() {
             <TabsTrigger value="sync">Sincronización</TabsTrigger>
             <TabsTrigger value="ranking">Ranking</TabsTrigger>
             <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsTrigger value="notificaciones">Notificaciones</TabsTrigger>
             <TabsTrigger value="debug">Debug</TabsTrigger>
+            <TabsTrigger value="dashtotal">DashTotal</TabsTrigger>
           </TabsList>
+                    {/* DashTotal */}
+                    <TabsContent value="dashtotal">
+                      {/* Sub-sección DashTotal: historial de resultados */}
+                      {/* @ts-expect-error Async Server Component */}
+                      {await import("@/components/admin/dash-total").then(m => <m.default />)}
+                    </TabsContent>
           {/* Clientes */}
           <TabsContent value="clientes">
             <Tabs defaultValue="payments">
@@ -210,6 +221,10 @@ export default async function AdminPage() {
           {/* Marketing */}
           <TabsContent value="marketing">
             <MarketingPanel />
+          </TabsContent>
+          {/* Notificaciones */}
+          <TabsContent value="notificaciones">
+            <AdminNotificationsPanel />
           </TabsContent>
           {/* Ranking */}
           <TabsContent value="ranking">

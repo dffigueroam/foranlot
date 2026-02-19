@@ -168,26 +168,7 @@ export function DataUploadForm({ onUploadSuccess }: { onUploadSuccess?: () => vo
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="data">Datos Manuales</Label>
-            <Textarea
-              id="data"
-              value={data}
-              onChange={(e) => {
-                setData(e.target.value)
-                if (e.target.value) {
-                  parseAndPreviewData(e.target.value)
-                }
-              }}
-              placeholder="123,2024-01-15&#10;456,2024-01-16&#10;789,2024-01-17"
-              rows={6}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              <FileText className="w-3 h-3 inline mr-1" />
-              Formato: numero,fecha (una entrada por línea)
-            </p>
-          </div>
+          {/* Campo manual de números eliminado por preferencia del usuario */}
 
           {showPreview && previewData.length > 0 && (
             <div className="border rounded-lg p-4 bg-muted/50">

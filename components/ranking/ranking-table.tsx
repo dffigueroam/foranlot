@@ -226,7 +226,7 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                         </Button>
                       ) : currentUser?.is_premium ? (
                         <Button size="sm" asChild>
-                          <a href={`/contracts?userId=${user.user_id}`}>
+                          <a href={`/contracts?userId=${user.user_id}`} target="_blank" rel="noopener noreferrer">
                             Contratar
                           </a>
                         </Button>

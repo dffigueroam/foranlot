@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Flame, Snowflake, TrendingUp, Loader2, AlertCircle, CheckCircle2, Plus, X } from "lucide-react"
+import { Flame, Snowflake, TrendingUp, Loader2, AlertCircle, CheckCircle2, Plus, X, Target } from "lucide-react"
 import {
   analyzeHotNumbersAction,
   analyzeColdNumbersAction,
@@ -24,20 +22,28 @@ interface ToolLimits {
   maxUses: number
 }
 
-export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
-  const [lotteryType, setLotteryType] = useState("3_cifras")
-  const [country, setCountry] = useState("COL")
-  const [userNumbers, setUserNumbers] = useState<string[]>([""])
+export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, country, userNumbers, setUserNumbers, selectedLottery }: {
+  isPremium: boolean,
+  showCountryHeader?: boolean,
+  country: string,
+  userNumbers: string[],
+  setUserNumbers: (nums: string[]) => void,
+  selectedLottery: string
+}) {
+  const lotteryType = selectedLottery;
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [limits, setLimits] = useState<ToolLimits | null>(null)
-  const [activeTool, setActiveTool] = useState<"hot" | "cold" | "patterns" | null>(null)
+  const [activeTool, setActiveTool] = useState<"hot" | "cold" | "patterns" | "loteries" | null>(null)
+  const [mounted, setMounted] = useState(false)
 
-  // Cargar límites al montar
+  useEffect(() => setMounted(true), [])
   useEffect(() => {
-    loadLimits()
-  }, [])
+    if (mounted) loadLimits()
+  }, [mounted])
+
+  if (!mounted) return null
 
   async function loadLimits() {
     const response = await getUserDailyLimitsAction()
@@ -47,26 +53,23 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
   }
 
   function addNumberField() {
-    setUserNumbers([...userNumbers, ""])
+    setUserNumbers([...userNumbers, ""]);
   }
 
   function removeNumberField(index: number) {
-    setUserNumbers(userNumbers.filter((_, i) => i !== index))
+    setUserNumbers(userNumbers.filter((_, i) => i !== index));
   }
 
   function updateNumber(index: number, value: string) {
-    const newNumbers = [...userNumbers]
-    newNumbers[index] = value
-    setUserNumbers(newNumbers)
+    const cleanValue = value.replace(/\D/g, "").slice(0, digitCount);
+    const newNumbers = [...userNumbers];
+    newNumbers[index] = cleanValue;
+    setUserNumbers(newNumbers);
   }
 
   function validateNumbers(): string[] {
-    const digitCount = parseInt(lotteryType.split("_")[0])
-    const valid = userNumbers
-      .filter(n => n.trim() !== "")
-      .filter(n => /^\d+$/.test(n) && n.length === digitCount)
-
-    return valid
+    // Solo números llenos y con la longitud exacta
+    return userNumbers.filter(n => n.length === digitCount && /^\d+$/.test(n))
   }
 
   async function runHotNumbersAnalysis() {
@@ -75,21 +78,17 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
       setError("Ingresa al menos un número válido")
       return
     }
-
     setLoading(true)
     setError(null)
     setResult(null)
     setActiveTool("hot")
-
     const response = await analyzeHotNumbersAction(validNumbers, lotteryType, country)
-
     if (response.error) {
       setError(response.error)
     } else if (response.success) {
       setResult(response.result)
       await loadLimits()
     }
-
     setLoading(false)
   }
 
@@ -99,21 +98,17 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
       setError("Ingresa al menos un número válido")
       return
     }
-
     setLoading(true)
     setError(null)
     setResult(null)
     setActiveTool("cold")
-
     const response = await analyzeColdNumbersAction(validNumbers, lotteryType, country)
-
     if (response.error) {
       setError(response.error)
     } else if (response.success) {
       setResult(response.result)
       await loadLimits()
     }
-
     setLoading(false)
   }
 
@@ -123,21 +118,41 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
       setError("Ingresa al menos un número válido")
       return
     }
-
     setLoading(true)
     setError(null)
     setResult(null)
     setActiveTool("patterns")
-
     const response = await analyzeNumberPatternsAction(validNumbers, lotteryType)
-
     if (response.error) {
       setError(response.error)
     } else if (response.success) {
       setResult(response.result)
       await loadLimits()
     }
+    setLoading(false)
+  }
 
+  async function runNumberLoteriesAnalysis() {
+    const validNumbers = validateNumbers()
+    if (validNumbers.length === 0) {
+      setError("Ingresa al menos un número válido")
+      return
+    }
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    setActiveTool("loteries")
+    // Import dinámico para evitar problemas SSR
+    const digitCount = parseInt(lotteryType.split("_")[0])
+    const response = await import("@/app/actions/tool-analyzers").then(mod =>
+      mod.analyzeNumberByLoteriesAction(validNumbers, country, digitCount)
+    )
+    if (response.error) {
+      setError(response.error)
+    } else if (response.success) {
+      setResult(response.result)
+      await loadLimits()
+    }
     setLoading(false)
   }
 
@@ -163,172 +178,163 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
         </Alert>
       )}
 
-      {/* Configuración */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuración del Análisis</CardTitle>
-          <CardDescription>
-            Ingresa tus números para analizarlos con herramientas estadísticas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tipo de lotería</Label>
-              <Select value={lotteryType} onValueChange={setLotteryType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2_cifras">2 Cifras</SelectItem>
-                  <SelectItem value="3_cifras">3 Cifras</SelectItem>
-                  <SelectItem value="4_cifras">4 Cifras</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="space-y-2">
-              <Label>País</Label>
-              <Select value={country} onValueChange={setCountry}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="COL">Colombia</SelectItem>
-                  <SelectItem value="ESP">España</SelectItem>
-                  <SelectItem value="USA">Estados Unidos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Tus números ({digitCount} dígitos cada uno)</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addNumberField}
-                disabled={userNumbers.length >= 10}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Agregar
-              </Button>
-            </div>
-
-            {userNumbers.map((number, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder={`Ej: ${"0".repeat(digitCount)}`}
-                  value={number}
-                  onChange={e => updateNumber(index, e.target.value)}
-                  maxLength={digitCount}
-                  className="font-mono"
-                />
-                {userNumbers.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeNumberField(index)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+      {/* Formulario simple y claro */}
+      <div className="space-y-4">
+              {/* Campo de entrada de números para analizar */}
+              <div>
+                <Label className="block mb-2 text-base font-semibold text-gray-800 dark:text-gray-100">Tus Números para Analizar</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {userNumbers.map((num, idx) => (
+                    <div key={idx} className="flex items-center gap-1">
+                      <Input
+                        type="text"
+                        value={num}
+                        onChange={e => updateNumber(idx, e.target.value)}
+                        maxLength={digitCount}
+                        className="w-20 text-center font-mono text-base"
+                        placeholder={"0".repeat(digitCount)}
+                      />
+                      {userNumbers.length > 1 && (
+                        <Button type="button" size="icon" variant="ghost" onClick={() => removeNumberField(idx)} aria-label="Eliminar número">
+                          <X className="w-4 h-4 text-red-500" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {userNumbers.length < 10 && (
+                    <Button type="button" size="icon" variant="outline" onClick={addNumberField} aria-label="Agregar número">
+                      <Plus className="w-4 h-4 text-green-600" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        {/* El selector de tipo de lotería se controla globalmente, no aquí */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card
+            className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${activeTool === "hot" ? "border-orange-500 bg-orange-50 dark:bg-orange-900/30" : "border-transparent"}`}
+            onClick={runHotNumbersAnalysis}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Flame className="w-5 h-5 text-orange-500" />
+                Números Calientes
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Encuentra números que se repiten en los últimos 15 sorteos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={runHotNumbersAnalysis}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading && activeTool === "hot" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analizando...
+                  </>
+                ) : (
+                  "Analizar"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+          <Card
+            className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${activeTool === "cold" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30" : "border-transparent"}`}
+            onClick={runColdNumbersAnalysis}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Snowflake className="w-5 h-5 text-blue-500" />
+                Números Fríos
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Detecta dígitos que llevan tiempo sin salir en sus posiciones
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={runColdNumbersAnalysis}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading && activeTool === "cold" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analizando...
+                  </>
+                ) : (
+                  "Analizar"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+          <Card
+            className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${activeTool === "patterns" ? "border-green-500 bg-green-50 dark:bg-green-900/30" : "border-transparent"}`}
+            onClick={runPatternAnalysis}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                Análisis de Patrones
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Detecta patrones estadísticos en tus números (secuencias, sumas, etc.)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={runPatternAnalysis}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading && activeTool === "patterns" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analizando...
+                  </>
+                ) : (
+                  "Analizar"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+          <Card
+            className={`hover:shadow-md transition-shadow cursor-pointer border-2 ${activeTool === "loteries" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30" : "border-transparent"}`}
+            onClick={runNumberLoteriesAnalysis}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+                ¿Dónde podría salir?
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Analiza en qué loterías de tu país tu número tiene más probabilidad de salir
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={runNumberLoteriesAnalysis}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading && activeTool === "loteries" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analizando...
+                  </>
+                ) : (
+                  "Analizar"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+	</div>
 
-      {/* Herramientas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={runHotNumbersAnalysis}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Flame className="w-5 h-5 text-orange-500" />
-              Números Calientes
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Encuentra números que se repiten en los últimos 15 sorteos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={runHotNumbersAnalysis}
-              disabled={loading || validateNumbers().length === 0}
-              className="w-full"
-            >
-              {loading && activeTool === "hot" ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analizando...
-                </>
-              ) : (
-                "Analizar"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={runColdNumbersAnalysis}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Snowflake className="w-5 h-5 text-blue-500" />
-              Números Fríos
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Detecta dígitos que llevan tiempo sin salir en sus posiciones
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={runColdNumbersAnalysis}
-              disabled={loading || validateNumbers().length === 0}
-              className="w-full"
-            >
-              {loading && activeTool === "cold" ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analizando...
-                </>
-              ) : (
-                "Analizar"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={runPatternAnalysis}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              Análisis de Patrones
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Detecta patrones estadísticos en tus números (secuencias, sumas, etc.)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={runPatternAnalysis}
-              disabled={loading || validateNumbers().length === 0}
-              className="w-full"
-            >
-              {loading && activeTool === "patterns" ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analizando...
-                </>
-              ) : (
-                "Analizar"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Herramientas duplicadas eliminadas: solo se muestra una sección de analizadores básicos */}
 
       {/* Errores */}
       {error && (
@@ -492,6 +498,41 @@ export function NumberAnalyzerTools({ isPremium }: { isPremium: boolean }) {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {result && activeTool === "loteries" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-500" />
+              Resultados: ¿Dónde podría salir?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(result).map(([number, loterias]: any, idx) => (
+              <div key={idx} className="mb-4">
+                <div className="font-mono font-bold text-lg mb-2">{number}</div>
+                {loterias.length > 0 ? (
+                  <ul className="space-y-1">
+                    {loterias.map((info: any, i: number) => (
+                      <li key={i} className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                        <span className="font-semibold">{info.lottery}</span>: {info.message}
+                        {info.freq !== undefined && (
+                          <span className="ml-2 text-xs text-muted-foreground">Frecuencia: {info.freq}</span>
+                        )}
+                        {info.atraso !== undefined && (
+                          <span className="ml-2 text-xs text-muted-foreground">Atraso: {info.atraso} días</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No se detectaron loterías con alta probabilidad para este número.</p>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

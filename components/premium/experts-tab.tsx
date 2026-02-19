@@ -52,13 +52,13 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button asChild>
-                  <Link href="/ranking">
+                    <Link href="/ranking" target="_blank" rel="noopener noreferrer">
                     <TrendingUp className="w-4 h-4 mr-2" />
                     Ver Ranking de Expertos
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/selections">
+                    <Link href="/selections" target="_blank" rel="noopener noreferrer">
                     <Crown className="w-4 h-4 mr-2" />
                     Gestionar Contratos
                   </Link>
@@ -132,7 +132,7 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
                         {contractUsername}
                       </CardTitle>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/users/${contract.selected_user_id}`}>
+                          <Link href={`/users/${contract.selected_user_id}`} target="_blank" rel="noopener noreferrer">
                           Ver perfil
                         </Link>
                       </Button>
@@ -227,7 +227,7 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
                   </p>
                 </div>
                 <Button asChild>
-                  <Link href="/ranking">
+                    <Link href="/ranking" target="_blank" rel="noopener noreferrer">
                     Explorar Ranking
                   </Link>
                 </Button>

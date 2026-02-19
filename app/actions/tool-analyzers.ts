@@ -1,5 +1,21 @@
 "use server"
-
+import { analyzeNumberByLoteries } from "@/lib/number-lottery-analysis"
+/**
+ * Analiza cada número ingresado y devuelve en qué loterías del país tiene alta probabilidad de salir
+ */
+export async function analyzeNumberByLoteriesAction(userNumbers: string[], country: string, digitCount: number) {
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return { error: "No autenticado" }
+    }
+    const result = await analyzeNumberByLoteries(userNumbers, country, digitCount)
+    return { success: true, result }
+  } catch (error) {
+    console.error("[v0] Error en analyzeNumberByLoteriesAction:", error)
+    return { error: "Error al analizar números por lotería" }
+  }
+}
 import { revalidatePath } from "next/cache"
 import { getCurrentUser } from "@/lib/auth"
 import { neon } from "@neondatabase/serverless"

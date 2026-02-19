@@ -84,7 +84,7 @@ export function ToolCard({ tool, isFreeTool, onUse, userIsPremium, accessInfo, i
                     : `Necesitas ${(accessInfo?.creditsCost ?? 0) - (accessInfo?.userCredits ?? 0)} créditos más`}
               </p>
               {!isLimitReached && (
-                <Link href="/pricing" className="block">
+                <Link href="/pricing" className="block" target="_blank" rel="noopener noreferrer">
                   <Button size="sm" variant="outline" className="w-full">
                     {needsPremium ? "Ir a Premium" : "Comprar Créditos"}
                   </Button>

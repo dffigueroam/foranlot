@@ -12,6 +12,7 @@ import { ToolCard } from "@/components/tools/tool-card"
 import { ToolResultDisplay } from "@/components/tools/tool-result-display"
 import { DataUploadForm } from "@/components/tools/data-upload-form"
 import { NumberAnalyzerTools } from "@/components/tools/number-analyzer-tools"
+import { PremiumNeighborsTool } from "@/components/tools/premium-neighbors-tool"
 import {
   getToolsAction,
   getDailyFreeToolAction,
@@ -72,28 +73,31 @@ export function ToolsClient({ user }: { user: User }) {
   const [toolAccessMap, setToolAccessMap] = useState<Record<number, any>>({})
   const [dailyFreeTool, setDailyFreeTool] = useState<any>(null)
   const [selectedLottery, setSelectedLottery] = useState<string>("3_cifras")
+  const [selectedCountry, setSelectedCountry] = useState<string>("COL")
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [uploadedData, setUploadedData] = useState<any[]>([])
   const [targetDate, setTargetDate] = useState<string>("")
   const [limitsInfo, setLimitsInfo] = useState<any>(null)
-  
   // Estado para la lista de números del usuario
   const [userNumbers, setUserNumbers] = useState<string[]>([""])
   const [validationErrors, setValidationErrors] = useState<string[]>([])
-
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   useEffect(() => {
+    if (!mounted) return
     loadTools()
     loadDailyFreeTool()
     loadUploadedData()
     loadToolLimits()
-  }, [])
-
+  }, [mounted])
   // Limpiar números cuando cambia el tipo de lotería
   useEffect(() => {
+    if (!mounted) return
     setUserNumbers([""])
     setValidationErrors([])
-  }, [selectedLottery])
+  }, [selectedLottery, mounted])
+  if (!mounted) return null
 
   async function loadTools() {
     const response = await getToolsAction()
@@ -225,42 +229,23 @@ export function ToolsClient({ user }: { user: User }) {
 
   return (
     <div className="space-y-6">
-      {dailyFreeTool && !dailyFreeTool.is_used && (
-        <Card className="border-green-500 border-2 bg-green-50 dark:bg-green-950">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <Sparkles className="w-8 h-8 text-green-600 shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">Herramienta Gratis del Día</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Hoy puedes usar <strong>{dailyFreeTool.tool_name}</strong> gratis para{" "}
-                  {dailyFreeTool.lottery_type.replace("_", " ")}
-                </p>
-                <Button
-                  onClick={() => {
-                    setSelectedLottery(dailyFreeTool.lottery_type)
-                    handleUseTool(dailyFreeTool.tool_id)
-                  }}
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={loading}
-                >
-                  {loading ? "Ejecutando..." : "Usar Ahora"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Filtro de país ahora dentro de Configuración del Pronóstico */}
+      {/* Anuncio de herramienta gratis eliminado para evitar duplicidad, solo se muestra al final de la página */}
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">Herramientas de Predicción</h1>
+      </div>
+      <div className="mb-4 text-muted-foreground text-sm">
+        Usa herramientas gratuitas básicas para analizar números. Actualiza a premium para acceso ilimitado a análisis avanzados
+      </div>
 
-      {/* Configuración de lotería y fecha */}
+      {/* Input global de números para analizar */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Wrench className="w-5 h-5" />
             <h3 className="font-semibold">Configuración del Pronóstico</h3>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium block mb-2">Tipo de Lotería:</label>
               <Select value={selectedLottery} onValueChange={setSelectedLottery}>
@@ -275,6 +260,19 @@ export function ToolsClient({ user }: { user: User }) {
               </Select>
             </div>
             <div>
+              <label className="text-sm font-medium block mb-2">País:</label>
+              <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="País" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COL">Colombia</SelectItem>
+                  <SelectItem value="ESP">España</SelectItem>
+                  <SelectItem value="USA">Estados Unidos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium block mb-2">Fecha del Resultado (Opcional):</label>
               <input
                 type="date"
@@ -285,8 +283,7 @@ export function ToolsClient({ user }: { user: User }) {
               <p className="text-xs text-muted-foreground mt-1">Dejar vacío = próximo sorteo</p>
             </div>
           </div>
-
-          {/* Ingreso de números del usuario */}
+          {/* Input de números global */}
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -299,7 +296,6 @@ export function ToolsClient({ user }: { user: User }) {
                 {filledCount}/10 números
               </Badge>
             </div>
-
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-3">
               {userNumbers.map((num, index) => (
                 <div key={index} className="relative">
@@ -327,7 +323,6 @@ export function ToolsClient({ user }: { user: User }) {
                   )}
                 </div>
               ))}
-              
               {userNumbers.length < 10 && (
                 <button
                   onClick={addNumberField}
@@ -338,7 +333,6 @@ export function ToolsClient({ user }: { user: User }) {
                 </button>
               )}
             </div>
-
             {/* Errores de validación */}
             {validationErrors.length > 0 && (
               <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-3 mt-3">
@@ -355,7 +349,6 @@ export function ToolsClient({ user }: { user: User }) {
                 </div>
               </div>
             )}
-
             {/* Resumen de validación */}
             {allValid && (
               <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3 mt-3">
@@ -367,7 +360,6 @@ export function ToolsClient({ user }: { user: User }) {
                 </div>
               </div>
             )}
-
             <p className="text-xs text-muted-foreground mt-2">
               Si no ingresas números, el sistema generará pronósticos basados en datos históricos.
             </p>
@@ -435,25 +427,14 @@ export function ToolsClient({ user }: { user: User }) {
         </TabsList>
 
         <TabsContent value="analyzers" className="space-y-4">
-          {!user.is_premium && (
-            <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950 mb-4">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <Target className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Herramientas Básicas Gratuitas</h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                      Tienes <strong>{limitsInfo?.dailyLimit || 3} usos diarios</strong> en estas herramientas. Ingresa tus números y déjame analizarlos.
-                    </p>
-                    <Button variant="outline" size="sm" asChild className="border-blue-600 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900">
-                      <Link href="/premium">Más herramientas en Premium →</Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          <NumberAnalyzerTools isPremium={user.is_premium} />
+          <NumberAnalyzerTools
+            isPremium={user.is_premium}
+            showCountryHeader={false}
+            country={selectedCountry}
+            userNumbers={userNumbers}
+            setUserNumbers={setUserNumbers}
+            selectedLottery={selectedLottery}
+          />
         </TabsContent>
 
         <TabsContent value="free" className="space-y-4">
@@ -499,6 +480,9 @@ export function ToolsClient({ user }: { user: User }) {
                 </div>
               </CardContent>
             </Card>
+          )}
+          {user.is_premium && (
+            <PremiumNeighborsTool country={selectedCountry} />
           )}
           {premiumTools.length > 0 && (
             <div className="grid md:grid-cols-2 gap-4">

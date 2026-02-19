@@ -11,7 +11,7 @@ export function RankingPageClient({ user, official, waitlist, minAccuracy, minSc
     <div className="container mx-auto px-4 py-8 relative z-10">
       <div className="mb-8">
         <Button variant="ghost" asChild className="mb-4">
-          <Link href="/dashboard">
+          <Link href="/dashboard" target="_blank" rel="noopener noreferrer">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al Dashboard
           </Link>
@@ -40,7 +40,7 @@ export function RankingPageClient({ user, official, waitlist, minAccuracy, minSc
           </div>
           {user.is_premium && (
             <Button asChild>
-              <Link href="/selections">
+              <Link href="/selections" target="_blank" rel="noopener noreferrer">
                 <Crown className="w-4 h-4 mr-2" />
                 Mis Selecciones
               </Link>

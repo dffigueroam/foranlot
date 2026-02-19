@@ -1,8 +1,5 @@
-"use client"
-
 "use client";
-"use client";
-// ...existing code...
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,12 +8,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Calculator, DollarSign, Users, TrendingUp } from "lucide-react"
 import { useState } from "react"
+
 // Nueva función API para compensación real por contratos
 async function fetchContractCompensation() {
   const res = await fetch("/api/admin/contract-compensation");
   if (!res.ok) throw new Error("Error al obtener compensación por contrato");
   return res.json();
 }
+
+export default function CompensationPanel() {
 
 
 
@@ -39,6 +39,7 @@ async function fetchContractCompensation() {
     setLoadingContractComp(false);
   }
 
+
   return (
     <Card>
       <CardHeader>
@@ -51,7 +52,6 @@ async function fetchContractCompensation() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-
         <Alert className="border-blue-500/40 bg-blue-50/50 dark:bg-blue-950/20">
           {/* Solo botón para compensación real por contratos */}
           <div className="flex justify-end">
@@ -59,19 +59,17 @@ async function fetchContractCompensation() {
               {loadingContractComp ? "Cargando..." : "Ver compensación real por contratos"}
             </Button>
           </div>
-        {/* ...existing code... */}
+        </Alert>
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
         {message && (
           <Alert>
             <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}
-
         {/* Resultados de compensación real por contratos */}
         {contractComp && (
           <Card className="mt-4">
