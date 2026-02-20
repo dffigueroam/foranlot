@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertCircle, BarChart3, RefreshCw } from "lucide-react"
 import { getRankedPredictionsAction } from "@/app/actions/admin/ml-utilities"
+import React, { useMemo } from "react"
 
-export function MLRankedPredictionsCard() {
+export const MLRankedPredictionsCard = React.memo(function MLRankedPredictionsCard() {
   const [predictions, setPredictions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -54,6 +55,9 @@ export function MLRankedPredictionsCard() {
     }
     return labels[confidence as keyof typeof labels] || "Desconocida"
   }
+
+  // Memo para predictions
+  const memoizedPredictions = useMemo(() => predictions, [predictions])
 
   return (
     <Card>
@@ -105,7 +109,7 @@ export function MLRankedPredictionsCard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {predictions.map((pred, idx) => (
+                {memoizedPredictions.map((pred, idx) => (
                   <TableRow key={idx} className="text-sm">
                     <TableCell>
                       <Badge className={`${getScoreBadgeColor(pred.score)} border`}>
@@ -135,4 +139,4 @@ export function MLRankedPredictionsCard() {
       </CardContent>
     </Card>
   )
-}
+})

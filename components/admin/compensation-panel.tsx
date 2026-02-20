@@ -16,12 +16,7 @@ async function fetchContractCompensation() {
   return res.json();
 }
 
-export default function CompensationPanel() {
-
-
-
-
-
+const CompensationPanel = React.memo(function CompensationPanel() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [contractComp, setContractComp] = useState<any[] | null>(null);
@@ -38,7 +33,6 @@ export default function CompensationPanel() {
     }
     setLoadingContractComp(false);
   }
-
 
   return (
     <Card>
@@ -98,4 +92,6 @@ export default function CompensationPanel() {
       </CardContent>
     </Card>
   );
-}
+})
+
+export default CompensationPanel;

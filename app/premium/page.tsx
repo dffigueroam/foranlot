@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { PageWrapper } from "@/components/layout/page-wrapper"
-import { PremiumClient } from "./premium-client"
+import { PremiumClientWrapper } from "./premium-client-wrapper"
 import { getUserSelections, getSelectedPredictions } from "@/lib/credits"
 
 export default async function PremiumPage() {
@@ -62,7 +62,7 @@ export default async function PremiumPage() {
           </div>
         </div>
 
-        <PremiumClient 
+        <PremiumClientWrapper 
           user={user} 
           activeContracts={activeContracts}
           groupedByDate={groupedByDate}

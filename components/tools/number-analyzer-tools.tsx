@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +22,7 @@ interface ToolLimits {
   maxUses: number
 }
 
-export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, country, userNumbers, setUserNumbers, selectedLottery }: {
+export const NumberAnalyzerTools = React.memo(function NumberAnalyzerTools({ isPremium, showCountryHeader = false, country, userNumbers, setUserNumbers, selectedLottery }: {
   isPremium: boolean,
   showCountryHeader?: boolean,
   country: string,
@@ -157,6 +157,10 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
   }
 
   const digitCount = parseInt(lotteryType.split("_")[0])
+
+  // Memo para resultados y límites
+  const memoizedResult = useMemo(() => result, [result])
+  const memoizedLimits = useMemo(() => limits, [limits])
 
   return (
     <div className="space-y-6">
@@ -345,7 +349,7 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
       )}
 
       {/* Resultados */}
-      {result && activeTool === "hot" && (
+      {memoizedResult && activeTool === "hot" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -357,17 +361,17 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
             <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <AlertDescription className="text-green-800 dark:text-green-200">
-                {result.summary.recommendation}
+                {memoizedResult.summary.recommendation}
               </AlertDescription>
             </Alert>
 
             <div className="text-sm text-muted-foreground">
-              Analizados: {result.summary.totalAnalyzed} sorteos recientes | Coincidencias: {result.summary.totalMatches}
+              Analizados: {memoizedResult.summary.totalAnalyzed} sorteos recientes | Coincidencias: {memoizedResult.summary.totalMatches}
             </div>
 
-            {result.matchedNumbers.length > 0 ? (
+            {memoizedResult.matchedNumbers.length > 0 ? (
               <div className="space-y-2">
-                {result.matchedNumbers.map((match: any, i: number) => (
+                {memoizedResult.matchedNumbers.map((match: any, i: number) => (
                   <div key={i} className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono font-bold text-lg">{match.number}</span>
@@ -403,7 +407,7 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
         </Card>
       )}
 
-      {result && activeTool === "cold" && (
+      {memoizedResult && activeTool === "cold" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -412,13 +416,13 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert className={result.summary.hasVeryOldDigits ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "border-green-500 bg-green-50 dark:bg-green-950/20"}>
-              <AlertDescription>{result.summary.recommendation}</AlertDescription>
+            <Alert className={memoizedResult.summary.hasVeryOldDigits ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "border-green-500 bg-green-50 dark:bg-green-950/20"}>
+              <AlertDescription>{memoizedResult.summary.recommendation}</AlertDescription>
             </Alert>
 
-            {result.analysis.length > 0 ? (
+            {memoizedResult.analysis.length > 0 ? (
               <div className="space-y-3">
-                {result.analysis.map((item: any, i: number) => (
+                {memoizedResult.analysis.map((item: any, i: number) => (
                   <div key={i} className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="font-mono font-bold text-lg mb-3">{item.userNumber}</div>
                     <div className="space-y-2">
@@ -461,7 +465,7 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
         </Card>
       )}
 
-      {result && activeTool === "patterns" && (
+      {memoizedResult && activeTool === "patterns" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -472,12 +476,12 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
           <CardContent className="space-y-4">
             <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
               <AlertDescription className="text-green-800 dark:text-green-200">
-                {result.recommendation}
+                {memoizedResult.recommendation}
               </AlertDescription>
             </Alert>
 
             <div className="space-y-2">
-              {result.patterns.map((pattern: any, i: number) => (
+              {memoizedResult.patterns.map((pattern: any, i: number) => (
                 <div key={i} className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
                   <div className="flex items-start justify-between mb-1">
                     <span className="font-semibold text-sm">{pattern.type}</span>
@@ -502,7 +506,7 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
         </Card>
       )}
 
-      {result && activeTool === "loteries" && (
+      {memoizedResult && activeTool === "loteries" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -511,7 +515,7 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {Object.entries(result).map(([number, loterias]: any, idx) => (
+            {Object.entries(memoizedResult).map(([number, loterias]: any, idx) => (
               <div key={idx} className="mb-4">
                 <div className="font-mono font-bold text-lg mb-2">{number}</div>
                 {loterias.length > 0 ? (
@@ -538,4 +542,4 @@ export function NumberAnalyzerTools({ isPremium, showCountryHeader = false, coun
       )}
     </div>
   )
-}
+})

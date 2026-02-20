@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, Eye, Send, TestTube, Info, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import React from "react"
 
 const EMAIL_TEMPLATES = [
   {
@@ -275,7 +276,7 @@ const EMAIL_TEMPLATES = [
   }
 ]
 
-export function MarketingPanel() {
+export const MarketingPanel = React.memo(function MarketingPanel() {
   const [recipientType, setRecipientType] = useState<string>("manual")
   const [manualEmails, setManualEmails] = useState("")
   const [subject, setSubject] = useState("")
@@ -643,4 +644,4 @@ export function MarketingPanel() {
       </CardContent>
     </Card>
   )
-}
+})

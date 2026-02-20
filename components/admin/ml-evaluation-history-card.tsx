@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertCircle, History } from "lucide-react"
 import { getMLEvaluationHistoryAction } from "@/app/actions/admin/ml-utilities"
+import React, { useMemo } from "react"
 
-export function MLEvaluationHistoryCard() {
+export const MLEvaluationHistoryCard = React.memo(function MLEvaluationHistoryCard() {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -35,6 +36,8 @@ export function MLEvaluationHistoryCard() {
     if (accuracy >= 30) return "bg-orange-100 text-orange-800"
     return "bg-red-100 text-red-800"
   }
+
+  const memoizedHistory = useMemo(() => history, [history])
 
   return (
     <Card>
@@ -74,7 +77,7 @@ export function MLEvaluationHistoryCard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.map((eval_item, idx) => (
+                {memoizedHistory.map((eval_item, idx) => (
                   <TableRow key={idx} className="text-sm">
                     <TableCell className="font-mono text-xs">
                       {new Date(eval_item.evaluation_date).toLocaleDateString("es-CO", {
@@ -108,4 +111,4 @@ export function MLEvaluationHistoryCard() {
       </CardContent>
     </Card>
   )
-}
+})

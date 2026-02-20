@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ interface ClusterAnalysis {
   stats?: any
 }
 
-export function MLClusteringSynthetics() {
+export const MLClusteringSynthetics = React.memo(function MLClusteringSynthetics() {
   const [analysis, setAnalysis] = useState<ClusterAnalysis | null>(null)
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -58,6 +58,9 @@ export function MLClusteringSynthetics() {
       setGenerating(false)
     }
   }
+
+  // Memo para análisis
+  const memoizedAnalysis = useMemo(() => analysis, [analysis])
 
   return (
     <div className="space-y-6">
@@ -296,4 +299,4 @@ export function MLClusteringSynthetics() {
       )}
     </div>
   )
-}
+})

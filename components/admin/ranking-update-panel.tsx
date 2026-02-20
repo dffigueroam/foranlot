@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { updateRankingManually, getRankingUpdateStats } from "@/app/actions/admin/ranking"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, AlertCircle, TrendingUp, Users, Clock, AlertTriangle } from "lucide-react"
 
-export function RankingUpdatePanel() {
+const RankingUpdatePanel = React.memo(function RankingUpdatePanel() {
   const [loading, setLoading] = useState(false)
   const [statsLoading, setStatsLoading] = useState(true)
   const [result, setResult] = useState<any>(null)
@@ -19,6 +19,9 @@ export function RankingUpdatePanel() {
   useEffect(() => {
     loadStats()
   }, [])
+
+  // Memo para stats
+  const statsMemo = useMemo(() => stats, [stats])
 
   async function loadStats() {
     setStatsLoading(true)
@@ -109,6 +112,16 @@ export function RankingUpdatePanel() {
           </div>
         )}
 
+        {/* Skeletons para estadísticas */}
+        {statsLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        )}
+
         {/* Alertas de resultado */}
         {error && (
           <Alert variant="destructive">
@@ -189,4 +202,6 @@ export function RankingUpdatePanel() {
       </CardContent>
     </Card>
   )
-}
+})
+
+export default RankingUpdatePanel;

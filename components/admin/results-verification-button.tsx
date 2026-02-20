@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
-export function ResultsVerificationButton() {
+export const ResultsVerificationButton = React.memo(function ResultsVerificationButton() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -55,4 +55,4 @@ export function ResultsVerificationButton() {
       )}
     </div>
   )
-}
+})

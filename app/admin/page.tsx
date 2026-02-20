@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { Suspense, lazy } from "react"
 
 // Importaciones de lógica y componentes
 import { getCurrentUser } from "@/lib/auth"
@@ -23,6 +24,18 @@ import { AdminNotificationsPanel } from "@/components/admin/notifications-panel"
 import { MLClusteringSynthetics } from "@/components/admin/ml-clustering-synthetics"
 import AdminDashboardSummary from "@/components/admin/dashboard-summary"
 
+// Suspense y lazy loading para paneles secundarios
+const VerificationPanel = lazy(() => import("@/components/admin/verification-panel"))
+const ManualPaymentsPanel = lazy(() => import("@/components/admin/manual-payments-panel"))
+const DropboxSyncPanel = lazy(() => import("@/components/admin/dropbox-sync-panel"))
+const CompensationPanel = lazy(() => import("@/components/admin/compensation-panel"))
+const SyntheticUsersPanel = lazy(() => import("@/components/admin/synthetic-users-panel"))
+const RankingUpdatePanel = lazy(() => import("@/components/admin/ranking-update-panel"))
+const TableStructureChecker = lazy(() => import("@/components/admin/table-structure-checker"))
+const MarketingPanel = lazy(() => import("@/components/admin/marketing-panel"))
+const AdminNotificationsPanel = lazy(() => import("@/components/admin/notifications-panel"))
+const MLClusteringSynthetics = lazy(() => import("@/components/admin/ml-clustering-synthetics"))
+const AdminDashboardSummary = lazy(() => import("@/components/admin/dashboard-summary"))
 
 /**
  * INTERFAZ CORREGIDA
@@ -41,31 +54,29 @@ interface LotteryResult {
   source?: string
 }
 
-async function ResultsList() {
+// Actualización: paginación real
+async function ResultsList({ page = 1, pageSize = 20 }: { page?: number; pageSize?: number }) {
   try {
-    const data = await getLotteryResults(undefined, 20)
-    
-    // Filtrar solo resultados con datos completos de la BD
-    const recentResults = (data as any[]).filter(res => 
+    const offset = (page - 1) * pageSize;
+    const data = await getLotteryResults(undefined, pageSize, offset);
+    const recentResults = (data as any[]).filter(res =>
       res.lottery_name && res.lottery_type && res.draw_time
-    ) as LotteryResult[]
-
+    ) as LotteryResult[];
     if (!recentResults || recentResults.length === 0) {
       return (
         <div className="text-center py-10 border border-dashed rounded-lg">
           <p className="text-sm text-muted-foreground">No hay resultados recientes para mostrar.</p>
         </div>
-      )
+      );
     }
-
-    return <ResultsTable results={recentResults} />
+    return <ResultsTable results={recentResults} page={page} pageSize={pageSize} />;
   } catch (error) {
-    console.error("Error fetching lottery results:", error)
+    console.error("Error fetching lottery results:", error);
     return (
       <div className="p-4 border border-destructive/20 bg-destructive/10 text-destructive rounded-md text-sm">
         No se pudieron cargar los resultados.
       </div>
-    )
+    );
   }
 }
 
@@ -123,12 +134,12 @@ export default async function AdminPage() {
             <TabsTrigger value="debug">Debug</TabsTrigger>
             <TabsTrigger value="dashtotal">DashTotal</TabsTrigger>
           </TabsList>
-                    {/* DashTotal */}
-                    <TabsContent value="dashtotal">
-                      {/* Sub-sección DashTotal: historial de resultados */}
-                      {/* @ts-expect-error Async Server Component */}
-                      {await import("@/components/admin/dash-total").then(m => <m.default />)}
-                    </TabsContent>
+          {/* DashTotal */}
+          <TabsContent value="dashtotal">
+            {/* Sub-sección DashTotal: historial de resultados */}
+            {/* @ts-expect-error Async Server Component */}
+            {await import("@/components/admin/dash-total").then(m => <m.default />)}
+          </TabsContent>
           {/* Clientes */}
           <TabsContent value="clientes">
             <Tabs defaultValue="payments">
@@ -141,13 +152,17 @@ export default async function AdminPage() {
                   <div className="bg-card p-6 rounded-xl border shadow-xs">
                     <h2 className="text-xl font-semibold mb-1">Solicitudes de Pago Manual</h2>
                     <p className="text-sm text-muted-foreground mb-6">Valida los comprobantes de transferencia subidos por los usuarios.</p>
-                    <ManualPaymentsPanel />
+                    <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                      <ManualPaymentsPanel />
+                    </Suspense>
                   </div>
                 </div>
               </TabsContent>
               <TabsContent value="compensation">
                 <div className="max-w-4xl space-y-4">
-                  <CompensationPanel />
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <CompensationPanel />
+                  </Suspense>
                 </div>
               </TabsContent>
             </Tabs>
@@ -162,7 +177,9 @@ export default async function AdminPage() {
               </TabsList>
               <TabsContent value="ml-clustering">
                 <div className="max-w-6xl space-y-4">
-                  <MLClusteringSynthetics />
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <MLClusteringSynthetics />
+                  </Suspense>
                 </div>
               </TabsContent>
               <TabsContent value="ml-utilities">
@@ -174,7 +191,9 @@ export default async function AdminPage() {
               </TabsContent>
               <TabsContent value="synthetics">
                 <div className="max-w-6xl space-y-4">
-                  <SyntheticUsersPanel />
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <SyntheticUsersPanel />
+                  </Suspense>
                 </div>
               </TabsContent>
             </Tabs>
@@ -189,12 +208,16 @@ export default async function AdminPage() {
               </TabsList>
               <TabsContent value="dropbox">
                 <div className="max-w-4xl space-y-4">
-                  <DropboxSyncPanel />
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <DropboxSyncPanel />
+                  </Suspense>
                 </div>
               </TabsContent>
               <TabsContent value="verification">
                 <div className="max-w-4xl">
-                  <VerificationPanel />
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <VerificationPanel />
+                  </Suspense>
                 </div>
               </TabsContent>
               <TabsContent value="results">
@@ -205,14 +228,16 @@ export default async function AdminPage() {
                       <p className="text-sm text-muted-foreground">Últimos 20 resultados registrados.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <ResultsVerificationButton />
+                      <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                        <ResultsVerificationButton />
+                      </Suspense>
                       <Button size="sm" variant="outline" asChild>
                         <Link href="/admin/results">Subir CSV</Link>
                       </Button>
                     </div>
                   </div>
                   <Suspense fallback={<TablePlaceholder />}>
-                    <ResultsList />
+                    <ResultsList page={1} pageSize={20} />
                   </Suspense>
                 </div>
               </TabsContent>
@@ -220,23 +245,31 @@ export default async function AdminPage() {
           </TabsContent>
           {/* Marketing */}
           <TabsContent value="marketing">
-            <MarketingPanel />
+            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+              <MarketingPanel />
+            </Suspense>
           </TabsContent>
           {/* Notificaciones */}
           <TabsContent value="notificaciones">
-            <AdminNotificationsPanel />
+            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+              <AdminNotificationsPanel />
+            </Suspense>
           </TabsContent>
           {/* Ranking */}
           <TabsContent value="ranking">
-            <div className="max-w-6xl space-y-4">
-              <RankingUpdatePanel />
-            </div>
+            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+              <div className="max-w-6xl space-y-4">
+                <RankingUpdatePanel />
+              </div>
+            </Suspense>
           </TabsContent>
           {/* Debug */}
           <TabsContent value="debug">
-            <div className="max-w-4xl space-y-4">
-              <TableStructureChecker />
-            </div>
+            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+              <div className="max-w-4xl space-y-4">
+                <TableStructureChecker />
+              </div>
+            </Suspense>
           </TabsContent>
         </Tabs>
       </div>

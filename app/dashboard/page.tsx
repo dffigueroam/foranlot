@@ -224,6 +224,24 @@ export default async function DashboardPage() {
                 </CardContent>
               </Card>
             )}
+            {/* Panel de solicitudes de vinculación (solo usuario gratis) */}
+            {!user.is_premium && (
+              <div className="mt-6">
+                {/* Panel de solicitudes de vinculación */}
+                <div className="border rounded bg-yellow-50 dark:bg-yellow-900/10 p-4">
+                  <h3 className="font-bold text-yellow-700 dark:text-yellow-300 mb-2">Solicitudes de vinculación</h3>
+                  {/* Panel funcional */}
+                  {/* Panel funcional */}
+                  {/* Importación dinámica del wrapper server component */}
+                  {/**
+                   * El panel de solicitudes se importa como componente estándar
+                   * y se renderiza directamente (Next.js soporta server components en layouts/pages)
+                   */}
+                  {/* @ts-expect-error Server Component */}
+                  <LinkRequestsPanelWrapper />
+                </div>
+              </div>
+            )}
             {/* Filtro de aciertos al final */}
             <PredictionListWithFilter
               initialPredictions={predictions}

@@ -367,7 +367,7 @@ export async function verifyPendingPredictions() {
 }
 
 // Obtener resultados oficiales guardados
-export async function getLotteryResults(date?: string, limit = 50) {
+export async function getLotteryResults(date?: string, limit = 50, offset = 0) {
   try {
     let results
 
@@ -376,6 +376,7 @@ export async function getLotteryResults(date?: string, limit = 50) {
         SELECT * FROM lottery_results
         WHERE draw_date = ${date}
         ORDER BY lottery_name ASC
+        LIMIT ${limit} OFFSET ${offset}
       `
     } else {
       // Obtener resultados de últimas 24 horas usando subquery
@@ -386,7 +387,7 @@ export async function getLotteryResults(date?: string, limit = 50) {
           FROM lottery_results
         )
         ORDER BY draw_date DESC, lottery_name ASC
-        LIMIT ${limit}
+        LIMIT ${limit} OFFSET ${offset}
       `
     }
 

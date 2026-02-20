@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Check, X, Loader2, FileText, CheckCircle, AlertCircle } from "lucide-react"
+import { useMemo } from "react"
 
 interface PaymentRequest {
   id: number
@@ -25,7 +26,7 @@ interface PaymentRequest {
   created_at: string
 }
 
-export function ManualPaymentsPanel() {
+const ManualPaymentsPanel = React.memo(function ManualPaymentsPanel() {
   const [payments, setPayments] = useState<PaymentRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<number | null>(null)
@@ -45,19 +46,19 @@ export function ManualPaymentsPanel() {
     loadPayments()
   }, [])
 
+  // Memo para pagos filtrados
+  const filteredPayments = useMemo(() => payments.filter(p => p.account_validated === false), [payments])
+
   async function handleApprove(id: number) {
     if (!confirm("¿Confirmar aprobación de este pago?")) return
-
     setProcessingId(id)
     const result = await approvePayment(id)
-
     if (result.success) {
       alert("Pago aprobado exitosamente")
       loadPayments()
     } else {
       alert(result.error || "Error al aprobar")
     }
-
     setProcessingId(null)
   }
 
@@ -84,8 +85,12 @@ export function ManualPaymentsPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <Skeleton className="h-8 w-1/4" />
+        <Skeleton className="h-12 w-full max-w-md" />
+        <Skeleton className="h-12 w-full max-w-md" />
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Skeleton className="h-12 w-full max-w-md" />
       </div>
     )
   }
@@ -102,7 +107,7 @@ export function ManualPaymentsPanel() {
 
   return (
     <div className="space-y-4">
-      {payments.map((payment) => (
+      {filteredPayments.map((payment) => (
         <Card key={payment.id} className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -243,4 +248,6 @@ export function ManualPaymentsPanel() {
       ))}
     </div>
   )
-}
+})
+
+export default ManualPaymentsPanel

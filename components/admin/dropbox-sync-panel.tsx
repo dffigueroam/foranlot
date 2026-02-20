@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CloudDownload, CheckCircle2, FileSpreadsheet, Clock, Database, AlertTriangle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface SyncAudit {
   id: number
@@ -22,7 +23,7 @@ interface SyncStatus {
   lastSyncs: SyncAudit[]
 }
 
-export function DropboxSyncPanel() {
+const DropboxSyncPanel = React.memo(function DropboxSyncPanel() {
   const [status, setStatus] = useState<SyncStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -86,6 +87,9 @@ export function DropboxSyncPanel() {
     fetchStatus()
   }, [])
 
+  // Memo para auditoría
+  const audits = useMemo(() => status?.lastSyncs || [], [status])
+
   if (loading) {
     return (
       <Card>
@@ -96,7 +100,13 @@ export function DropboxSyncPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">Cargando estado...</p>
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <p className="text-muted-foreground text-sm mt-4">Cargando estado...</p>
         </CardContent>
       </Card>
     )
@@ -262,4 +272,6 @@ export function DropboxSyncPanel() {
       </CardContent>
     </Card>
   )
-}
+})
+
+export default DropboxSyncPanel

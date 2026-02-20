@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Lock } from "lucide-react"
 import Link from "next/link"
+import React from "react"
 
 interface ToolCardProps {
   tool: {
@@ -29,7 +30,7 @@ interface ToolCardProps {
   isLimitReached?: boolean
 }
 
-export function ToolCard({ tool, isFreeTool, onUse, userIsPremium, accessInfo, isLimitReached }: ToolCardProps) {
+export const ToolCard = React.memo(function ToolCard({ tool, isFreeTool, onUse, userIsPremium, accessInfo, isLimitReached }: ToolCardProps) {
   const canUse = accessInfo ? accessInfo.canAccess : !tool.is_premium || userIsPremium || isFreeTool
   const isAccessible = canUse && !isLimitReached
   const needsPremium = accessInfo?.requiresPremium && !accessInfo?.userIsPremium
@@ -104,4 +105,4 @@ export function ToolCard({ tool, isFreeTool, onUse, userIsPremium, accessInfo, i
       </CardContent>
     </Card>
   )
-}
+})

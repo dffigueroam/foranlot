@@ -37,7 +37,7 @@ interface PendingUpdate {
   current_username: string
 }
 
-export function SyntheticUsersPanel() {
+const SyntheticUsersPanel = React.memo(function SyntheticUsersPanel() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
@@ -51,16 +51,18 @@ export function SyntheticUsersPanel() {
     loadPending()
   }, [])
 
+  // Memo para usuarios y updates
+  const sortedUsers = useMemo(() => users.sort((a, b) => b.accuracy - a.accuracy), [users])
+  const sortedPending = useMemo(() => pendingUpdates.sort((a, b) => b.created_at.localeCompare(a.created_at)), [pendingUpdates])
+
   async function loadUsers() {
     setIsLoading(true)
     const result = await getSyntheticUsersAction()
-    
     if (result.error) {
       setError(result.error)
     } else {
-      setUsers(result.users!)
+      setUsers(result.data || [])
     }
-    
     setIsLoading(false)
   }
 
@@ -69,7 +71,7 @@ export function SyntheticUsersPanel() {
     if (result.error) {
       setError(result.error)
     } else {
-      setPendingUpdates(result.updates || [])
+      setPendingUpdates(result.data || [])
     }
   }
 
@@ -281,8 +283,6 @@ export function SyntheticUsersPanel() {
 
         {/* Lista de usuarios sintéticos */}
         <div>
-          <h3 className="text-sm font-semibold mb-3">Usuarios Generados</h3>
-          
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -307,7 +307,7 @@ export function SyntheticUsersPanel() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => {
+                  {sortedUsers.map((user) => {
                     const userType = getUserType(user)
                     return (
                       <TableRow key={user.id}>
@@ -338,4 +338,18 @@ export function SyntheticUsersPanel() {
       </CardContent>
     </Card>
   )
-}
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-1/4" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    )
+  }
+})
+
+export default SyntheticUsersPanel;

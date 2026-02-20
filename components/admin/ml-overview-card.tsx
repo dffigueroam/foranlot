@@ -9,8 +9,9 @@ import {
   evaluateModelAction,
   getMLStatsAction,
 } from "@/app/actions/admin/ml-utilities"
+import React, { useMemo } from "react"
 
-export function MLOverviewCard() {
+export const MLOverviewCard = React.memo(function MLOverviewCard() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [evaluating, setEvaluating] = useState(false)
@@ -48,6 +49,8 @@ export function MLOverviewCard() {
     }
   }
 
+  const memoizedStats = useMemo(() => stats, [stats])
+
   if (loading) {
     return (
       <Card>
@@ -58,7 +61,7 @@ export function MLOverviewCard() {
     )
   }
 
-  const lastEval = stats?.lastEvaluation
+  const lastEval = memoizedStats?.lastEvaluation
   const accuracy = lastEval?.accuracy_percentage || 0
 
   return (
@@ -129,4 +132,4 @@ export function MLOverviewCard() {
       </CardContent>
     </Card>
   )
-}
+})

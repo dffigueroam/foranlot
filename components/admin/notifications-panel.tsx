@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import React from "react"
 
-export function AdminNotificationsPanel() {
+export const AdminNotificationsPanel = React.memo(function AdminNotificationsPanel() {
   const [segment, setSegment] = useState<string>("frequent")
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
@@ -97,4 +98,4 @@ export function AdminNotificationsPanel() {
       </CardContent>
     </Card>
   )
-}
+})

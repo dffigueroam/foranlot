@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Wrench, Sparkles, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
+
 interface ToolsTabProps {
   user: {
     id: number
@@ -17,6 +18,8 @@ interface ToolsTabProps {
 export function ToolsTab({ user }: ToolsTabProps) {
   return (
     <div className="space-y-6">
+
+
       <Card className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border-blue-200 dark:border-blue-500/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
