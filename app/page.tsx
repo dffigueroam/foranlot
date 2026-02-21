@@ -88,7 +88,7 @@ export default async function HomePage() {
                 Solo los mejores pronosticadores se mantienen
               </h2>
               <p className="text-lg text-gray-700 dark:text-gray-300 font-medium mb-4">
-                En Lotiq, la comunidad califica y sigue a quienes demuestran resultados consistentes. El sistema de ranking premia la precisión, la recurrencia y la constancia, no los golpes de suerte. Así, la comunidad se beneficia de los verdaderos expertos y se filtran los "chispazos" de casualidad.
+                En Lot-IQ, la comunidad califica y sigue a quienes demuestran resultados consistentes. El sistema de ranking premia la precisión, la recurrencia y la constancia, no los golpes de suerte. Así, la comunidad se beneficia de los verdaderos expertos y se filtran los "chispazos" de casualidad.
               </p>
               <p className="text-base text-gray-600 dark:text-gray-400">
                 Si eres bueno, tu historial lo demostrará y ganarás seguidores y recompensas reales. Si no, la comunidad lo notará. Aquí, la meritocracia es real y transparente.
@@ -100,7 +100,7 @@ export default async function HomePage() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-14">
               <h2 className="text-4xl sm:text-5xl font-black mb-4 text-gray-900 dark:text-white">
-                Por qué <span className="bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">Lotiq</span> es diferente
+                Por qué <span className="bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">Lot-IQ</span> es diferente
               </h2>
               <p className="text-gray-600 dark:text-gray-300 text-lg">Características diseñadas para maximizar tus ganancias</p>
             </div>
@@ -211,7 +211,7 @@ export default async function HomePage() {
                   🚀 ¿Listo para Cambiar tu Vida?
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
-                  Miles de usuarios ya están ganando dinero con sus predicciones en Lotiq. <span className="font-bold text-green-600 dark:text-green-400">Sin comisiones ocultas</span>, sin promesas falsas. Solo predicciones inteligentes y dinero real.
+                  Miles de usuarios ya están ganando dinero con sus predicciones en Lot-IQ. <span className="font-bold text-green-600 dark:text-green-400">Sin comisiones ocultas</span>, sin promesas falsas. Solo predicciones inteligentes y dinero real.
                 </p>
                 <Button size="lg" className="bg-linear-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-white font-bold px-12 shadow-lg hover:shadow-xl transition-all text-base" asChild>
                   <Link href="/register">

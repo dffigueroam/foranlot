@@ -1,0 +1,5 @@
+-- Agregar campos opcionales al perfil de usuario
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS municipality VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profession VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS estrato VARCHAR(8);
