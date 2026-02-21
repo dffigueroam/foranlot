@@ -4,8 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
   title: {
-    default: "Lotiq - Predicciones de Lotería Inteligentes | Gana Dinero Real",
-    template: "%s | Lotiq",
+    default: "Lot-IQ - Predicciones de Lotería Inteligentes | Gana Dinero Real",
+    template: "%s | Lot-IQ",
   },
   description:
     "Únete a la comunidad de pronósticos de lotería más grande de Colombia. Predice números, sigue expertos, analiza patrones y gana dinero por tus aciertos. Sin comisiones ocultas. 100% transparente.",
@@ -26,9 +26,10 @@ export const metadata: Metadata = {
     "lotería online Colombia"
   ],
   authors: [{ name: "Lotiq Team", url: "https://lotiq.com" }],
-  creator: "Lotiq",
-  publisher: "Lotiq",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com"),
+  authors: [{ name: "Lot-IQ Team", url: "https://lot-iq.com" }],
+  creator: "Lot-IQ",
+  publisher: "Lot-IQ",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"),
   alternates: {
     canonical: "/",
     languages: {
@@ -40,8 +41,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CO",
     url: "/",
-    siteName: "Lotiq",
-    title: "Lotiq - Predicciones de Lotería Inteligentes | Gana Dinero Real",
+    siteName: "Lot-IQ",
+    title: "Lot-IQ - Predicciones de Lotería Inteligentes | Gana Dinero Real",
     description:
       "Comunidad de pronósticos de lotería en Colombia. Predice números, sigue expertos y gana dinero por tus aciertos. Sin comisiones ocultas.",
     images: [
@@ -59,7 +60,7 @@ export const metadata: Metadata = {
     description:
       "Comunidad de pronósticos de lotería en Colombia. Predice, sigue expertos y gana dinero real.",
     images: ["/twitter-image.png"],
-    creator: "@lotiq",
+    creator: "@lot_iq",
   },
   robots: {
     index: true,
@@ -91,10 +92,10 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Lotiq",
+    name: "Lot-IQ",
     description:
       "Plataforma de predicciones de lotería con comunidad de expertos, análisis de patrones y sistema de ganancias transparente",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com",
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
     offers: {
@@ -112,20 +113,20 @@ export default function RootLayout({
     },
     provider: {
       "@type": "Organization",
-      name: "Lotiq",
-      url: process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com",
-      logo: `${process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com"}/logo.png`,
+      name: "Lot-IQ",
+      url: process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com",
+      logo: `${process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"}/logo.png`,
       contactPoint: {
         "@type": "ContactPoint",
-        email: "soporte@lotiq.com",
+        email: "soporte@lot-iq.com",
         contactType: "Customer Service",
         availableLanguage: ["Spanish", "es"],
         areaServed: "CO",
       },
       sameAs: [
-        "https://www.facebook.com/lotiq",
-        "https://twitter.com/lotiq",
-        "https://www.instagram.com/lotiq",
+        "https://www.facebook.com/lot-iq",
+        "https://twitter.com/lot_iq",
+        "https://www.instagram.com/lot_iq",
       ],
     },
     featureList: [
@@ -135,7 +136,7 @@ export default function RootLayout({
       "Sistema de recompensas transparente",
       "Seguimiento de expertos",
     ],
-    screenshot: `${process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com"}/screenshot.png`,
+    screenshot: `${process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"}/screenshot.png`,
   }
 
   return (

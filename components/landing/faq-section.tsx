@@ -10,12 +10,12 @@ import { Card } from "@/components/ui/card"
 
 const FAQS = [
   {
-    question: "¿Cómo funciona Lotiq?",
+    question: "¿Cómo funciona Lot-IQ?",
     answer:
       "Puedes predecir números de loterías, compartir tus predicciones con la comunidad y ganar dinero cuando tus predicciones son acertadas. También puedes seguir a otros pronosticadores y contratar sus predicciones si eres miembro premium.",
   },
   {
-    question: "¿Cómo puedo ganar dinero en Lotiq?",
+    question: "¿Cómo puedo ganar dinero en Lot-IQ?",
     answer:
       "Ganas dinero de dos formas: 1) Teniendo predicciones acertadas: recibes compensación basada en tu aporte económico, recurrencia y consistencia. 2) Siendo seguido: otros usuarios pagan por seguir tus predicciones.",
   },
@@ -67,7 +67,7 @@ const FAQS = [
   {
     question: "¿Puedo contactar al soporte?",
     answer:
-      "Claro, usa el formulario en la sección Contacto o envía un email a soporte@lotiq.com. Responderemos en máximo 24 horas.",
+      "Claro, usa el formulario en la sección Contacto o envía un email a soporte@lot-iq.com. Responderemos en máximo 24 horas.",
   },
 ]
 
@@ -85,7 +85,7 @@ export function FAQSection() {
               Preguntas Frecuentes
             </h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg">
-              Todo lo que necesitas saber sobre Lotiq en un solo lugar
+              Todo lo que necesitas saber sobre Lot-IQ en un solo lugar
             </p>
           </div>
 
@@ -128,7 +128,7 @@ export function FAQSection() {
               ¿No encontraste lo que buscabas?
             </p>
             <a
-              href="mailto:soporte@lotiq.com"
+              href="mailto:soporte@lot-iq.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg transition-all hover:shadow-lg"
             >
               <span>📧</span>

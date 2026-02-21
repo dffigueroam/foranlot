@@ -89,6 +89,18 @@ export async function registerUser(
   try {
     const passwordHash = await bcrypt.hash(password, 10)
 
+    // Generar username automático si no se provee
+    let assignedUsername = username
+    if (!assignedUsername || assignedUsername.trim() === "") {
+      // Formato: user + 6 dígitos aleatorios
+      assignedUsername = `user${Math.floor(100000 + Math.random() * 900000)}`
+    }
+    // Verificar que no exista
+    let tries = 0
+    while (!(await checkUsernameAvailability(assignedUsername)) && tries < 5) {
+      assignedUsername = `user${Math.floor(100000 + Math.random() * 900000)}`
+      tries++
+    }
     const result = await sql`
       INSERT INTO users (
         email, 
@@ -105,7 +117,7 @@ export async function registerUser(
       VALUES (
         ${email}, 
         ${passwordHash}, 
-        ${username},
+        ${assignedUsername},
         ${profile?.fullName || null},
         ${profile?.phone || null},
         ${profile?.city || null},

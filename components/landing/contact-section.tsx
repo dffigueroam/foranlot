@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 export function ContactSection() {
-  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "soporte@lotiq.com"
+  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "soporte@lot-iq.com"
 
   return (
     <section className="py-24 bg-linear-to-b from-white via-green-50/30 dark:from-gray-950 dark:via-green-900/10 to-white dark:to-gray-950">

@@ -1,4 +1,37 @@
+
 "use server"
+import { neon } from "@neondatabase/serverless"
+import bcrypt from "bcryptjs"
+
+const sql = neon(process.env.DATABASE_URL!)
+
+export async function reactivateAccount(email: string, password: string, message: string) {
+  try {
+    const users = await sql`SELECT id, password_hash, user_status, username FROM users WHERE email = ${email}`
+    if (users.length === 0) return { error: "Correo no encontrado" }
+    const user = users[0]
+    const valid = await bcrypt.compare(password, user.password_hash)
+    if (!valid) return { error: "Contraseña incorrecta" }
+    if (user.user_status !== "inactive") return { error: "La cuenta ya está activa" }
+    await sql`
+      UPDATE users SET user_status = 'active' WHERE id = ${user.id}
+    `
+    // Notificar a todos los admins
+    const admins = await sql`SELECT id FROM users WHERE role = 'admin'`
+    const { createNotification } = await import("@/lib/notifications")
+    for (const admin of admins) {
+      await createNotification(
+        admin.id,
+        "info",
+        "Cuenta reactivada",
+        `El usuario ${user.username} (${email}) reactivó su cuenta. Mensaje: ${message}`
+      )
+    }
+    return { success: true }
+  } catch (e) {
+    return { error: "Error al reactivar la cuenta" }
+  }
+}
 
 import { registerUser, loginUser, logoutUser, checkUsernameAvailability } from "@/lib/auth"
 import { sanitizeInput, logSuspiciousActivity, checkRateLimit } from "@/lib/security"

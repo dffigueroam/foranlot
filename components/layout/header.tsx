@@ -47,7 +47,7 @@ export function Header({ user }: HeaderProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-primary to-purple-600 text-white text-xs font-bold">
               L
             </div>
-            <span className="hidden sm:inline text-sm sm:text-base">Lotiq</span>
+            <span className="hidden sm:inline text-sm sm:text-base">Lot-IQ</span>
           </Link>
 
           {/* CENTRO – MENÚ DESKTOP (solo en lg) */}
@@ -72,6 +72,8 @@ export function Header({ user }: HeaderProps) {
               <Link href={user.is_premium ? "/premium" : "/tools"} className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 <Crown size={16} /> <span className="hidden xl:inline">{user.is_premium ? "Zona Premium" : "Herramientas Gratis"}</span>
               </Link>
+
+
 
               <Link href="/pricing" className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
                 💎 <span className="hidden xl:inline">Precios</span>
@@ -192,6 +194,21 @@ export function Header({ user }: HeaderProps) {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel className="text-xs">Mi cuenta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 text-green-700 dark:text-green-200 font-medium">
+                    📝 Editar perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/info/guia-usos" className="flex items-center gap-2 text-blue-700 dark:text-blue-200 font-medium" target="_blank" rel="noopener noreferrer">
+                    📄 Guía y Usos
+                  </Link>
+                </DropdownMenuItem>
+                {user.is_premium ? (
+                  <div className="px-3 py-1 text-xs text-green-700 dark:text-green-300">Cuenta premium: acceso a optimización y herramientas avanzadas.</div>
+                ) : (
+                  <div className="px-3 py-1 text-xs text-yellow-700 dark:text-yellow-300">Cuenta gratis: acceso limitado, revisa recomendaciones y beneficios.</div>
+                )}
                 <DropdownMenuItem asChild>
                   <form
                     action={async () => {

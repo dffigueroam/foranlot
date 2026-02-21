@@ -97,13 +97,13 @@ const EMAIL_TEMPLATES = [
 </div>`
   },
   {
-    name: "Lanzamiento LotIQ",
-    subject: "📊 Nace LotIQ en Colombia - Plataforma Estratégica de Pronósticos",
+    name: "Lanzamiento Lot-IQ",
+    subject: "📊 Nace Lot-IQ en Colombia - Plataforma Estratégica de Pronósticos",
     html: `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Lanzamiento LotIQ</title>
+  <title>Lanzamiento Lot-IQ</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -167,14 +167,14 @@ const EMAIL_TEMPLATES = [
 </head>
 <body>
   <div class="container">
-    <h1>📊 Nace LotIQ en Colombia</h1>
+    <h1>📊 Nace Lot-IQ en Colombia</h1>
     
     <p style="text-align:center;">
       Plataforma estratégica de pronósticos de <strong>chance y lotería</strong>.
     </p>
     
     <div class="highlight" style="text-align:center;">
-      ✅ El registro en LotIQ es completamente gratuito.
+      ✅ El registro en Lot-IQ es completamente gratuito.
     </div>
     
     <h2>¿Se puede enfrentar el azar con estrategia?</h2>
@@ -184,7 +184,7 @@ const EMAIL_TEMPLATES = [
     </p>
     
     <p>
-      LotIQ transforma la improvisación en análisis estructurado. Cuando los números se estudian, se comparan y se observan en el tiempo, las decisiones dejan de ser impulsivas y comienzan a tener fundamento.
+      Lot-IQ transforma la improvisación en análisis estructurado. Cuando los números se estudian, se comparan y se observan en el tiempo, las decisiones dejan de ser impulsivas y comienzan a tener fundamento.
     </p>
     
     <ul>
@@ -197,7 +197,7 @@ const EMAIL_TEMPLATES = [
     <h2>Ranking basado en resultados verificables</h2>
     
     <p>
-      En LotIQ el desempeño se mide. El sistema clasifica a los usuarios según su nivel de aciertos y consistencia.
+      En Lot-IQ el desempeño se mide. El sistema clasifica a los usuarios según su nivel de aciertos y consistencia.
     </p>
     
     <ul>
@@ -213,7 +213,7 @@ const EMAIL_TEMPLATES = [
     <h2>Una comunidad que evoluciona</h2>
     
     <p>
-      LotIQ inicia oficialmente en <strong>Colombia</strong>, consolidando métricas y comunidad antes de expandirse hacia <strong>España y Estados Unidos</strong>.
+      Lot-IQ inicia oficialmente en <strong>Colombia</strong>, consolidando métricas y comunidad antes de expandirse hacia <strong>España y Estados Unidos</strong>.
     </p>
     
     <p>
@@ -230,7 +230,7 @@ const EMAIL_TEMPLATES = [
     </ul>
     
     <div class="btn-container">
-      <a href="{{app_url}}/signup" class="btn">Crear cuenta gratuita en LotIQ</a>
+      <a href="{{app_url}}/signup" class="btn">Crear cuenta gratuita en Lot-IQ</a>
     </div>
     
     <div class="highlight" style="text-align:center;">
@@ -247,7 +247,7 @@ const EMAIL_TEMPLATES = [
     
     <h2>Preguntas Frecuentes</h2>
     
-    <p><strong>¿LotIQ garantiza resultados?</strong></p>
+    <p><strong>¿Lot-IQ garantiza resultados?</strong></p>
     <p>
       No. Ninguna plataforma puede garantizar resultados en juegos de azar. LotIQ ofrece análisis estructurado y seguimiento estratégico para mejorar la calidad de tus decisiones.
     </p>

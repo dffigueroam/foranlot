@@ -12,6 +12,8 @@ import { getLotteriesForDay, LOTTERIES } from "@/lib/lotteries"
 import { PredictionForm } from "@/components/predictions/prediction-form"
 import { PredictionList } from "@/components/predictions/prediction-list"
 
+import LinkRequestsPanelWrapper from "@/components/dashboard/LinkRequestsPanelWrapper"
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
