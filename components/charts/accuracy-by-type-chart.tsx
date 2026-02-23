@@ -18,7 +18,7 @@ export function AccuracyByTypeChart({ data }: AccuracyByTypeChartProps) {
   const chartData = data.map((item) => ({
     ...item,
     accuracy: Number(item.accuracy),
-    name: item.lottery_type === "2_digits" ? "2 Cifras" : item.lottery_type === "3_digits" ? "3 Cifras" : "4 Cifras",
+    name: item.lottery_type.replace("_digits", " Cifras"),
     color: COLORS[item.lottery_type as keyof typeof COLORS],
   }))
 

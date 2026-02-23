@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { updateRankingManually, getRankingUpdateStats } from "@/app/actions/admin/ranking"
 import { Button } from "@/components/ui/button"
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"

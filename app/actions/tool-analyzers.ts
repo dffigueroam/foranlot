@@ -54,8 +54,8 @@ export async function getUserDailyLimitsAction() {
           ${user.id},
           CURRENT_DATE,
           0,
-          3,
-          10
+          20,
+          20
         )
       `
 
@@ -63,10 +63,10 @@ export async function getUserDailyLimitsAction() {
         success: true,
         limits: {
           totalUses: 0,
-          freeRemaining: 3,
-          premiumRemaining: 10,
+          freeRemaining: 20,
+          premiumRemaining: 20,
           isPremium: user.is_premium,
-          maxUses: user.is_premium ? 10 : 3,
+          maxUses: 20,
         },
       }
     }
@@ -79,7 +79,7 @@ export async function getUserDailyLimitsAction() {
         freeRemaining: limits.free_remaining,
         premiumRemaining: limits.premium_remaining,
         isPremium: limits.is_premium,
-        maxUses: limits.is_premium ? 10 : 3,
+        maxUses: 20,
       },
     }
   } catch (error: any) {
@@ -107,8 +107,8 @@ export async function analyzeHotNumbersAction(
     if (!canUse[0].can_use) {
       return {
         error: user.is_premium
-          ? "Has alcanzado tu límite de 10 usos diarios"
-          : "Has alcanzado tu límite de 3 usos diarios. Hazte premium para 10 usos/día",
+          ? "Has alcanzado tu límite de 20 usos diarios"
+          : "Has alcanzado tu límite de 20 usos diarios. Hazte premium para más ventajas",
       }
     }
 
@@ -121,8 +121,8 @@ export async function analyzeHotNumbersAction(
         ${user.id},
         'numeros_calientes',
         ${lotteryType},
-        ${userNumbers.join(", ")},
-        ${`${result.summary.totalMatches} coincidencias de ${result.summary.totalAnalyzed} sorteos`}
+        ${JSON.stringify(userNumbers)},
+        ${JSON.stringify(result.summary)}
       )
     `
 
@@ -154,8 +154,8 @@ export async function analyzeColdNumbersAction(
     if (!canUse[0].can_use) {
       return {
         error: user.is_premium
-          ? "Has alcanzado tu límite de 10 usos diarios"
-          : "Has alcanzado tu límite de 3 usos diarios. Hazte premium para 10 usos/día",
+          ? "Has alcanzado tu límite de 20 usos diarios"
+          : "Has alcanzado tu límite de 20 usos diarios. Hazte premium para más ventajas",
       }
     }
 
@@ -168,8 +168,8 @@ export async function analyzeColdNumbersAction(
         ${user.id},
         'numeros_frios',
         ${lotteryType},
-        ${userNumbers.join(", ")},
-        ${result.summary.hasVeryOldDigits ? "Tiene dígitos muy fríos" : "Sin dígitos muy fríos"}
+        ${JSON.stringify(userNumbers)},
+        ${JSON.stringify(result.summary)}
       )
     `
 
@@ -200,8 +200,8 @@ export async function analyzeNumberPatternsAction(
     if (!canUse[0].can_use) {
       return {
         error: user.is_premium
-          ? "Has alcanzado tu límite de 10 usos diarios"
-          : "Has alcanzado tu límite de 3 usos diarios. Hazte premium para 10 usos/día",
+          ? "Has alcanzado tu límite de 20 usos diarios"
+          : "Has alcanzado tu límite de 20 usos diarios. Hazte premium para más ventajas",
       }
     }
 
@@ -214,8 +214,8 @@ export async function analyzeNumberPatternsAction(
         ${user.id},
         'analisis_patrones',
         ${lotteryType},
-        ${userNumbers.join(", ")},
-        ${`${result.patterns.length} patrones detectados`}
+        ${JSON.stringify(userNumbers)},
+        ${JSON.stringify(result.summary || { patrones: result.patterns?.length || 0 })}
       )
     `
 

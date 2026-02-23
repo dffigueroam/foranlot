@@ -1,3 +1,78 @@
+// Registro especial para LotIQLite: usuario solo con email, sin contraseña, rol user_email
+export async function registerUserEmailLite({
+  email,
+  username,
+  password
+}: {
+  email: string
+  username: string
+  password: string
+}) {
+  try {
+    // Generar username automático si no se provee
+    let assignedUsername = username
+    if (!assignedUsername || assignedUsername.trim() === "") {
+      assignedUsername = `user${Math.floor(100000 + Math.random() * 900000)}`
+    }
+    let tries = 0
+    while (!(await checkUsernameAvailability(assignedUsername)) && tries < 5) {
+      assignedUsername = `user${Math.floor(100000 + Math.random() * 900000)}`
+      tries++
+    }
+    // Hashear la contraseña
+    const password_hash = await bcrypt.hash(password, 10)
+    const result = await sql`
+      INSERT INTO users (
+        email,
+        password_hash,
+        username,
+        role,
+        registration_method,
+        is_synthetic_pending
+      )
+      VALUES (
+        ${email},
+        ${password_hash},
+        ${assignedUsername},
+        'user_email',
+        'email',
+        false
+      )
+      RETURNING id, email, username, is_premium, role, stripe_customer_id, subscription_status
+    `
+    if (result.length === 0) {
+      return { error: "Error al crear usuario" }
+    }
+    const user = result[0] as User
+    await sql`
+      INSERT INTO user_stats (user_id, total_predictions, correct_predictions, accuracy_percentage)
+      VALUES (${user.id}, 0, 0, 0)
+      ON CONFLICT (user_id) DO NOTHING
+    `
+    // Crear sesión JWT
+    const sessionData: SessionData = {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      isPremium: user.is_premium,
+      role: user.role,
+    }
+    const token = await createToken(sessionData)
+    const cookieStore = await cookies()
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+    })
+    return { user }
+  } catch (error: any) {
+    if (error.code === "23505") {
+      return { error: "El email o nombre de usuario ya está registrado" }
+    }
+    return { error: error?.message ? `Error: ${error.message}` : "Error al registrar usuario" }
+  }
+}
 import "server-only"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
@@ -197,7 +272,12 @@ export async function loginUser(email: string, password: string) {
       return { error: "Credenciales inválidas" }
     }
 
+
     const user = result[0] as User & { password_hash: string }
+    // Bloqueo para usuarios con rol user_email
+    if (user.role === "user_email") {
+      return { error: "Este tipo de cuenta no puede iniciar sesión por este método." }
+    }
 
     const isValid = await bcrypt.compare(password, user.password_hash)
     if (!isValid) {

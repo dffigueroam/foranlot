@@ -156,7 +156,6 @@ COMMENT ON COLUMN user_selections.is_synthetic_target IS 'TRUE si el contrato es
 COMMENT ON COLUMN user_selections.auto_renew IS 'TRUE para renovación automática si hay créditos disponibles';
 COMMENT ON COLUMN user_selections.renewal_attempts IS 'Contador de renovaciones automáticas exitosas';
 
--- 7. Actualizar contratos existentes con valores por defecto
 UPDATE user_selections
 SET 
   contract_duration = 'weekly',

@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS daily_tool_limits (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
   total_uses INTEGER DEFAULT 0,
-  free_uses_remaining INTEGER DEFAULT 3,
-  premium_uses_remaining INTEGER DEFAULT 10,
+  free_uses_remaining INTEGER DEFAULT 12,
+  premium_uses_remaining INTEGER DEFAULT 30,
   last_reset TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, usage_date)
 );
@@ -69,7 +69,7 @@ BEGIN
       p_user_id,
       CURRENT_DATE,
       0,
-      3,
+      10,
       10
     )
     RETURNING * INTO v_limits;

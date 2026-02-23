@@ -1,9 +1,11 @@
 "use client"
+import { HeatmapTool } from "@/components/tools/heatmap-tool"
+import { QuedadosTool } from "@/components/tools/quedados-tool"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -69,11 +71,47 @@ function validateNumberList(
 }
 
 export function ToolsClient({ user }: { user: User }) {
+      const [selectedCountry, setSelectedCountry] = useState<string>("COL")
+    // Estado para filtro de lotería
+    const [selectedLottery, setSelectedLottery] = useState<string>("3_cifras")
+    const [lotteryName, setLotteryName] = useState("")
+    const [lotteries, setLotteries] = useState<any[]>([])
+    // ...existing code...
+
+    // Cargar loterías disponibles según selección del usuario
+    useEffect(() => {
+      async function fetchLotteries() {
+        // Mapear código país a nombre en DB
+        const countryMap: Record<string, string> = {
+          COL: "Colombia",
+          ESP: "España",
+          USA: "Estados Unidos"
+        }
+        const dbCountry = countryMap[selectedCountry] || "Colombia"
+        const digitCount = LOTTERY_CONFIG[selectedLottery]?.digits || 3
+        const url = `/api/tools/lotteries-filtered?country=${encodeURIComponent(dbCountry)}&digitCount=${digitCount}`
+        const res = await fetch(url, { method: "GET" })
+        const data = await res.json()
+        console.log("[v0] fetchLotteries", { url, dbCountry, digitCount, data })
+        if (!data.lotteries || data.lotteries.length === 0) {
+          console.warn("[v0] No se recibieron loterías", { url, dbCountry, digitCount, data })
+        } else {
+          console.log("[v0] Loterías recibidas:", data.lotteries.map(l => l.name))
+        }
+        if (data.success && Array.isArray(data.lotteries)) {
+          setLotteries(data.lotteries)
+          if (data.lotteries.length > 0) setLotteryName(data.lotteries[0].name)
+          else setLotteryName("")
+        } else {
+          setLotteries([])
+          setLotteryName("")
+        }
+      }
+      fetchLotteries()
+    }, [selectedCountry, selectedLottery])
   const [tools, setTools] = useState<any[]>([])
   const [toolAccessMap, setToolAccessMap] = useState<Record<number, any>>({})
   const [dailyFreeTool, setDailyFreeTool] = useState<any>(null)
-  const [selectedLottery, setSelectedLottery] = useState<string>("3_cifras")
-  const [selectedCountry, setSelectedCountry] = useState<string>("COL")
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [uploadedData, setUploadedData] = useState<any[]>([])
@@ -438,30 +476,28 @@ export function ToolsClient({ user }: { user: User }) {
         </TabsContent>
 
         <TabsContent value="free" className="space-y-4">
-          {freeTools.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground mb-4">No hay herramientas gratuitas disponibles en este momento.</p>
-                <Button asChild>
-                  <Link href="/pricing">Explorar Plan Premium</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {freeTools.map((tool) => (
-                <ToolCard
-                  key={tool.id}
-                  tool={tool}
-                  isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
-                  onUse={handleUseTool}
-                  userIsPremium={user.is_premium}
-                  accessInfo={toolAccessMap[tool.id]}
-                  isLimitReached={limitsInfo?.remainingUses === 0}
-                />
-              ))}
-            </div>
-          )}
+                    {/* Análisis de Quedados por Posición */}
+                    <QuedadosTool />
+          {/* Card de Herramientas Gratis eliminada, solo visualización directa de Tabla Guía y grid de ToolCard */}
+          {/* Card de Tabla Guía eliminada, solo mapa de calor arriba */}
+          {/* Visualización directa de Tabla Guía */}
+          <div className="mt-8">
+            {/* @ts-expect-error Server Component */}
+            {typeof window === "undefined" && require("@/components/tools/tabla-guia-tool").TablaGuiaTool()}
+          </div>
+          <div className="grid md:grid-cols-2 gap-4 mt-8">
+            {freeTools.filter(tool => tool.name !== "Tabla Guía").map((tool) => (
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                isFreeTool={dailyFreeTool?.tool_id === tool.id && !dailyFreeTool.is_used}
+                onUse={handleUseTool}
+                userIsPremium={user.is_premium}
+                accessInfo={toolAccessMap[tool.id]}
+                isLimitReached={limitsInfo?.remainingUses === 0}
+              />
+            ))}
+          </div>
         </TabsContent>
 
         <TabsContent value="premium" className="space-y-4">

@@ -61,20 +61,23 @@ export async function analyzeHotNumbers(
   try {
     const digitCount = parseInt(lotteryType.split("_")[0])
 
-    // 1. Obtener últimos 15 resultados del país
-    const recentResults = await sql`
+    // 1. Obtener últimos 15 resultados del país usando columna digits_3 o digits_4
+    const digitsCol = digitCount === 3 ? 'digits_3' : digitCount === 4 ? 'digits_4' : null;
+    if (!digitsCol) throw new Error('Solo se soportan 3 o 4 dígitos');
+    const query = `
       SELECT 
-        lr.winning_number,
+        lr.${digitsCol} AS winning_number,
         lr.draw_date,
         l.country
       FROM lottery_results lr
       JOIN lotteries l ON lr.lottery_name = l.name
-      WHERE l.country = ${country}
-        AND lr.lottery_type = ${lotteryType}
+      WHERE l.country = $1
+        AND lr.${digitsCol} IS NOT NULL
         AND lr.draw_date >= CURRENT_DATE - INTERVAL '15 days'
       ORDER BY lr.draw_date DESC
       LIMIT 15
-    `
+    `;
+    const recentResults = await sql.query(query, [country]);
 
     if (recentResults.length === 0) {
       return {
@@ -183,19 +186,22 @@ export async function analyzeColdNumbers(
   try {
     const digitCount = parseInt(lotteryType.split("_")[0])
 
-    // 1. Obtener todos los resultados históricos (últimos 60 días para tener datos)
-    const historicalResults = await sql`
+    // 1. Obtener todos los resultados históricos (últimos 60 días para tener datos) usando digits_3 o digits_4
+    const digitsCol = digitCount === 3 ? 'digits_3' : digitCount === 4 ? 'digits_4' : null;
+    if (!digitsCol) throw new Error('Solo se soportan 3 o 4 dígitos');
+    const query = `
       SELECT 
-        lr.winning_number,
+        lr.${digitsCol} AS winning_number,
         lr.draw_date,
         l.country
       FROM lottery_results lr
       JOIN lotteries l ON lr.lottery_name = l.name
-      WHERE l.country = ${country}
-        AND lr.lottery_type = ${lotteryType}
+      WHERE l.country = $1
+        AND lr.${digitsCol} IS NOT NULL
         AND lr.draw_date >= CURRENT_DATE - INTERVAL '60 days'
       ORDER BY lr.draw_date DESC
-    `
+    `;
+    const historicalResults = await sql.query(query, [country]);
 
     if (historicalResults.length === 0) {
       return {

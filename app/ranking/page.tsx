@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { getRankingWithWaitlist } from "@/lib/ranking"
-import { LOTTERIES } from "@/lib/lotteries"
 import { RankingPageClient } from "@/components/ranking/ranking-page-client"
 import { getGlobalLastRankingUpdate, formatLastUpdate } from "@/lib/ranking-updates"
 import { PageWrapper } from "@/components/layout/page-wrapper"
@@ -20,7 +19,8 @@ export default async function RankingPage() {
 
   // Por defecto Colombia
   const defaultCountry = "Colombia"
-  const defaultLottery = LOTTERIES.find(l => l.country === defaultCountry)?.name || LOTTERIES[0].name
+  // TODO: Reemplazar con consulta a la base de datos para obtener la lotería por defecto
+  const defaultLottery = "" // Debe obtenerse de la DB
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>

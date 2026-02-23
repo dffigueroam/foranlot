@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { LOTTERIES } from "@/lib/lotteries";
+import { useState, useEffect } from "react";
+// import { getLotteriesFromDB } from "@/lib/lotteries"; // No usar en cliente
 import { RankingTable } from "@/components/ranking/ranking-table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
@@ -10,16 +10,26 @@ export function LoteriaRankingSection({ currentUser, initialRanking, initialCoun
   const [lottery, setLottery] = useState(initialLottery);
   const [ranking, setRanking] = useState(initialRanking);
 
-  // Extraer países únicos
-  const countries = Array.from(new Set(LOTTERIES.map(l => l.country)));
-  // Loterías dependientes del país
-  const lotteries = LOTTERIES.filter(l => l.country === country);
+  const [lotteries, setLotteries] = useState([]);
+  const [countries, setCountries] = useState([]);
+
+  // Cargar loterías y países al montar
+  useEffect(() => {
+    async function loadLotteries() {
+      // TODO: Reemplazar con fetch desde API o pasar por props desde el server
+      setLotteries([])
+      setCountries([])
+    }
+    loadLotteries();
+  }, [country]);
 
   // Handler para cambiar país
   const handleCountryChange = async (value) => {
     setCountry(value);
-    const firstLottery = LOTTERIES.find(l => l.country === value)?.name || lotteries[0]?.name;
-    setLottery(firstLottery);
+    // Actualizar loterías del país
+    // TODO: Reemplazar con fetch desde API o pasar por props desde el server
+    setLotteries([]);
+    setLottery("");
     // Fetch ranking
     const res = await fetch("/api/loteria-ranking?country=" + value + "&lottery=" + firstLottery);
     const data = await res.json();

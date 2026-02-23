@@ -31,7 +31,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, RotateCcw, Clock, Star, Trash2, Search, Filter, Calendar } from "lucide-react"
-import { LOTTERIES } from "@/lib/lotteries"
 import { QuickSelectCombinations } from "./quick-select-combinations"
 
 import {
@@ -84,7 +83,8 @@ export function PredictionForm() {
   const formRef = useRef<HTMLFormElement | null>(null)
 
   const digitsNum = parseInt(selectedDigits)
-  const countryOptions = Array.from(new Set(LOTTERIES.map(l => l.country))).sort()
+  // Derivar países de las loterías disponibles (DB)
+  const countryOptions = Array.from(new Set(availableLotteries.map(l => l.country))).sort()
 
   // Cargar combinaciones último al montar
   useEffect(() => {
@@ -143,26 +143,19 @@ export function PredictionForm() {
   const applyLotteryCombination = async (combination: LotteryCombination) => {
     const digitType = parseInt(combination.digit_type.split("_")[0])
     setSelectedDigits(digitType.toString())
-    
-    // Validar que las loterías aún existen
+    // Validar contra loterías disponibles
     const validLotteryKeys: string[] = []
     const invalidLotteries: string[] = []
-    
     for (const name of combination.lottery_names) {
-      const lottery = LOTTERIES.find(l => l.name === name)
+      const lottery = availableLotteries.find(l => l.name === name)
       if (lottery) {
         validLotteryKeys.push(`${name}|${lottery.country}`)
       } else {
         invalidLotteries.push(name)
       }
     }
-    
     setSelectedLotteries(new Set(validLotteryKeys))
-    
-    // Incrementar contador de uso
     await applyCombinationAction(combination.id)
-    
-    // Mostrar advertencia si hay loterías inválidas
     if (invalidLotteries.length > 0) {
       setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
     }
@@ -172,23 +165,17 @@ export function PredictionForm() {
   const handleQuickSelectCombination = (lotteryNames: string[], digitType: string) => {
     const digitNum = parseInt(digitType.split("_")[0])
     setSelectedDigits(digitNum.toString())
-    
-    // Validar que las loterías aún existen
     const validLotteryKeys: string[] = []
     const invalidLotteries: string[] = []
-    
     for (const name of lotteryNames) {
-      const lottery = LOTTERIES.find(l => l.name === name)
+      const lottery = availableLotteries.find(l => l.name === name)
       if (lottery) {
         validLotteryKeys.push(`${name}|${lottery.country}`)
       } else {
         invalidLotteries.push(name)
       }
     }
-    
     setSelectedLotteries(new Set(validLotteryKeys))
-    
-    // Mostrar advertencia si hay loterías inválidas
     if (invalidLotteries.length > 0) {
       setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
     } else {
@@ -234,14 +221,13 @@ export function PredictionForm() {
 
   const drawDayName = getDrawDayName()
 
-const recommendedLotteries = LOTTERIES
+const recommendedLotteries = availableLotteries
   .filter(l => {
-    const matchesDigits = l.digits.includes(digitsNum)
+    const matchesDigits = l.digits && l.digits.includes(digitsNum)
     const matchesCountry = selectedCountry === "all" || l.country === selectedCountry
     const matchesDay = !drawDayName || l.dias === "todos_dias" || l.dias === drawDayName
     const matchesSearch =
       l.name.toLowerCase().includes(lotterySearch.toLowerCase())
-
     return matchesDigits && matchesCountry && matchesDay && matchesSearch
   })
   .sort((a, b) => a.name.localeCompare(b.name, "es"))
@@ -336,10 +322,7 @@ const recommendedLotteries = LOTTERIES
       setLastPublishedPrediction({
         date: drawDate,
         numbers: numbers,
-        lotteries: lotteryNames.map(name => {
-          const lottery = LOTTERIES.find(l => l.name === name)
-          return lottery ? lottery.name : name
-        })
+        lotteries: lotteryNames
       })
       
       formRef.current?.reset()

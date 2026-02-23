@@ -51,7 +51,7 @@ export async function getLoteriaRanking(lotteryName: string, country: string, da
   }
 }
 import "server-only"
-import { LOTTERIES } from "./lotteries"
+// import { getLotteriesFromDB } from "./lotteries" // Usar función si se requiere consultar loterías
 import { notifyRankingChange } from "./notifications"
 
 export interface RankingUser {

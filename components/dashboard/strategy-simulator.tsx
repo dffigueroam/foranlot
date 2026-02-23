@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LOTTERIES } from "@/lib/lotteries"
+// import { LOTTERIES } from "@/lib/lotteries" // No usar en cliente
 import { StrategyBuilder } from "@/components/dashboard/strategy-builder"
 import { Settings, TrendingUp } from "lucide-react"
 

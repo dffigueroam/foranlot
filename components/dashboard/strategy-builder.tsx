@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2, Info } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { LOTTERIES } from "@/lib/lotteries"
+// import { LOTTERIES } from "@/lib/lotteries" // No usar en cliente
 
 interface StrategyRule {
   id: string

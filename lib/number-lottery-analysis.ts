@@ -1,6 +1,6 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
-import { LOTTERIES } from "./lotteries"
+import { getLotteriesFromDB } from "./lotteries"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -9,8 +9,8 @@ const sql = neon(process.env.DATABASE_URL!)
  * Basado en frecuencia y atraso en los últimos 60 sorteos por lotería
  */
 export async function analyzeNumberByLoteries(userNumbers: string[], country: string, digitCount: number) {
-  // Filtrar loterías del país y dígitos
-  const lotteries = LOTTERIES.filter(l => l.country === country && l.digits.includes(digitCount))
+  // Filtrar loterías del país y dígitos desde la base de datos
+  const lotteries = (await getLotteriesFromDB()).filter(l => l.country === country && l.digits.includes(digitCount))
   const results: Record<string, any> = {}
 
   for (const number of userNumbers) {

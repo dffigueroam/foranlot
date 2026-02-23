@@ -119,18 +119,7 @@ export default function SelectedPredictionsList() {
     return <Badge variant="destructive">{label}</Badge>
   }
 
-  const getLotteryTypeLabel = (type: string) => {
-    switch (type) {
-      case "2_digits":
-        return "2 Cifras"
-      case "3_digits":
-        return "3 Cifras"
-      case "4_digits":
-        return "4 Cifras"
-      default:
-        return type
-    }
-  }
+  const getLotteryTypeLabel = (type: string) => `${type.replace("_digits", " Cifras")}`
 
   if (loading) {
     return (

@@ -7,7 +7,7 @@ import { fetchVerifiedCorrectPredictions } from "@/app/actions/dashboard"
 import { PredictionListWithFilter } from "@/components/dashboard/prediction-list-with-filter"
 import { getUserStats } from "@/lib/ranking"
 import { PageWrapper } from "@/components/layout/page-wrapper"
-import { getLotteriesForDay, LOTTERIES } from "@/lib/lotteries"
+
 
 import { PredictionForm } from "@/components/predictions/prediction-form"
 import { PredictionList } from "@/components/predictions/prediction-list"
@@ -67,11 +67,8 @@ export default async function DashboardPage() {
 
   // === NUEVO: Resumen de loterías disponibles hoy ===
   // Determinar día actual y país por defecto (Colombia)
-  const today = new Date()
-  const days = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]
-  const todayName = days[today.getDay()]
-  const defaultCountry = "Colombia"
-  const availableLotteriesToday = getLotteriesForDay(todayName, defaultCountry)
+  // TODO: Reemplazar con versión async que consulta loterías desde la base de datos
+  const availableLotteriesToday = []
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
@@ -141,9 +138,22 @@ export default async function DashboardPage() {
           {/* ===== LAYOUT ===== */}
           <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
 
-          {/* COLUMNA IZQUIERDA - Formulario */}
+          {/* COLUMNA IZQUIERDA - Formulario y solicitudes */}
           <div className="space-y-6">
             <PredictionForm />
+            {/* Panel de solicitudes de vinculación (solo usuario gratis, al final de la columna izquierda) */}
+            {!user.is_premium && (
+              <div className="mt-6">
+                {/* Panel de solicitudes de vinculación */}
+                <div className="border rounded bg-yellow-50 dark:bg-yellow-900/10 p-4">
+                  <h3 className="font-bold text-yellow-700 dark:text-yellow-300 mb-2">Solicitudes de vinculación</h3>
+                  {/* Panel funcional */}
+                  {/* Importación dinámica del wrapper server component */}
+                  {/* @ts-expect-error Server Component */}
+                  <LinkRequestsPanelWrapper />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* COLUMNA DERECHA - Pronósticos Recientes */}
@@ -225,24 +235,6 @@ export default async function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
-            {/* Panel de solicitudes de vinculación (solo usuario gratis) */}
-            {!user.is_premium && (
-              <div className="mt-6">
-                {/* Panel de solicitudes de vinculación */}
-                <div className="border rounded bg-yellow-50 dark:bg-yellow-900/10 p-4">
-                  <h3 className="font-bold text-yellow-700 dark:text-yellow-300 mb-2">Solicitudes de vinculación</h3>
-                  {/* Panel funcional */}
-                  {/* Panel funcional */}
-                  {/* Importación dinámica del wrapper server component */}
-                  {/**
-                   * El panel de solicitudes se importa como componente estándar
-                   * y se renderiza directamente (Next.js soporta server components en layouts/pages)
-                   */}
-                  {/* @ts-expect-error Server Component */}
-                  <LinkRequestsPanelWrapper />
-                </div>
-              </div>
             )}
             {/* Filtro de aciertos al final */}
             <PredictionListWithFilter

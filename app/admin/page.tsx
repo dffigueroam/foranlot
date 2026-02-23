@@ -1,41 +1,25 @@
-import { Suspense } from "react"
-import { redirect } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { Suspense, lazy } from "react"
-
-// Importaciones de lógica y componentes
-import { getCurrentUser } from "@/lib/auth"
-import { getLotteryResults } from "@/lib/verification"
+import CompensationPanel from "@/components/admin/compensation-panel"
+import SyntheticUsersPanel from "@/components/admin/synthetic-users-panel"
+import DropboxSyncPanel from "@/components/admin/dropbox-sync-panel"
+import RankingUpdatePanel from "@/components/admin/ranking-update-panel"
 import { VerificationPanel } from "@/components/admin/verification-panel"
-import { ManualPaymentsPanel } from "@/components/admin/manual-payments-panel"
-import { DropboxSyncPanel } from "@/components/admin/dropbox-sync-panel"
-import { CompensationPanel } from "@/components/admin/compensation-panel"
-import { SyntheticUsersPanel } from "@/components/admin/synthetic-users-panel"
-import { RankingUpdatePanel } from "@/components/admin/ranking-update-panel"
-import { TableStructureChecker } from "@/components/admin/table-structure-checker"
-import { ResultsTable } from "@/components/lottery/results-table"
 import { ResultsVerificationButton } from "@/components/admin/results-verification-button"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
 import { MarketingPanel } from "@/components/admin/marketing-panel"
 import { AdminNotificationsPanel } from "@/components/admin/notifications-panel"
 import { MLClusteringSynthetics } from "@/components/admin/ml-clustering-synthetics"
+import { TableStructureChecker } from "@/components/admin/table-structure-checker"
+import { Suspense } from "react"
+import ManualPaymentsPanel from "@/components/admin/manual-payments-panel"
+import { getLotteryResults } from "@/lib/verification"
+import { ResultsTable } from "@/components/lottery/results-table"
+import { Skeleton } from "@/components/ui/skeleton"
+import { redirect } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import AdminDashboardSummary from "@/components/admin/dashboard-summary"
-
-// Suspense y lazy loading para paneles secundarios
-const VerificationPanel = lazy(() => import("@/components/admin/verification-panel"))
-const ManualPaymentsPanel = lazy(() => import("@/components/admin/manual-payments-panel"))
-const DropboxSyncPanel = lazy(() => import("@/components/admin/dropbox-sync-panel"))
-const CompensationPanel = lazy(() => import("@/components/admin/compensation-panel"))
-const SyntheticUsersPanel = lazy(() => import("@/components/admin/synthetic-users-panel"))
-const RankingUpdatePanel = lazy(() => import("@/components/admin/ranking-update-panel"))
-const TableStructureChecker = lazy(() => import("@/components/admin/table-structure-checker"))
-const MarketingPanel = lazy(() => import("@/components/admin/marketing-panel"))
-const AdminNotificationsPanel = lazy(() => import("@/components/admin/notifications-panel"))
-const MLClusteringSynthetics = lazy(() => import("@/components/admin/ml-clustering-synthetics"))
-const AdminDashboardSummary = lazy(() => import("@/components/admin/dashboard-summary"))
+import AdminTabsPanel, { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
+import { getCurrentUser } from "@/lib/auth"
 
 /**
  * INTERFAZ CORREGIDA
@@ -52,16 +36,18 @@ interface LotteryResult {
   digits_3?: string | null
   digits_2?: string | null
   source?: string
+  verified_at: string
 }
 
 // Actualización: paginación real
+// ...existing code...
 async function ResultsList({ page = 1, pageSize = 20 }: { page?: number; pageSize?: number }) {
   try {
     const offset = (page - 1) * pageSize;
     const data = await getLotteryResults(undefined, pageSize, offset);
-    const recentResults = (data as any[]).filter(res =>
+    const recentResults = (data as LotteryResult[]).filter(res =>
       res.lottery_name && res.lottery_type && res.draw_time
-    ) as LotteryResult[];
+    );
     if (!recentResults || recentResults.length === 0) {
       return (
         <div className="text-center py-10 border border-dashed rounded-lg">
@@ -69,7 +55,7 @@ async function ResultsList({ page = 1, pageSize = 20 }: { page?: number; pageSiz
         </div>
       );
     }
-    return <ResultsTable results={recentResults} page={page} pageSize={pageSize} />;
+    return <ResultsTable results={recentResults} />;
   } catch (error) {
     console.error("Error fetching lottery results:", error);
     return (
@@ -96,16 +82,14 @@ function TablePlaceholder() {
 }
 
 export default async function AdminPage() {
-  const user = await getCurrentUser()
-
+  const user = await getCurrentUser();
   // 1. Protección de ruta: Usuario autenticado
   if (!user) {
-    redirect("/login")
+    return redirect("/login");
   }
-
   // 2. Protección de ruta: Rol de administrador
   if (user.role !== "admin") {
-    redirect("/dashboard")
+    return redirect("/dashboard");
   }
 
   return (
@@ -137,7 +121,7 @@ export default async function AdminPage() {
           {/* DashTotal */}
           <TabsContent value="dashtotal">
             {/* Sub-sección DashTotal: historial de resultados */}
-            {/* @ts-expect-error Async Server Component */}
+            {/* DashTotal: historial de resultados */}
             {await import("@/components/admin/dash-total").then(m => <m.default />)}
           </TabsContent>
           {/* Clientes */}

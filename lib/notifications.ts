@@ -216,11 +216,16 @@ export async function notifyContractRecommendations(
   recommendedNumbers: string[]
 ): Promise<void> {
   try {
+    // Formato personalizado para la notificación premium
+    const today = new Date()
+    const fechaRegistro = today.toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    const numeros = recommendedNumbers.join("\n")
+    const message = `Números recomendados para hoy para ti\n\nFecha de registro: ${fechaRegistro}\n\n${numeros}\n\nLotería: ${lotteryType}`
     await createNotification(
       subscriberId,
       "contract_recommendations",
       `Nuevas recomendaciones de ${targetUsername}`,
-      `${targetUsername} tiene nuevas recomendaciones para ${lotteryType}. Números sugeridos: ${recommendedNumbers.join(", ")}`,
+      message,
       {
         predictorId,
         targetUsername,

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { logoutAction } from "@/app/actions/auth"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { NotificationBell } from "@/components/notifications/notification-bell"
@@ -101,6 +101,7 @@ export function Header({ user }: HeaderProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64">
+              <SheetTitle className="text-lg font-bold px-4 pt-4">Menú principal</SheetTitle>
               <nav className="flex flex-col gap-2 mt-8">
                 <Link 
                   href="/dashboard" 

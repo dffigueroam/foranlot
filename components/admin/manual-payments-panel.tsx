@@ -1,13 +1,14 @@
 "use client"
-
-import { useEffect, useState } from "react"
+import React from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useEffect, useState, useMemo } from "react"
 import { getPendingPayments, approvePayment, rejectPayment } from "@/app/actions/manual-payments"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Check, X, Loader2, FileText, CheckCircle, AlertCircle } from "lucide-react"
-import { useMemo } from "react"
+// ...existing code...
 
 interface PaymentRequest {
   id: number

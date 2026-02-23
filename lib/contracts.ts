@@ -118,7 +118,7 @@ export async function createContract(
   try {
     // 1. Verificar si el usuario objetivo es sintético
     const targetUser = await sql`
-      SELECT id, username, is_synthetic
+      SELECT id, username, is_synthetic_pending
       FROM users
       WHERE id = ${targetUserId}
     `
@@ -127,7 +127,7 @@ export async function createContract(
       return { success: false, error: "Usuario no encontrado" }
     }
 
-    const isSynthetic = targetUser[0].is_synthetic
+    const isSynthetic = targetUser[0].is_synthetic_pending
 
     // 2. Verificar límites
     const limits = await getContractLimits(subscriberId)

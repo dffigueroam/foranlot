@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, TrendingUp, User, Filter } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { LOTTERIES } from "@/lib/lotteries"
+import format from "date-fns/format"
+import es from "date-fns/locale/es"
+// import { LOTTERIES } from "@/lib/lotteries" // No usar en cliente
 
 interface PredictionListProps {
 
@@ -86,8 +86,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
   }
 
 
-  const getLotteryTypeLabel = (type: string) =>
-    type === "2_digits" ? "2 Cifras" : type === "3_digits" ? "3 Cifras" : "4 Cifras";
+  const getLotteryTypeLabel = (type: string) => `${type.replace("_digits", " Cifras")}`
 
   const getLotteryNameLabel = (name: string) =>
     name === "sin_definir" ? "Lotería sin definir" : name;
@@ -193,7 +192,7 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
             </CardContent>
           </Card>
         )}
-        {filteredPredictions.map((prediction, index) => (
+        {filteredPredictions.slice(0, 15).map((prediction, index) => (
           <Card key={prediction.id} className="prediction-item border border-border shadow-sm">
             <CardContent className="prediction-item-content flex flex-col gap-2">
               {/* Aquí puedes renderizar los datos de cada predicción */}
@@ -205,6 +204,11 @@ export function PredictionList({ predictions, isPremium }: PredictionListProps) 
                 <Badge variant="outline" className="text-xs py-0">
                   {getLotteryTypeLabel(prediction.lottery_type)}
                 </Badge>
+                {/* Fecha de juego */}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  <Calendar className="inline w-3 h-3 mr-1 mb-0.5" />
+                  {prediction.draw_date ? format(new Date(prediction.draw_date), "dd/MM/yyyy", { locale: es }) : "Sin fecha"}
+                </span>
               </div>
               <div className="prediction-number font-bold tracking-tight text-xl">
                 {prediction.predicted_number}

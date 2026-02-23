@@ -21,9 +21,7 @@ interface ResultsTableProps {
 }
 
 export function ResultsTable({ results }: ResultsTableProps) {
-  const getLotteryTypeLabel = (type: string) => {
-    return type === "2_digits" ? "2 Cifras" : type === "3_digits" ? "3 Cifras" : "4 Cifras"
-  }
+  const getLotteryTypeLabel = (type: string) => `${type.replace("_digits", " Cifras")}`
 
   if (results.length === 0) {
     return (

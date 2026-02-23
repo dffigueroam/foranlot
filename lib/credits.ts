@@ -166,10 +166,10 @@ export async function createSelection(
 
   if (selectionType === "user" && selectedUserId) {
     const targetUser = await sql`
-      SELECT is_synthetic FROM users WHERE id = ${selectedUserId}
+      SELECT is_synthetic_pending FROM users WHERE id = ${selectedUserId}
     `
 
-    if (targetUser[0]?.is_synthetic) {
+    if (targetUser[0]?.is_synthetic_pending) {
       creditsPerDay = 2
     }
   }

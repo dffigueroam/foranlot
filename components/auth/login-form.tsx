@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export function LoginForm() {
+export function LoginForm({ onGoToPayment, onGoToConfig }: { onGoToPayment?: () => void, onGoToConfig?: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -24,7 +24,11 @@ export function LoginForm() {
     const result = await login(formData)
 
     if (result.error) {
-      setError(result.error)
+      if (result.error.includes("Este tipo de cuenta no puede iniciar sesión")) {
+        setError("lite-special")
+      } else {
+        setError(result.error)
+      }
       setLoading(false)
     } else {
       router.push("/dashboard")
@@ -33,11 +37,37 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+      {error === "lite-special" ? (
+        <Alert variant="warning">
+          <AlertDescription>
+            Este tipo de cuenta solo puede continuar completando el <b>formulario de pago y configuración</b>.<br />
+            <div className="flex flex-col gap-2 mt-2">
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                type="button"
+                onClick={() => {
+                  if (onGoToPayment) onGoToPayment();
+                }}
+              >
+                Ir al formulario de pago
+              </Button>
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                type="button"
+                onClick={() => {
+                  if (onGoToConfig) onGoToConfig();
+                }}
+              >
+                Configurar mis Pronósticos
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : error ? (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>

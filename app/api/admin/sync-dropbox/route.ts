@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
       console.log("[v0] lottery_sync_audit table not found, returning empty syncs")
     }
 
-    const dropboxUrl = "https://www.dropbox.com/scl/fi/txc8lg5lhhiu4wjhf9vt5/UltResultsApp.xlsx?rlkey=4p1xkz3kgv1opuv0xtq449q6b&st=upg2nzb8&dl=0"
+    const dropboxUrl = "https://dl.dropboxusercontent.com/scl/fi/rxddyczf9p760znq2uom2/UltResultsAppCOL.csv?rlkey=31fet8clqohx8pbae9ygy45gc&st=ft1wxmt0&dl=1"
 
     return NextResponse.json({
       configured: true,

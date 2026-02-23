@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useState } from "react"
 import { submitManualPayment } from "@/app/actions/manual-payments"
 import { Button } from "@/components/ui/button"
@@ -23,45 +23,59 @@ interface PaymentMethod {
   image?: string
 }
 
+
 interface ManualPaymentFormProps {
   paymentMethods: PaymentMethod[]
   username?: string
+  onSuccess?: () => void
 }
 
-export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
+
+export function ManualPaymentForm({ paymentMethods, onSuccess }: ManualPaymentFormProps) {
+  // useState hooks primero
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [referenceNumber, setReferenceNumber] = useState("");
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [planType, setPlanType] = useState<PlanType>("monthly")
   const [file, setFile] = useState<File | null>(null)
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id || "")
-  
+
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethodId)
-  
+
   // Obtener datos del plan
   const planData = getPlanData(planType)
 
+  // (Ya no se usa postMessage, la validación se maneja por callback onSuccess)
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    
-    const referenceNumber = (e.currentTarget.elements.namedItem("referenceNumber") as HTMLInputElement)?.value
-    
+
     if (!referenceNumber || referenceNumber.trim() === "") {
       setMessage("Ingresa el número de referencia")
+      // Informar al padre que no es válido
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage('manual-payment:invalid', window.location.origin)
+      }
       return
     }
-    
-    if (!file) {
+
+    if (!receiptFile) {
       setMessage("Debes adjuntar un comprobante")
+      // Informar al padre que no es válido
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage('manual-payment:invalid', window.location.origin)
+      }
       return
     }
-    
+
     setLoading(true)
     setMessage("")
 
     const formData = new FormData()
     formData.append("planType", planType)
     formData.append("referenceNumber", referenceNumber)
-    formData.append("receiptFile", file)
+    formData.append("receiptFile", receiptFile)
     formData.append("paymentMethodId", paymentMethodId)
 
     const result = await submitManualPayment(formData)
@@ -69,7 +83,9 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
     if (result.success) {
       setMessage("✅ Solicitud enviada exitosamente. El administrador la revisará pronto.")
       ;(e.target as HTMLFormElement).reset()
-      setFile(null)
+      setReceiptFile(null)
+      setReferenceNumber("");
+      if (onSuccess) onSuccess();
     } else {
       setMessage(`❌ ${result.error || "Error al enviar solicitud"}`)
     }
@@ -159,7 +175,14 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
         {/* NÚMERO DE REFERENCIA */}
         <div>
           <Label htmlFor="referenceNumber">Número de Referencia (Comprobante) *</Label>
-          <Input id="referenceNumber" name="referenceNumber" placeholder="Ej: 1234567890" required />
+          <Input
+            id="referenceNumber"
+            name="referenceNumber"
+            placeholder="Ej: 1234567890"
+            required
+            value={referenceNumber}
+            onChange={e => setReferenceNumber(e.target.value)}
+          />
         </div>
 
         {/* CARGAR COMPROBANTE */}
@@ -169,8 +192,8 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
             <div className="text-center">
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {file ? (
-                  <span className="text-green-600 dark:text-green-400">✓ {file.name}</span>
+                {receiptFile ? (
+                  <span className="text-green-600 dark:text-green-400">✓ {receiptFile.name}</span>
                 ) : (
                   <span>Haz clic o arrastra tu comprobante aquí</span>
                 )}
@@ -181,7 +204,7 @@ export function ManualPaymentForm({ paymentMethods }: ManualPaymentFormProps) {
               type="file"
               accept="image/*,.pdf"
               className="hidden"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
               required
             />
           </label>

@@ -1,7 +1,7 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { updateRankings } from "./ranking"
-import { LOTTERIES } from "./lotteries"
+// import { getLotteriesFromDB } from "./lotteries" // Usar función si se requiere consultar loterías
 import { 
   notifyOfficialResults, 
   notifyPredictionHit,
@@ -438,9 +438,10 @@ export async function getLastDayResultsByCountry() {
         .replace(/[^a-z0-9]/g, "")
     }
 
-    // Crear mapa de país para cada lotería
+    // Crear mapa de país para cada lotería desde la base de datos
     const lotteryCountryMap = new Map<string, string[]>()
-    LOTTERIES.forEach(lottery => {
+    const lotteries = await (await import("./lotteries")).getLotteriesFromDB();
+    lotteries.forEach(lottery => {
       // Dividir países combinados (ej: "USA y Colombia" -> ["USA", "Colombia"])
       const countries = lottery.country.split(" y ").map(c => c.trim())
       const key = normalizeLotteryName(lottery.name)

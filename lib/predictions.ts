@@ -18,7 +18,6 @@ export async function getVerifiedCorrectPredictionsWithUser() {
 }
 import "server-only"
 import { neon } from "@neondatabase/serverless"
-import { LOTTERIES } from "./lotteries"
 import { saveLotteryCombination } from "./lottery-combinations"
 
 const sql = neon(process.env.DATABASE_URL!)

@@ -37,7 +37,7 @@ export function DailyAccuracyChart({ data }: DailyAccuracyChartProps) {
           <div className="space-y-1 text-sm">
             <p className="text-green-600">Aciertos: {data.correct}</p>
             <p className="text-red-600">Fallos: {data.total - data.correct}</p>
-            <p className="font-semibold">Precisión: {data.accuracy.toFixed(1)}%</p>
+            <p className="font-semibold">Precisión: {typeof data.accuracy === "number" && !isNaN(data.accuracy) ? data.accuracy.toFixed(1) : "0.0"}%</p>
           </div>
         </div>
       )
