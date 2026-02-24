@@ -20,85 +20,9 @@ export default async function ResultsPage() {
     return colorMap[country] || "bg-slate-50 dark:bg-slate-900"
   }
 
-  const getFormattedDateHeader = (dateInput: any): string => {
-    let date: Date
-    
-    // Manejar diferentes tipos de entrada
-    if (dateInput instanceof Date) {
-      date = dateInput
-    } else if (typeof dateInput === 'string') {
-      // Si es string, intentar parsearlo
-      const parsedDate = new Date(dateInput)
-      if (isNaN(parsedDate.getTime())) {
-        // Si falla, intentar agregar T00:00:00
-        date = new Date(dateInput + "T00:00:00")
-      } else {
-        date = parsedDate
-      }
-    } else if (typeof dateInput === 'number') {
-      // Si es número (timestamp), convertir a Date
-      date = new Date(dateInput)
-    } else {
-      // Fallback: retornar string vacío si no se puede procesar
-      return ""
-    }
-
-    // Validar que la fecha es válida
-    if (isNaN(date.getTime())) {
-      return ""
-    }
-
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-
-    // Comparar solo las fechas
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
-
-    let prefix = ""
-    if (dateOnly.getTime() === yesterdayOnly.getTime()) {
-      prefix = "Resultados de ayer "
-    } else if (dateOnly.getTime() === todayOnly.getTime()) {
-      prefix = "Resultados de hoy "
-    } else {
-      prefix = "Resultados del "
-    }
-
-    const dayOfWeek = date.toLocaleDateString("es-CO", { weekday: "long" })
-    const dateFormatted = date.toLocaleDateString("es-CO", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    })
-
-    return prefix + dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1) + " " + dateFormatted
-  }
-
-  const getShortDate = (dateInput: any): string => {
-    if (!dateInput) return ""
-    const date = new Date(dateInput)
-    if (isNaN(date.getTime())) return ""
-    return date.toLocaleDateString("es-CO", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    })
-  }
-
-  const isRecentResult = (dateStr: any): boolean => {
-    if (!dateStr) return false
-    try {
-      const resultDate = new Date(dateStr)
-      const today = new Date()
-      const diffTime = Math.abs(today.getTime() - resultDate.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays === 0
-    } catch {
-      return false
-    }
-  }
+  // La fecha corta y si es reciente ya vienen del backend
+  const getShortDate = (date: string) => date
+  const isRecentResult = (result: any) => result.isRecent
 
   const lastDay = resultsByCountry.length > 0 && resultsByCountry[0]?.lotteries.length > 0 
     ? resultsByCountry[0].lotteries[0]?.draw_date 
@@ -113,94 +37,84 @@ export default async function ResultsPage() {
     <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          
           {/* Header */}
           <div className="mb-8 space-y-4">
-            <Button variant="ghost" asChild className="mb-4 group">
-              <Link href="/dashboard">
-                <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
-                Volver al Dashboard
-              </Link>
-            </Button>
-
-            <div>
-              <h1 className="text-2xl font-bold mb-2">
-                🎰 Resultados de Loterias
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Últimos resultados disponibles por país
-              </p>
-            </div>
+            <Button variant="ghost" asChild className="mb-4 group" />
           </div>
-
-          {/* Contenido */}
-          {resultsByCountry.length === 0 || totalResults === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground text-lg">No hay resultados disponibles en este momento</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {countryColumns.map((country) => {
-                const countryGroup = resultsByCountryMap.get(country)
-                const lotteries = countryGroup?.lotteries || []
-                const flag = countryGroup?.flag || "🎰"
-
-                return (
-                  <div key={country} className={`p-6 rounded-lg border ${getCountryBgColor(country)} border-gray-300 dark:border-gray-700`}>
-                    {/* Header del país */}
-                    <div className="flex items-center gap-3 pb-4 border-b-2 border-border/50 mb-4">
-                      <span className="text-3xl">{flag}</span>
-                      <h2 className="text-xl font-bold text-foreground">
-                        {country}
-                      </h2>
-                      <span className="ml-auto text-xs text-muted-foreground font-semibold">
-                        {lotteries.length} {lotteries.length === 1 ? "resultado" : "resultados"}
-                      </span>
-                    </div>
-
-                    {/* Tabla de resultados por país */}
-                    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                      <table className="w-full text-sm">
-                        <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                          <tr>
-                            <th className="px-3 py-2 text-left font-semibold">
-                              <span className="mr-2">{flag}</span>Loteria
-                            </th>
-                            <th className="px-3 py-2 text-center font-semibold">Numero</th>
-                            <th className="px-3 py-2 text-right font-semibold">Fecha</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {lotteries.map((result, idx) => {
-                            const isRecent = isRecentResult(result.draw_date)
-                            return (
-                              <tr key={idx} className={`border-t border-slate-200 dark:border-slate-700 ${
-                                isRecent 
-                                  ? "" 
-                                  : "opacity-70 text-amber-600 dark:text-amber-400"
-                              }`}>
-                                <td className="px-3 py-2">
-                                  {result.lottery_name}
-                                </td>
-                                <td className="px-3 py-2 text-center font-mono font-semibold text-cyan-600 dark:text-cyan-300">
-                                  {result.winning_number.padStart(result.winning_number.length, "0")}
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                  {getShortDate(result.draw_date)}
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+          {/* Tabla de resultados por país */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {countryColumns.map((country) => {
+              const countryGroup = resultsByCountryMap.get(country)
+              const lotteries = countryGroup?.lotteries || []
+              const flag = countryGroup?.flag || "🎰"
+              return (
+                <div key={country} className={`p-6 rounded-lg border ${getCountryBgColor(country)} border-gray-300 dark:border-gray-700`}>
+                  {/* Header del país */}
+                  <div className="flex items-center gap-3 pb-4 border-b-2 border-border/50 mb-4">
+                    <span className="text-3xl">{flag}</span>
+                    <h2 className="text-xl font-bold text-foreground">
+                      {country}
+                    </h2>
+                    <span className="ml-auto text-xs text-muted-foreground font-semibold">
+                      {lotteries.length} {lotteries.length === 1 ? "resultado" : "resultados"}
+                    </span>
                   </div>
-                )
-              })}
-            </div>
-          )}
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold">
+                            <span className="mr-2">{flag}</span>Loteria
+                          </th>
+                          <th className="px-3 py-2 text-center font-semibold">Numero</th>
+                          <th className="px-3 py-2 text-right font-semibold">Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lotteries.map((result, idx) => {
+                          const isRecent = isRecentResult(result)
+                          return (
+                            <tr key={idx} className={`border-t border-slate-200 dark:border-slate-700 ${
+                              isRecent 
+                                ? "" 
+                                : "opacity-70 text-amber-600 dark:text-amber-400"
+                            }`}>
+                              <td className="px-3 py-2">
+                                {result.lottery_name}
+                              </td>
+                              <td className="px-3 py-2 text-center font-mono font-semibold text-cyan-600 dark:text-cyan-300">
+                                {result.winning_number.padStart(result.winning_number.length, "0")}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {result.draw_date_formatted
+                                  ? result.draw_date_formatted
+                                  : result.draw_date
+                                    ? new Date(result.draw_date + "T00:00:00").toLocaleDateString("es-CO", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric"
+                                      })
+                                    : ""}
+                                {result.draw_time_formatted
+                                  ? (
+                                      <span className="block text-xs text-muted-foreground">{result.draw_time_formatted}h</span>
+                                    )
+                                  : result.draw_time
+                                    ? (
+                                        <span className="block text-xs text-muted-foreground">{result.draw_time}h</span>
+                                      )
+                                    : null}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
 
           {/* Total */}
           {totalResults > 0 && (

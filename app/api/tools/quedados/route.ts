@@ -1,3 +1,6 @@
+import { NextRequest, NextResponse } from "next/server"
+import { generateQuedadosByPosition, getLastDraws } from "@/lib/quedados"
+
 export async function GET(req: NextRequest) {
   let country = req.nextUrl.searchParams.get("country")
   const lotteryName = req.nextUrl.searchParams.get("lotteryName")
@@ -21,8 +24,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Error al obtener sorteos", errorType: "db_error", details: typeof e === "object" && e && "message" in e ? (e as any).message : String(e) }, { status: 500 })
   }
 }
-import { NextRequest, NextResponse } from "next/server"
-import { generateQuedadosByPosition, getLastDraws } from "@/lib/quedados"
 
 export async function POST(req: NextRequest) {
   try {

@@ -38,6 +38,8 @@ export function StrategySimulator() {
   const [selectedLottery, setSelectedLottery] = useState<string>("")
   const [selectedDigits, setSelectedDigits] = useState<number>(4)
   const [availableDigits, setAvailableDigits] = useState<number[]>([3, 4, 5])
+  const [lotteries, setLotteries] = useState<any[]>([])
+  const [loadingLotteries, setLoadingLotteries] = useState(false)
   const [strategyRules, setStrategyRules] = useState<StrategyRule[]>([])
   const [combineLogic, setCombineLogic] = useState<"sequential" | "combinations">("sequential")
 
@@ -51,20 +53,34 @@ export function StrategySimulator() {
     setSelectedLottery("")
   }, [selectedCountry])
 
-  // Actualizar dígitos disponibles cuando cambia la lotería
+  // Cargar loterías desde la API cuando cambian país o dígitos
   useEffect(() => {
-    if (selectedLottery) {
-      const [name, country] = selectedLottery.split('|')
-      const lottery = LOTTERIES.find(l => l.name === name && l.country === country)
+    if (!selectedCountry || !selectedDigits) {
+      setLotteries([])
+      return
+    }
+    setLoadingLotteries(true)
+    fetch(`/api/tools/lotteries-filtered?country=${encodeURIComponent(selectedCountry)}&digitCount=${selectedDigits}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setLotteries(data.lotteries)
+        else setLotteries([])
+      })
+      .finally(() => setLoadingLotteries(false))
+  }, [selectedCountry, selectedDigits])
+
+  // Actualizar dígitos disponibles cuando cambia la lotería seleccionada
+  useEffect(() => {
+    if (selectedLottery && lotteries.length > 0) {
+      const lottery = lotteries.find(l => l.name === selectedLottery)
       if (lottery) {
         setAvailableDigits(lottery.digits)
-        // Si los dígitos seleccionados no están disponibles, usar el primero disponible
         if (!lottery.digits.includes(selectedDigits)) {
           setSelectedDigits(lottery.digits[0])
         }
       }
     }
-  }, [selectedLottery])
+  }, [selectedLottery, lotteries])
 
   async function checkStrategy() {
     setIsCheckingStrategy(true)
@@ -257,16 +273,32 @@ export function StrategySimulator() {
 
                 <div className="space-y-2">
                   <Label htmlFor="lottery">Lotería</Label>
-                  <Select value={selectedLottery} onValueChange={setSelectedLottery}>
+                  <Select value={selectedLottery} onValueChange={setSelectedLottery} disabled={loadingLotteries || lotteries.length === 0}>
                     <SelectTrigger id="lottery">
-                      <SelectValue placeholder="Selecciona una lotería" />
+                      <SelectValue placeholder={loadingLotteries ? "Cargando..." : "Selecciona una lotería"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {LOTTERIES.filter(l => l.country === selectedCountry).map(lottery => (
-                        <SelectItem key={`${lottery.name}|${lottery.country}`} value={`${lottery.name}|${lottery.country}`}>
-                          {lottery.name}
-                        </SelectItem>
-                      ))}
+                      {lotteries.map(lottery => {
+                        // Obtener hora local y aplicar filtro de 1 hora antes del sorteo
+                        const today = new Date()
+                        const drawDate = today.toISOString().split("T")[0]
+                        const drawTime = lottery.time ? `${lottery.time.toString().padStart(2, "0")}:00` : "21:00"
+                        // Validar si se puede publicar
+                        let allowed = true
+                        let message = ""
+                        try {
+                          // @ts-ignore
+                          const result = require("@/lib/timezones").canPublishPrediction(drawDate, drawTime, selectedCountry)
+                          allowed = result.allowed
+                          message = result.message || ""
+                        } catch {}
+                        return (
+                          <SelectItem key={lottery.name} value={lottery.name} disabled={!allowed}>
+                            {lottery.name} <span style={{color:'#888',fontSize:'0.9em'}}>({drawTime}h)</span>
+                            {!allowed && message ? <span style={{color:'#e00',fontSize:'0.8em',marginLeft:4}} title={message}>⏰</span> : null}
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

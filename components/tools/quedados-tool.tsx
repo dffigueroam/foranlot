@@ -86,6 +86,12 @@ async function handleAnalyze() {
   setLoadingResult(true);
   setErrorResult("");
   setResult(null);
+  // Validación previa
+  if (!country || !digitCount || !selectedLotteryId) {
+    setErrorResult("Debes seleccionar país, cifras y lotería antes de analizar quedados.");
+    setLoadingResult(false);
+    return;
+  }
   try {
     const selectedLottery = lotteries.find(l => l.id === selectedLotteryId);
     const lotteryName = selectedLottery ? selectedLottery.name : "";
@@ -131,6 +137,12 @@ async function handleLastDraws() {
   setLoadingDraws(true);
   setErrorDraws("");
   setLastDraws([]);
+  // Validación previa
+  if (!country || !digitCount || !selectedLotteryId) {
+    setErrorDraws("Debes seleccionar país, cifras y lotería antes de ver los últimos resultados.");
+    setLoadingDraws(false);
+    return;
+  }
   try {
     const selectedLottery = lotteries.find(l => l.id === selectedLotteryId);
     const lotteryName = selectedLottery ? selectedLottery.name : "";
@@ -187,10 +199,14 @@ async function handleLastDraws() {
                 {loadingCountries ? <option>Cargando...</option> : null}
                 {errorCountries ? <option disabled>{errorCountries}</option> : null}
                 {countries
-                  .filter(c => ["Colombia", "España", "USA", "Estados Unidos"].includes(c))
-                  .map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
+                  .filter(c => ["Colombia", "COL", "CO", "España", "ESP", "USA", "Estados Unidos"].includes(c))
+                  .map(c => {
+                    let label = c;
+                    if (["Colombia", "COL", "CO"].includes(c)) label = "Colombia";
+                    if (["España", "ESP"].includes(c)) label = "España";
+                    if (["USA", "Estados Unidos"].includes(c)) label = "Estados Unidos";
+                    return <option key={c} value={c}>{label}</option>;
+                  })}
               </select>
             </div>
             {/* Cifras */}

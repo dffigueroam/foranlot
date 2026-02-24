@@ -45,10 +45,14 @@ export async function submitPrediction(formData: FormData) {
   const notesRaw = formData.get("notes")
   const notes = typeof notesRaw === "string" && notesRaw.trim() !== "" ? sanitizeInput(notesRaw, "text") : undefined
 
-  const lottery = LOTTERIES.find(l => l.name === lotteryName)
+  // Buscar lotería válida usando la función async
+  const { getAvailableLotteriesForPosting } = await import("@/lib/lotteries")
+  const resolvedDrawDate = drawDate || new Date().toISOString().split("T")[0]
+  const availableLotteries = await getAvailableLotteriesForPosting(resolvedDrawDate, "Colombia") // TODO: país dinámico si aplica
+  const lottery = availableLotteries.find(l => l.name === lotteryName)
 
   if (!lottery) {
-    return { error: "Lotería no válida" }
+    return { error: "Lotería no válida o fuera de horario para postear" }
   }
 
   if (!lotteryName || !lotteryType || !predictedNumber || !confidenceLevel) {
@@ -56,42 +60,36 @@ export async function submitPrediction(formData: FormData) {
   }
 
   const predictedNumbers = predictedNumber.trim().split(" ")
-
-const allowedDigits = lottery.digits // ej: [3, 4]
-
-const invalid = predictedNumbers.find(
-  n => !allowedDigits.includes(n.length)
-)
-
-if (invalid) {
-  return {
-    error: `La lotería ${lottery.name} no soporta ${invalid.length} cifras`
+  const allowedDigits = lottery.digits // ej: [3, 4]
+  const invalid = predictedNumbers.find(
+    n => !allowedDigits.includes(n.length)
+  )
+  if (invalid) {
+    return {
+      error: `La lotería ${lottery.name} no soporta ${invalid.length} cifras`
+    }
   }
-}
-
-// Derivar fecha y hora desde la lotería
-const resolvedDrawDate = drawDate || new Date().toISOString().split("T")[0]
 
   // Usar la hora específica de la lotería (lottery.time)
   const resolvedDrawTime = drawTime || `${lottery.time.toString().padStart(2, "0")}:00`
 
   // 🕐 VALIDACIÓN DE TIEMPO: Debe publicar al menos 1 hora antes del sorteo
+  const { canPublishPrediction } = await import("@/lib/timezones")
   const timeValidation = canPublishPrediction(
-    drawDate,
+    resolvedDrawDate,
     resolvedDrawTime,
     lottery.country
   )
-
   if (!timeValidation.allowed) {
     return { error: timeValidation.message || "No se puede publicar esta predicción" }
   }
- 
+
   const result = await createPrediction(
     user.id,
     lotteryName,
     lotteryType,
     predictedNumber,
-    drawDate,
+    resolvedDrawDate,
     drawTime || null,
     confidenceValue,
     notes,
@@ -104,7 +102,6 @@ const resolvedDrawDate = drawDate || new Date().toISOString().split("T")[0]
   revalidatePath("/dashboard")
   revalidatePath("/predictions")
   return { success: true }
-}
 
 // Nuevo: Crear múltiples predicciones en varias loterias (uno por número)
 export async function submitMultiplePredictions(
@@ -223,7 +220,6 @@ export async function submitMultiplePredictions(
     success: true,
     message: `Pronóstico publicado: ${successCount} registros (${predictedNumbers.length} números × ${validatedLotteries.length} loterias)`
   }
-}
 
 export async function fetchPredictions(limit?: number) {
   const user = await getCurrentUser()
@@ -295,6 +291,12 @@ export async function applyCombinationAction(combinationId: number) {
  * Filtra por país y verifica que tengan hora configurada para ese tipo de día
  */
 export async function getAvailableLotteriesForDate(date: string, country: string) {
-  // TODO: Reemplazar con versión async que consulta loterías desde la base de datos
-  return { error: "Función no implementada: migrar a versión async con DB", lotteries: [] }
+  try {
+    const { getAvailableLotteriesForPosting } = await import("@/lib/lotteries")
+    const lotteries = await getAvailableLotteriesForPosting(date, country)
+    return { success: true, lotteries }
+  } catch (e) {
+    return { error: "Error al consultar loterías disponibles", lotteries: [] }
+  }
+}
 }

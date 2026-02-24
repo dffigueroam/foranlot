@@ -196,9 +196,12 @@ export async function createPrediction(
     }
 
     if (lotteryName !== "sin_definir") {
-      const lottery = LOTTERIES.find(l => l.name === lotteryName)
+      // Validación avanzada: consultar lotería desde la BD y aplicar lógica de disponibilidad
+      const { getAvailableLotteriesForPosting } = await import("./lotteries")
+      const availableLotteries = await getAvailableLotteriesForPosting(drawDate, "Colombia")
+      const lottery = availableLotteries.find(l => l.name === lotteryName)
       if (!lottery) {
-        return { error: "Lotería no válida" }
+        return { error: "La lotería no está disponible para postear en la fecha/hora seleccionada (verifica el día y la hora límite)." }
       }
 
       const digitCount = parseInt(lotteryType.split("_")[0])

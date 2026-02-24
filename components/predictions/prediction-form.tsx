@@ -2,14 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { 
-  submitMultiplePredictions, 
-  getLastLotteryCombinations,
-  toggleFavoriteCombinationAction,
-  deleteLotteryCombinationAction,
-  applyCombinationAction,
-  getAvailableLotteriesForDate
-} from "@/app/actions/predictions"
+// ...existing code...
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -84,7 +77,8 @@ export function PredictionForm() {
 
   const digitsNum = parseInt(selectedDigits)
   // Derivar países de las loterías disponibles (DB)
-  const countryOptions = Array.from(new Set(availableLotteries.map(l => l.country))).sort()
+  // Países soportados (estático)
+  const countryOptions = ["Colombia", "España", "USA"]
 
   // Cargar combinaciones último al montar
   useEffect(() => {
@@ -103,7 +97,13 @@ export function PredictionForm() {
 
       setLoadingLotteries(true)
       try {
-        const result = await getAvailableLotteriesForDate(drawDate, selectedCountry)
+        // Llamar a la server action vía API
+        const res = await fetch("/api/lotteries/available", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ drawDate, country: selectedCountry })
+        })
+        const result = await res.json()
         if (result.success && result.lotteries) {
           setAvailableLotteries(result.lotteries)
           // Obtener el tipo de día del primer resultado
@@ -128,7 +128,13 @@ export function PredictionForm() {
   async function loadCombinations() {
     try {
       setLoadingCombinations(true)
-      const result = await getLastLotteryCombinations(5)
+      // Llamar a la server action vía API
+      const res = await fetch("/api/lottery-combinations/last", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 5 })
+      })
+      const result = await res.json()
       if (result.success && result.combinations) {
         setLastCombinations(result.combinations)
       }
@@ -303,15 +309,21 @@ const recommendedLotteries = availableLotteries
     // Convertir las claves con formato "nombre|país" de vuelta a solo nombres
     const lotteryNames = Array.from(selectedLotteries).map(key => key.split('|')[0])
     
-    const res = await submitMultiplePredictions(
-      lotteryNames,
-      `${selectedDigits}_digits`,
-      predictedNumbers,
-      drawDate,
-      null,
-      confidenceLevel,
-      notesField || null
-    )
+      // Llamar a la server action vía API
+      const res = await fetch("/api/predictions/multiple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lotteryNames,
+          lotteryType: `${selectedDigits}_digits`,
+          predictedNumbersStr: predictedNumbers,
+          drawDate,
+          drawTime: null,
+          confidenceLevel,
+          notes: notesField || null
+        })
+      })
+      const result = await res.json()
 
     if (res.error) setError(res.error)
     else {

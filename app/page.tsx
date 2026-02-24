@@ -136,6 +136,13 @@ export default async function HomePage() {
                   key={idx}
                   className={`relative group bg-white dark:bg-gray-800/50 dark:backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-purple-500/10 transition-all duration-300`}
                 >
+                  {/* Tailwind color variants for tree-shaking */}
+                  {/*
+                    from-blue-500 to-cyan-500
+                    from-purple-500 to-pink-500
+                    from-green-500 to-emerald-500
+                    from-yellow-500 to-orange-500
+                  */}
                   <div className={`absolute inset-0 bg-linear-to-br ${feature.color} opacity-0 group-hover:opacity-10 dark:opacity-0 dark:group-hover:opacity-20 rounded-xl transition-opacity duration-300`}></div>
                   <div className="relative z-10">
                     <div className="text-5xl mb-4">{feature.icon}</div>
