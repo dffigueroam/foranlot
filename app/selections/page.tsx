@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import SelectionManager from "@/components/credits/selection-manager"
 import NotificationCenter from "@/components/notifications/notification-center"
 import SelectedPredictionsList from "@/components/predictions/selected-predictions-list"

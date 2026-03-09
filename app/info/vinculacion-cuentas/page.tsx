@@ -1,8 +1,27 @@
 import { Metadata } from "next"
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
+
 export const metadata: Metadata = {
-  title: "Vinculación de cuentas - ForanLot",
-  description: "Información pública sobre requisitos, beneficios, consecuencias y acuerdos de la vinculación de cuentas en ForanLot."
+  title: "Vinculacion de Cuentas",
+  description:
+    "Informacion publica sobre requisitos, beneficios y condiciones de la vinculacion de cuentas en ForanLot.",
+  alternates: {
+    canonical: "/info/vinculacion-cuentas",
+  },
+  openGraph: {
+    title: "Vinculacion de Cuentas | ForanLot",
+    description:
+      "Conoce requisitos, consecuencias y acuerdos de la vinculacion de cuentas en la plataforma.",
+    url: `${appUrl}/info/vinculacion-cuentas`,
+    type: "article",
+    locale: "es_CO",
+  },
+  twitter: {
+    card: "summary",
+    title: "Vinculacion de Cuentas | ForanLot",
+    description: "Requisitos y condiciones de vinculacion de cuentas en ForanLot.",
+  },
 }
 
 export default function VinculacionCuentasInfoPage() {

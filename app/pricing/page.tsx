@@ -9,6 +9,10 @@ import { Check } from "lucide-react"
 import { ManualPaymentForm } from "@/components/payments/manual-payment-form"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 export default async function PricingPage() {
   const user = await getCurrentUser()
 

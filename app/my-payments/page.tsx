@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { getUserPaymentRequests } from "@/lib/manual-payments"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"

@@ -1,6 +1,6 @@
 "use client"
 import { HeatmapTool } from "@/components/tools/heatmap-tool"
-import { QuedadosTool } from "@/components/tools/quedados-tool"
+import QuedadosTool from "@/components/tools/quedados-tool"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"

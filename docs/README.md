@@ -83,7 +83,22 @@ CRON_SECRET=your_random_secret_for_cron_protection
 
 # API de Lotería (opcional)
 LOTTERY_API_KEY=your_lottery_api_key
+
+# SEO / Search Console
+GOOGLE_SITE_VERIFICATION=google_site_verification_token
+BING_SITE_VERIFICATION=bing_msvalidate_token
 ```
+
+## Activacion de Search Console y Bing Webmaster
+
+1. Define `NEXT_PUBLIC_APP_URL` con tu dominio final (ej: `https://tudominio.com`).
+2. Crea la propiedad en Google Search Console y usa el metodo "Etiqueta HTML".
+3. Copia el token y configuralo en `GOOGLE_SITE_VERIFICATION`.
+4. Crea la propiedad en Bing Webmaster Tools y usa "Meta tag".
+5. Copia el token y configuralo en `BING_SITE_VERIFICATION`.
+6. Despliega y valida en ambos paneles.
+
+Nota: El proyecto ya publica `sitemap.xml` y `robots.txt` automaticamente para rastreo.
 
 ## Instalación y Desarrollo
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { saveUserStrategy } from "@/lib/strategies"
-import { LOTTERIES } from "@/lib/lotteries"
+import { getLotteryByName } from "@/lib/lotteries"
 
 export async function POST(req: Request) {
   try {
@@ -40,17 +40,15 @@ export async function POST(req: Request) {
       ? resolvedLotteryName.split('|')
       : [resolvedLotteryName, 'Colombia']
     
-    // Validar que la lotería exista
-    const lottery = LOTTERIES.find(l => l.name === name && l.country === country)
-    if (!lottery) {
+    // Validar que la lotería exista y soporte el tipo de dígitos
+    const lottery = await getLotteryByName(name)
+    if (!lottery || lottery.country !== country) {
       return NextResponse.json(
         { error: "Lotería no válida" },
         { status: 400 }
       )
     }
-
-    // Validar que la lotería soporte ese tipo de dígitos
-    if (!lottery.digits.includes(digitsType)) {
+    if (!lottery.digits.includes(Number(digitsType))) {
       return NextResponse.json(
         { error: `La lotería ${resolvedLotteryName} no soporta ${digitsType} dígitos` },
         { status: 400 }

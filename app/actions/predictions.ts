@@ -104,122 +104,39 @@ export async function submitPrediction(formData: FormData) {
   return { success: true }
 
 // Nuevo: Crear múltiples predicciones en varias loterias (uno por número)
-export async function submitMultiplePredictions(
-  lotteryNames: string[],
-  lotteryType: string,
-  predictedNumbersStr: string,
-  drawDate: string,
-  drawTime: string | null,
-  confidenceLevel: string,
-  notes: string | null
-) {
+async function submitMultiplePredictions(formData: FormData) {
   const user = await getCurrentUser()
   if (!user) {
     return { error: "Debes iniciar sesión" }
   }
+  // Extract values from FormData
+  const lotteryNames = formData.getAll("lotteryNames") as string[]
+  const lotteryType = formData.get("lotteryType") as string
+  const predictedNumbersStr = formData.get("predictedNumbersStr") as string
+  const drawDate = formData.get("drawDate") as string
+  const drawTime = formData.get("drawTime") as string | null
+  const confidenceLevel = formData.get("confidenceLevel") as string
+  const notes = formData.get("notes") as string | null
 
-  const confidenceValue = Number(confidenceLevel)
-  if (Number.isNaN(confidenceValue) || confidenceValue < 1 || confidenceValue > 5) {
-    return { error: "El nivel de confianza debe estar entre 1 y 5" }
+  const result = await submitMultiplePredictionsLib(
+    user.id,
+    lotteryNames,
+    lotteryType,
+    predictedNumbersStr,
+    drawDate,
+    drawTime,
+    confidenceLevel,
+    notes
+  )
+
+  if (result.error) {
+    return { error: result.error }
   }
-
-  // Validar y separar números
-  const predictedNumbers = predictedNumbersStr.trim().split(" ").filter(Boolean)
-  if (predictedNumbers.length === 0) {
-    return { error: "Debes ingresar al menos un número" }
-  }
-
-  const digitsNum = parseInt(lotteryType.split("_")[0])
-  const invalid = predictedNumbers.find(n => n.length !== digitsNum)
-  if (invalid) {
-    return { error: `Cada número debe tener exactamente ${digitsNum} dígitos` }
-  }
-
-  // Validar y procesar loterias
-  const validatedLotteries = lotteryNames
-    .map(name => LOTTERIES.find(l => l.name === name))
-    .filter((lot): lot is typeof LOTTERIES[0] => {
-      if (!lot) return false
-      return lot.digits.includes(digitsNum)
-    })
-
-  if (validatedLotteries.length === 0) {
-    return { error: "No hay loterias válidas para los números ingresados" }
-  }
-
-  // Verificar límites antes de crear
-  for (const lottery of validatedLotteries) {
-    const remaining = await getRemainingDailyLimit(user.id, lottery.name, lotteryType, drawDate)
-    if (remaining < predictedNumbers.length) {
-      return { 
-        error: `Límite excedido para ${lottery.name}: solo puedes agregar ${remaining} números más hoy (máx 10 por lotería por tipo de cifra por día)` 
-      }
-    }
-  }
-
-  // 🕐 VALIDACIÓN DE TIEMPO: Verificar al menos una lotería para tiempo
-  if (validatedLotteries.length > 0) {
-    const firstLottery = validatedLotteries[0]
-    // Usar dayTypeHours o time según la definición de la lotería
-    let lotteryHour = firstLottery.time;
-    if (lotteryHour === undefined && firstLottery.dayTypeHours) {
-      // Tomar la hora laboral por defecto
-      lotteryHour = firstLottery.dayTypeHours.laboral || Object.values(firstLottery.dayTypeHours)[0];
-    }
-    const resolvedDrawTime = drawTime || `${lotteryHour?.toString().padStart(2, "0")}:00`
-    
-    const timeValidation = canPublishPrediction(
-      drawDate,
-      resolvedDrawTime,
-      firstLottery.country
-    )
-
-    if (!timeValidation.allowed) {
-      return { error: timeValidation.message || "No se puede publicar esta predicción" }
-    }
-  }
-
-  const notesProcessed = notes && notes.trim() !== "" ? notes : undefined
-
-  // Crear una predicción por cada número por cada lotería
-  const errors: string[] = []
-  let successCount = 0
-
-  for (const lottery of validatedLotteries) {
-    for (const number of predictedNumbers) {
-      const result = await createPrediction(
-        user.id,
-        lottery.name,
-        lotteryType,
-        number,  // Un solo número por registro
-        drawDate,
-        drawTime || null,
-        confidenceValue,
-        notesProcessed,
-      )
-
-      if (result.error) {
-        errors.push(`${lottery.name} - ${number}: ${result.error}`)
-      } else {
-        successCount++
-      }
-    }
-  }
-
-  if (successCount === 0) {
-    return { error: `No se pudieron crear pronósticos. ${errors.join(" | ")}` }
-  }
-
-  // Guardar combinación de loterías para uso futuro
-  await saveLotteryCombination(user.id, lotteryNames, lotteryType)
 
   revalidatePath("/dashboard")
   revalidatePath("/predictions")
-
-  return { 
-    success: true,
-    message: `Pronóstico publicado: ${successCount} registros (${predictedNumbers.length} números × ${validatedLotteries.length} loterias)`
-  }
+  return { success: true, message: result.message }
+}
 
 export async function fetchPredictions(limit?: number) {
   const user = await getCurrentUser()

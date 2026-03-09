@@ -21,6 +21,10 @@ import AdminDashboardSummary from "@/components/admin/dashboard-summary"
 import AdminTabsPanel, { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
 import { getCurrentUser } from "@/lib/auth"
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 /**
  * INTERFAZ CORREGIDA
  * Añadimos las propiedades faltantes para que coincida exactamente con ResultsTable

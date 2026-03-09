@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { PageWrapper } from "@/components/layout/page-wrapper"
 import { PremiumClientWrapper } from "./premium-client-wrapper"
 import { getUserSelections, getSelectedPredictions } from "@/lib/credits"

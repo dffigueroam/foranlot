@@ -2,6 +2,10 @@ import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 export default async function AdminLayout({
   children,
 }: {

@@ -1,4 +1,8 @@
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { EditProfileForm } from "@/components/profile/edit-profile-form"
 
 export default async function ProfilePage() {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
 import { PageWrapper } from "@/components/layout/page-wrapper"
@@ -7,12 +8,86 @@ import { FAQSection } from "@/components/landing/faq-section"
 import { ContactSection } from "@/components/landing/contact-section"
 import { BarChart3, Crown, TrendingUp, Users, Sparkles, Target, Zap, Trophy } from "lucide-react"
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
+
+export const metadata: Metadata = {
+  title: "Predicciones de Loteria en Colombia | Resultados y Comunidad",
+  description:
+    "ForanLot es una comunidad de pronosticos de loteria en Colombia: publica predicciones, consulta resultados recientes y sigue a los pronosticadores con mejor desempeño.",
+  alternates: {
+    canonical: "/",
+    languages: {
+      "es-CO": "/",
+      "es": "/",
+    },
+  },
+  openGraph: {
+    title: "ForanLot | Predicciones de Loteria en Colombia",
+    description:
+      "Comunidad de pronosticos de loteria en Colombia con resultados, estadisticas y seguimiento de pronosticadores.",
+    url: "/",
+    siteName: "ForanLot",
+    locale: "es_CO",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ForanLot - Predicciones de Loteria",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ForanLot | Predicciones de Loteria en Colombia",
+    description:
+      "Publica predicciones, consulta resultados y sigue a los mejores pronosticadores de la comunidad.",
+    images: ["/twitter-image.png"],
+  },
+}
+
 export default async function HomePage() {
   const user = await getCurrentUser()
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ForanLot",
+    url: appUrl,
+    inLanguage: "es-CO",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${appUrl}/results?query={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  }
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ForanLot",
+    url: appUrl,
+    logo: `${appUrl}/logo.png`,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "soporte@foranlot.com",
+      availableLanguage: ["es"],
+      areaServed: "CO",
+    },
+  }
 
   return (
     <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
       <div className="min-h-screen bg-white dark:bg-linear-to-br dark:from-slate-950 dark:via-purple-950 dark:to-slate-950 text-foreground dark:text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         
         {/* Hero Section Mejorado */}
         <div className="relative overflow-hidden">
@@ -134,16 +209,20 @@ export default async function HomePage() {
               ].map((feature, idx) => (
                 <div
                   key={idx}
-                  className={`relative group bg-white dark:bg-gray-800/50 dark:backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-purple-500/10 transition-all duration-300`}
+                  className={
+                    `relative group bg-white dark:bg-gray-800/50 dark:backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-purple-500/10 transition-all duration-300`
+                  }
                 >
-                  {/* Tailwind color variants for tree-shaking */}
-                  {/*
-                    from-blue-500 to-cyan-500
-                    from-purple-500 to-pink-500
-                    from-green-500 to-emerald-500
-                    from-yellow-500 to-orange-500
-                  */}
-                  <div className={`absolute inset-0 bg-linear-to-br ${feature.color} opacity-0 group-hover:opacity-10 dark:opacity-0 dark:group-hover:opacity-20 rounded-xl transition-opacity duration-300`}></div>
+                  {/* Always render the gradient background for hydration consistency */}
+                  <div
+                    className="absolute inset-0 bg-linear-to-br rounded-xl transition-opacity duration-300"
+                    aria-hidden="true"
+                  ></div>
+                  {/* Color overlay for client only (avoids hydration mismatch) */}
+                  <div
+                    className={`absolute inset-0 ${feature.color} opacity-0 group-hover:opacity-10 dark:opacity-0 dark:group-hover:opacity-20 rounded-xl transition-opacity duration-300`}
+                    aria-hidden="true"
+                  ></div>
                   <div className="relative z-10">
                     <div className="text-5xl mb-4">{feature.icon}</div>
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{feature.title}</h3>

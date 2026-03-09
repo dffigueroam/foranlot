@@ -1,11 +1,18 @@
-import { getAdminDashboardStats } from "@/lib/admin-dashboard"
-import { getNotificationSentCount } from "@/lib/admin-notifications"
-
-export default async function DashTotal() {
-  const stats = await getAdminDashboardStats()
-  const notificationCount = await getNotificationSentCount()
-  const { tableSizes, premiumUsers, freeUsers, expiringIn2Days, expiringIn6Days } = stats
-
+export default function DashTotal({
+  premiumUsers,
+  freeUsers,
+  expiringIn2Days,
+  expiringIn6Days,
+  notificationCount,
+  tableSizes
+}: {
+  premiumUsers: number;
+  freeUsers: number;
+  expiringIn2Days: number;
+  expiringIn6Days: number;
+  notificationCount: number;
+  tableSizes: Array<{ table: string; size_kb: number }>;
+}) {
   return (
     <div className="max-w-4xl mx-auto py-8">
       <h2 className="text-2xl font-bold mb-6">Métricas del sistema (DashTotal)</h2>

@@ -7,6 +7,10 @@ import { MLOverviewCard } from "@/components/admin/ml-overview-card"
 import { MLRankedPredictionsCard } from "@/components/admin/ml-ranked-predictions-card"
 import { MLEvaluationHistoryCard } from "@/components/admin/ml-evaluation-history-card"
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 export default async function MLUtilitiesPage() {
   const user = await getCurrentUser()
 

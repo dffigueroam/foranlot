@@ -1,0 +1,49 @@
+yo quieroe scripts de enlace a la brbreb bancolombia sin pasar por ninugna pasarela de pago
+Para integrar Bre-B de forma directa en una landing page sin depender de pasarelas de terceros como Wompi o PayU, debes utilizar el sistema de Códigos QR Interoperables o Deep Links (enlaces profundos) que el Banco de la República ha estandarizado para el sistema de pagos inmediatos.
+Debido a que Bre-B es un sistema basado en "Llaves" (celular, cédula, correo), no existe un "botón de pago" tradicional que procese el dinero por sí solo; lo que haces es enviar al cliente directamente a su propia aplicación bancaria con tus datos ya cargados. 
+1. Implementación mediante Código QR (Recomendado)
+El estándar de Bre-B permite que un código QR contenga tu llave y el monto. En tu landing page, puedes generar una imagen dinámica que el usuario escanee con su app de Bancolombia u otro banco. 
+Bancolombia
+Bancolombia
+ +1
+Paso 1: Obtén tu código QR desde la App Bancolombia Negocios en la sección "Bre-B".
+Paso 2: Inserta la imagen en tu script de la siguiente manera: 
+Bancolombia
+Bancolombia
+html
+<!-- Ejemplo de sección de pago directa -->
+<div id="pago-breb">
+  <h3>Paga al instante con Bre-B</h3>
+  <img src="tu-codigo-qr-generado.png" alt="QR Bre-B Bancolombia">
+  <p>Escanea este código desde la App Mi Bancolombia o cualquier banco.</p>
+</div>
+Use code with caution.
+
+2. Uso de Deep Links (Enlaces Directos a la App)
+Para usuarios que navegan desde el celular, puedes usar un enlace que intente abrir la aplicación del banco. Aunque no hay un estándar público de "URL Scheme" que pre-cargue el monto exacto sin API, puedes facilitar el acceso a la zona de pagos: 
+BBVA Colombia
+BBVA Colombia
+Enlace Sugerido: Puedes usar un enlace que redirija a la sección de transferencias o simplemente mostrar tu Llave Bre-B de forma prominente para que el usuario la copie y pegue en su app. 
+d1b4gd4m8561gs.cloudfront.net
+d1b4gd4m8561gs.cloudfront.net
+html
+<script>
+function copiarLlave() {
+  const llave = "3001234567"; // Tu celular o llave registrada
+  navigator.clipboard.writeText(llave);
+  alert("Llave copiada. Abre tu App Bancolombia y pégala en Bre-B.");
+}
+</script>
+
+<button onclick="copiarLlave()">Pagar con Llave Bre-B</button>
+Use code with caution.
+
+3. Portal de APIs Bancolombia (Para flujo 100% automático)
+Si tienes conocimientos avanzados de desarrollo y quieres un script que genere cobros en tiempo real sin pasarelas intermedias, debes registrarte en el Portal de APIs Bancolombia.
+Allí puedes solicitar acceso a las APIs de Transferencias y Pagos para generar órdenes que se reflejen directamente en la cuenta del cliente como una notificación de cobro en su App. 
+YouTube
+YouTube
+Nota de seguridad: El Banco de la República advierte que para recibir pagos por Bre-B no se requiere que el cliente haga clic en enlaces externos para autorizar; el proceso siempre debe ocurrir dentro de los canales oficiales de cada banco. 
+Banco de la República
+Banco de la República
+ +1

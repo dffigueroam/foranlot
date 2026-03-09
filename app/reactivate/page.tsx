@@ -1,5 +1,12 @@
 import React from "react"
+import type { Metadata } from "next"
 import ReactivationForm from "@/components/auth/reactivation-form"
+
+export const metadata: Metadata = {
+  title: "Reactivar Cuenta",
+  description: "Formulario para reactivar una cuenta inactiva en ForanLot.",
+  robots: { index: false, follow: false },
+}
 
 export default function ReactivatePage() {
   return (

@@ -1,8 +1,15 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { LoginForm } from "@/components/auth/login-form"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: "Iniciar Sesion",
+  description: "Accede a tu cuenta de ForanLot para publicar y gestionar tus pronosticos.",
+  robots: { index: false, follow: false },
+}
 
 export default async function LoginPage() {
   const user = await getCurrentUser()

@@ -13,7 +13,10 @@
  * - Los tipos de día son válidos
  */
 
-import { LOTTERIES, DayTypeHours } from '../lib/lotteries'
+// import { getAllLotteries } from '../lib/lotteries' // Usar solo en entorno server
+// NOTA: Este script requiere adaptación para entorno serverless si se quiere validar desde la base de datos.
+// Si necesitas validar horarios de la base de datos, usa getAllLotteries() y adapta el script a async/await.
+import type { DayTypeHours } from '../lib/lotteries'
 
 interface ValidationError {
   lottery: string

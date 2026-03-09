@@ -1,6 +1,10 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { VerifyEmailForm } from "@/components/auth/verify-email-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 

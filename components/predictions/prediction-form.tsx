@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+// No importar LOTTERIES directamente, usar API
 import { useState, useRef, useEffect } from "react"
 // ...existing code...
 import { Button } from "@/components/ui/button"
@@ -40,45 +41,78 @@ interface LotteryCombination {
   created_at: string
 }
 
-const MAX_NUMBERS = 10
+const MAX_NUMBERS = 10;
 
 export function PredictionForm() {
-  const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string>("")
-  const [lastCombinations, setLastCombinations] = useState<LotteryCombination[]>([])
-  const [loadingCombinations, setLoadingCombinations] = useState(true)
-  const [combinationFilter, setCombinationFilter] = useState<string>("")
-  const [showAllCombinations, setShowAllCombinations] = useState(false)
-  
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [lastCombinations, setLastCombinations] = useState<LotteryCombination[]>([]);
+  const [loadingCombinations, setLoadingCombinations] = useState(true);
+  const [combinationFilter, setCombinationFilter] = useState<string>("");
+  const [showAllCombinations, setShowAllCombinations] = useState(false);
+
+  // Loterías dinámicas desde API
+  const [lotteries, setLotteries] = useState<any[]>([]);
+  const [loadingLotteries, setLoadingLotteries] = useState(true);
+
+  useEffect(() => {
+    setLoadingLotteries(true);
+    fetch("/api/tools/lotteries-list")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.lotteries)) setLotteries(data.lotteries);
+        else setLotteries([]);
+      })
+      .catch(() => setLotteries([]))
+      .finally(() => setLoadingLotteries(false));
+  }, []);
+
   // Estado para visualización agrupada de última predicción
   const [lastPublishedPrediction, setLastPublishedPrediction] = useState<{
-    date: string
-    numbers: string[]
-    lotteries: string[]
-  } | null>(null)
+    date: string;
+    numbers: string[];
+    lotteries: string[];
+  } | null>(null);
 
-  const [selectedLotteries, setSelectedLotteries] = useState<Set<string>>(new Set())
-  const [selectedDigits, setSelectedDigits] = useState<string>("3")
-  const [confidenceLevel, setConfidenceLevel] = useState<string>("3")
-  const [drawDate, setDrawDate] = useState<string>("")
-  const [selectedCountry, setSelectedCountry] = useState<string>("Colombia")
-  const [predictedNumbers, setPredictedNumbers] = useState<string>("")
-  const [lotterySearch, setLotterySearch] = useState("")
-  
+  const [selectedLotteries, setSelectedLotteries] = useState<Set<string>>(new Set());
+  const [selectedDigits, setSelectedDigits] = useState<string>("3");
+  const [confidenceLevel, setConfidenceLevel] = useState<string>("3");
+  const [drawDate, setDrawDate] = useState<string>("");
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [predictedNumbers, setPredictedNumbers] = useState<string>("");
+  const [lotterySearch, setLotterySearch] = useState("");
+
   // NUEVO: Estados para loterias disponibles por fecha
-  const [availableLotteries, setAvailableLotteries] = useState<any[]>([])
-  const [loadingLotteries, setLoadingLotteries] = useState(false)
-  const [dayType, setDayType] = useState<string>("")
-  
-  const formRef = useRef<HTMLFormElement | null>(null)
+  const [availableLotteries, setAvailableLotteries] = useState<any[]>([]);
+  const [loadingLotteries2, setLoadingLotteries2] = useState(false);
+  const [dayType, setDayType] = useState<string>("");
 
-  const digitsNum = parseInt(selectedDigits)
-  // Derivar países de las loterías disponibles (DB)
-  // Países soportados (estático)
-  const countryOptions = ["Colombia", "España", "USA"]
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  const digitsNum = parseInt(selectedDigits);
+
+  // Países dinámicos desde API
+  const [countryOptions, setCountryOptions] = useState<{ code: string; name: string }[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+  useEffect(() => {
+    setLoadingCountries(true);
+    fetch("/api/tools/countries")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.countries)) {
+          setCountryOptions(data.countries);
+          // Si no hay país seleccionado, usar el primero de la lista
+          setSelectedCountry(prev => prev || (data.countries[0]?.code ?? ""));
+        } else {
+          setCountryOptions([]);
+        }
+      })
+      .catch(() => setCountryOptions([]))
+      .finally(() => setLoadingCountries(false));
+  }, []);
 
   // Cargar combinaciones último al montar
   useEffect(() => {
@@ -152,13 +186,26 @@ export function PredictionForm() {
     // Validar contra loterías disponibles
     const validLotteryKeys: string[] = []
     const invalidLotteries: string[] = []
+    let detectedCountry = "";
     for (const name of combination.lottery_names) {
       const lottery = availableLotteries.find(l => l.name === name)
       if (lottery) {
         validLotteryKeys.push(`${name}|${lottery.country}`)
+        detectedCountry = lottery.country;
       } else {
         invalidLotteries.push(name)
       }
+    }
+    // Normalizar si es código
+    const countryMap: Record<string, string> = {
+      COL: "Colombia",
+      ESP: "España",
+      USA: "Estados Unidos"
+    };
+    if (detectedCountry && countryMap[detectedCountry]) {
+      setSelectedCountry(countryMap[detectedCountry]);
+    } else if (detectedCountry) {
+      setSelectedCountry(detectedCountry);
     }
     setSelectedLotteries(new Set(validLotteryKeys))
     await applyCombinationAction(combination.id)
@@ -420,7 +467,7 @@ const recommendedLotteries = availableLotteries
                   <div className="bg-white dark:bg-slate-900 rounded-md p-3 border border-green-200 dark:border-green-800">
                     <p className="text-sm text-green-900 dark:text-green-100 leading-relaxed">
                       {lastPublishedPrediction.lotteries.map((lottery, idx) => {
-                        const lotteryObj = LOTTERIES.find(l => l.name === lottery)
+                        const lotteryObj = availableLotteries.find(l => l.name === lottery)
                         return (
                           <span key={idx}>
                             <span className="font-medium">{lottery}</span>
@@ -664,13 +711,12 @@ const recommendedLotteries = availableLotteries
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>2. País</Label>
-              <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loading}>
+              <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loadingCountries || loading}>
                 <SelectTrigger className="w-full">
                   <SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
                   {countryOptions.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

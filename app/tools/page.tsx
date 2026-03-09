@@ -1,6 +1,10 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { ToolsClient } from "./tools-client"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 import { getDailyFreeToolAction } from "@/app/actions/prediction-tools"

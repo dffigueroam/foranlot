@@ -1,3 +1,111 @@
+// Crear múltiples predicciones en varias loterías (uno por número)
+import { getLotteriesFromDB } from "./lotteries-server"
+import { canPublishPrediction } from "./timezones"
+export async function submitMultiplePredictionsLib(
+  userId: number,
+  lotteryNames: string[],
+  lotteryType: string,
+  predictedNumbersStr: string,
+  drawDate: string,
+  drawTime: string | null,
+  confidenceLevel: string,
+  notes: string | null
+) {
+  const confidenceValue = Number(confidenceLevel)
+  if (Number.isNaN(confidenceValue) || confidenceValue < 1 || confidenceValue > 5) {
+    return { error: "El nivel de confianza debe estar entre 1 y 5" }
+  }
+
+  // Validar y separar números
+  const predictedNumbers = predictedNumbersStr.trim().split(" ").filter(Boolean)
+  if (predictedNumbers.length === 0) {
+    return { error: "Debes ingresar al menos un número" }
+  }
+
+  const digitsNum = parseInt(lotteryType.split("_")[0])
+  const invalid = predictedNumbers.find(n => n.length !== digitsNum)
+  if (invalid) {
+    return { error: `Cada número debe tener exactamente ${digitsNum} dígitos` }
+  }
+
+  // Validar y procesar loterias
+  const allLotteries = await getLotteriesFromDB()
+  const validatedLotteries = lotteryNames
+    .map(name => allLotteries.find(l => l.name === name))
+    .filter((lot): lot is typeof allLotteries[0] => {
+      if (!lot) return false
+      return lot.digits.includes(digitsNum)
+    })
+
+  if (validatedLotteries.length === 0) {
+    return { error: "No hay loterias válidas para los números ingresados" }
+  }
+
+  // Verificar límites antes de crear
+  for (const lottery of validatedLotteries) {
+    const remaining = await getRemainingDailyLimit(userId, lottery.name, lotteryType, drawDate)
+    if (remaining < predictedNumbers.length) {
+      return {
+        error: `Límite excedido para ${lottery.name}: solo puedes agregar ${remaining} números más hoy (máx 10 por lotería por tipo de cifra por día)`
+      }
+    }
+  }
+
+  // 🕐 VALIDACIÓN DE TIEMPO: Verificar al menos una lotería para tiempo
+  if (validatedLotteries.length > 0) {
+    const firstLottery = validatedLotteries[0]
+    let lotteryHour = firstLottery.time;
+    if (lotteryHour === undefined && firstLottery.dayTypeHours) {
+      lotteryHour = firstLottery.dayTypeHours.laboral || Object.values(firstLottery.dayTypeHours)[0];
+    }
+    const resolvedDrawTime = drawTime || `${lotteryHour?.toString().padStart(2, "0")}:00`
+    const timeValidation = canPublishPrediction(
+      drawDate,
+      resolvedDrawTime,
+      firstLottery.country
+    )
+    if (!timeValidation.allowed) {
+      return { error: timeValidation.message || "No se puede publicar esta predicción" }
+    }
+  }
+
+  const notesProcessed = notes && notes.trim() !== "" ? notes : undefined
+
+  // Crear una predicción por cada número por cada lotería
+  const errors: string[] = []
+  let successCount = 0
+
+  for (const lottery of validatedLotteries) {
+    for (const number of predictedNumbers) {
+      const result = await createPrediction(
+        userId,
+        lottery.name,
+        lotteryType,
+        number,
+        drawDate,
+        drawTime || null,
+        confidenceValue,
+        notesProcessed,
+      )
+      if (result.error) {
+        errors.push(`${lottery.name} - ${number}: ${result.error}`)
+      } else {
+        successCount++
+      }
+    }
+  }
+
+  if (successCount === 0) {
+    return { error: `No se pudieron crear pronósticos. ${errors.join(" | ")}` }
+  }
+
+  await saveLotteryCombination(userId, lotteryNames, lotteryType)
+
+  return {
+    success: true,
+    message: `Pronóstico publicado: ${successCount} registros (${predictedNumbers.length} números × ${validatedLotteries.length} loterias)`
+  }
+}
 /* ======================================================
    ACERTOS VERIFICADOS (para dashboard)
 ====================================================== */

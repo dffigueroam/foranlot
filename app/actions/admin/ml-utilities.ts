@@ -1,7 +1,7 @@
 "use server"
 
 import { getCurrentUser } from "@/lib/auth"
-import { MLEngine } from "@/services/ml_engine"
+import { analyzeDataset, scorePrediction, evaluateModelEngine } from "@/services/ml_engine"
 import { getPredictionsWithScores, getRankedPredictions } from "@/services/ml_engine/integration/prediction.adapter"
 import { neon } from "@neondatabase/serverless"
 
@@ -20,7 +20,7 @@ export async function analyzePredictionsAction() {
 
   try {
     console.log("[v0] Admin analyzing predictions dataset")
-    const dataset = await MLEngine.analyze()
+    const dataset = await analyzeDataset()
     
     return {
       success: true,
@@ -53,7 +53,7 @@ export async function evaluateModelAction() {
 
   try {
     console.log("[v0] Admin evaluating ML model")
-    const evaluation = await MLEngine.evaluate()
+    const evaluation = await evaluateModelEngine()
     
     // Guardar evaluación en base de datos
     await sql`

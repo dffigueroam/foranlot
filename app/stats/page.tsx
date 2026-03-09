@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { getDailyAccuracy, getAccuracyByType, getUserStats } from "@/lib/ranking"
 import { DailyAccuracyChart } from "@/components/charts/daily-accuracy-chart"
 import { AccuracyByTypeChart } from "@/components/charts/accuracy-by-type-chart"

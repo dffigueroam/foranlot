@@ -1,8 +1,27 @@
 import { Metadata } from "next"
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
+
 export const metadata: Metadata = {
-  title: "Consideraciones y Usos de esta Página - ForanLot",
-  description: "Recomendaciones, acuerdos, requisitos, recursos, beneficios, consecuencias y funcionamiento general de ForanLot."
+  title: "Consideraciones y Usos de la Plataforma",
+  description:
+    "Consideraciones de uso en ForanLot: acuerdos, requisitos, recursos y advertencias para usuarios de la plataforma.",
+  alternates: {
+    canonical: "/info/consideraciones-usos",
+  },
+  openGraph: {
+    title: "Consideraciones de Uso | ForanLot",
+    description:
+      "Consulta acuerdos, advertencias y recomendaciones generales para usar ForanLot.",
+    url: `${appUrl}/info/consideraciones-usos`,
+    type: "article",
+    locale: "es_CO",
+  },
+  twitter: {
+    card: "summary",
+    title: "Consideraciones de Uso | ForanLot",
+    description: "Acuerdos y advertencias generales para usuarios de la plataforma.",
+  },
 }
 
 export default function ConsideracionesUsosPage() {

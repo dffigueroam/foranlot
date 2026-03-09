@@ -1,3 +1,7 @@
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 import { redirect } from "next/navigation"
 import Link from "next/link"
 
@@ -9,7 +13,7 @@ import { getUserStats } from "@/lib/ranking"
 import { PageWrapper } from "@/components/layout/page-wrapper"
 
 
-import { PredictionForm } from "@/components/predictions/prediction-form"
+import PredictionFormClient from "@/components/predictions/prediction-form-client"
 import { PredictionList } from "@/components/predictions/prediction-list"
 
 import LinkRequestsPanelWrapper from "@/components/dashboard/LinkRequestsPanelWrapper"
@@ -140,7 +144,7 @@ export default async function DashboardPage() {
 
           {/* COLUMNA IZQUIERDA - Formulario y solicitudes */}
           <div className="space-y-6">
-            <PredictionForm />
+            <PredictionFormClient />
             {/* Panel de solicitudes de vinculación (solo usuario gratis, al final de la columna izquierda) */}
             {!user.is_premium && (
               <div className="mt-6">

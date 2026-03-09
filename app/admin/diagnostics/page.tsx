@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { getPredictions } from "@/lib/predictions"
 import { checkPredictionsTableStructure, addLotteryNameColumn } from "@/lib/db-migrations"
 import { debugFilterData } from "@/lib/debug-filter"

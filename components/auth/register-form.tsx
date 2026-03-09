@@ -237,9 +237,9 @@ export function RegisterForm() {
           </div>
           {username.length >= 3 && usernameAvailable === false && (
             <p className="text-xs text-red-500">Este nombre de usuario ya está en uso</p>
-                  {username.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Si dejas el campo vacío, el sistema asignará un nombre automáticamente (ejemplo: user123456).</p>
-                  )}
+          )}
+          {username.length === 0 && (
+            <p className="text-xs text-muted-foreground">Si dejas el campo vacío, el sistema asignará un nombre automáticamente (ejemplo: user123456).</p>
           )}
           {username.length >= 3 && usernameAvailable === true && (
             <p className="text-xs text-green-600">¡Nombre de usuario disponible!</p>

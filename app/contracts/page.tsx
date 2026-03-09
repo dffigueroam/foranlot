@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 import { getRanking } from "@/lib/ranking"
 import { getUserCredits } from "@/lib/credits"
 import { getContractLimits } from "@/lib/contracts"

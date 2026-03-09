@@ -1,8 +1,27 @@
 import { Metadata } from "next"
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
+
 export const metadata: Metadata = {
-  title: "Guía y Usos de esta Página - ForanLot",
-  description: "Recomendaciones, acuerdos, requisitos, recursos, beneficios, consecuencias y funcionamiento general de ForanLot."
+  title: "Guia y Usos de la Plataforma",
+  description:
+    "Guia de uso responsable de ForanLot: recomendaciones, requisitos, recursos y funcionamiento general de la plataforma.",
+  alternates: {
+    canonical: "/info/guia-usos",
+  },
+  openGraph: {
+    title: "Guia y Usos de ForanLot",
+    description:
+      "Conoce recomendaciones y reglas generales para usar ForanLot de forma responsable.",
+    url: `${appUrl}/info/guia-usos`,
+    type: "article",
+    locale: "es_CO",
+  },
+  twitter: {
+    card: "summary",
+    title: "Guia y Usos de ForanLot",
+    description: "Recomendaciones y acuerdos de uso responsable de la plataforma.",
+  },
 }
 
 export default function GuiaUsosPage() {

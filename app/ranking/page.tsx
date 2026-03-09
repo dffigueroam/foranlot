@@ -8,6 +8,10 @@ import { RankingTable } from "@/components/ranking/ranking-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+
+export const metadata = {
+  robots: { index: false, follow: false },
+}
 export default async function RankingPage() {
   const user = await getCurrentUser()
   if (!user) {

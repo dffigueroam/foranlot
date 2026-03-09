@@ -1,33 +1,26 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
-type Lottery = {
-  id: string
-  name: string
-  slug: string
-  country: string
-  digits: number[]
-}
-
-export function QuedadosTool() {
-    const [lastDraws, setLastDraws] = useState<any[]>([])
-    const [loadingDraws, setLoadingDraws] = useState(false)
-    const [errorDraws, setErrorDraws] = useState("")
-    const [countries, setCountries] = useState<string[]>([])
-    const [digits, setDigits] = useState<number[]>([])
-    const [lotteries, setLotteries] = useState<any[]>([])
-    const [country, setCountry] = useState("")
-    const [digitCount, setDigitCount] = useState("")
-    const [selectedLotteryId, setSelectedLotteryId] = useState("")
-    const [loadingCountries, setLoadingCountries] = useState(false)
-    const [loadingDigits, setLoadingDigits] = useState(false)
-    const [loadingLotteries, setLoadingLotteries] = useState(false)
-    const [errorCountries, setErrorCountries] = useState("")
-    const [errorDigits, setErrorDigits] = useState("")
-    const [errorLotteries, setErrorLotteries] = useState("")
-    const [result, setResult] = useState<any>(null)
-    const [loadingResult, setLoadingResult] = useState(false)
-    const [errorResult, setErrorResult] = useState("")
+export default function QuedadosTool() {
+  // Estados principales
+  const [country, setCountry] = useState("");
+  const [digitCount, setDigitCount] = useState("");
+  const [selectedLotteryName, setSelectedLotteryName] = useState("");
+  const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
+  const [digits, setDigits] = useState<string[]>([]);
+  const [lotteries, setLotteries] = useState<any[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingDigits, setLoadingDigits] = useState(false);
+  const [loadingLotteries, setLoadingLotteries] = useState(false);
+  const [loadingDraws, setLoadingDraws] = useState(false);
+  const [errorCountries, setErrorCountries] = useState("");
+  const [errorDigits, setErrorDigits] = useState("");
+  const [errorLotteries, setErrorLotteries] = useState("");
+  const [errorDraws, setErrorDraws] = useState("");
+  const [lastDraws, setLastDraws] = useState<any[]>([]);
+  const [result, setResult] = useState<any>(null);
+  const [loadingResult, setLoadingResult] = useState(false);
+  const [errorResult, setErrorResult] = useState("");
 
     // Load countries
     useEffect(() => {
@@ -66,7 +59,7 @@ export function QuedadosTool() {
     useEffect(() => {
       if (!country || !digitCount) {
         setLotteries([])
-        setSelectedLotteryId("")
+        setSelectedLotteryName("")
         return
       }
       setLoadingLotteries(true)
@@ -74,8 +67,11 @@ export function QuedadosTool() {
       fetch(`/api/tools/lotteries-list?country=${encodeURIComponent(country)}&digitCount=${encodeURIComponent(digitCount)}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success) setLotteries(data.lotteries)
-          else setErrorLotteries(data.error || "Error al cargar loterías")
+          if (data.success) {
+            setLotteries(data.lotteries)
+            if (data.lotteries.length > 0) setSelectedLotteryName(data.lotteries[0].name || "")
+            else setSelectedLotteryName("")
+          } else setErrorLotteries(data.error || "Error al cargar loterías")
         })
         .catch(() => setErrorLotteries("Error de red"))
         .finally(() => setLoadingLotteries(false))
@@ -87,34 +83,41 @@ async function handleAnalyze() {
   setErrorResult("");
   setResult(null);
   // Validación previa
-  if (!country || !digitCount || !selectedLotteryId) {
+  if (!country || !digitCount || !selectedLotteryName) {
     setErrorResult("Debes seleccionar país, cifras y lotería antes de analizar quedados.");
     setLoadingResult(false);
     return;
   }
   try {
-    const selectedLottery = lotteries.find(l => l.id === selectedLotteryId);
-    const lotteryName = selectedLottery ? selectedLottery.name : "";
-    const countryCodeMap: Record<string, string> = {
-      "Colombia": "COL",
-      "España": "ESP",
-      "USA": "USA",
-      "Estados Unidos": "USA"
-    };
-    const countryCode = countryCodeMap[country] || country;
+    const lotteryName = selectedLotteryName;
+    if (!lotteryName) {
+      setErrorResult("No se pudo determinar el nombre de la lotería seleccionada. Revisa la base de datos o selecciona otra lotería.");
+      setLoadingResult(false);
+      return;
+    }
     let res;
     try {
       res = await fetch("/api/tools/quedados", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ country: countryCode, lotteryName, digitCount: Number(digitCount) })
+        body: JSON.stringify({ country, lotteryName, digitCount: Number(digitCount) })
       });
     } catch (fetchErr) {
       setErrorResult("Error de red: fetch falló (endpoint no existe, ruta mal escrita, server caído, CORS, timeout)");
       return;
     }
     if (!res.ok) {
-      setErrorResult(`Error HTTP: status ${res.status} (${res.statusText}) — puede ser 400, 404, 500, 405`);
+      let errMsg = `Error HTTP: status ${res.status} (${res.statusText})`;
+      try {
+        const errData = await res.json();
+        if (errData && errData.error) {
+          errMsg += `\nMensaje: ${errData.error}`;
+          if (errData.details) {
+            errMsg += `\nDetalles: ${JSON.stringify(errData.details)}`;
+          }
+        }
+      } catch {}
+      setErrorResult(errMsg);
       return;
     }
     let data;
@@ -138,24 +141,21 @@ async function handleLastDraws() {
   setErrorDraws("");
   setLastDraws([]);
   // Validación previa
-  if (!country || !digitCount || !selectedLotteryId) {
+  if (!country || !digitCount || !selectedLotteryName) {
     setErrorDraws("Debes seleccionar país, cifras y lotería antes de ver los últimos resultados.");
     setLoadingDraws(false);
     return;
   }
   try {
-    const selectedLottery = lotteries.find(l => l.id === selectedLotteryId);
-    const lotteryName = selectedLottery ? selectedLottery.name : "";
-    const countryCodeMap: Record<string, string> = {
-      "Colombia": "COL",
-      "España": "ESP",
-      "USA": "USA",
-      "Estados Unidos": "USA"
-    };
-    const countryCode = countryCodeMap[country] || country;
+    const lotteryName = selectedLotteryName;
+    if (!lotteryName) {
+      setErrorDraws("No se pudo determinar el nombre de la lotería seleccionada. Revisa la base de datos o selecciona otra lotería.");
+      setLoadingDraws(false);
+      return;
+    }
     let res;
     try {
-      res = await fetch(`/api/tools/quedados?country=${encodeURIComponent(countryCode)}&lotteryName=${encodeURIComponent(lotteryName)}&digitCount=${encodeURIComponent(digitCount)}`);
+      res = await fetch(`/api/tools/quedados?lotteryName=${encodeURIComponent(lotteryName)}&digitCount=${encodeURIComponent(digitCount)}`);
     } catch (fetchErr) {
       setErrorDraws("Error de red: fetch falló (endpoint no existe, ruta mal escrita, server caído, CORS, timeout)");
       return;
@@ -198,15 +198,9 @@ async function handleLastDraws() {
                 <option value="">Selecciona país</option>
                 {loadingCountries ? <option>Cargando...</option> : null}
                 {errorCountries ? <option disabled>{errorCountries}</option> : null}
-                {countries
-                  .filter(c => ["Colombia", "COL", "CO", "España", "ESP", "USA", "Estados Unidos"].includes(c))
-                  .map(c => {
-                    let label = c;
-                    if (["Colombia", "COL", "CO"].includes(c)) label = "Colombia";
-                    if (["España", "ESP"].includes(c)) label = "España";
-                    if (["USA", "Estados Unidos"].includes(c)) label = "Estados Unidos";
-                    return <option key={c} value={c}>{label}</option>;
-                  })}
+                {countries.map(c => (
+                  <option key={c.code} value={c.name}>{c.name}</option>
+                ))}
               </select>
             </div>
             {/* Cifras */}
@@ -230,32 +224,40 @@ async function handleLastDraws() {
             <div className="flex flex-col">
               <label className="text-sm font-medium mb-2 text-[#E0E0E0]">Lotería:</label>
               <select
-                value={selectedLotteryId}
-                onChange={e => setSelectedLotteryId(e.target.value)}
+                value={selectedLotteryName}
+                onChange={e => setSelectedLotteryName(e.target.value)}
                 className="border rounded px-2 py-1 bg-[#E0E0E0] text-[#4A0018] focus:bg-[#FFFFFF] focus:text-[#4A0018]"
                 disabled={loadingLotteries || lotteries.length === 0 || !country || !digitCount}
               >
                 <option value="">Selecciona lotería</option>
                 {loadingLotteries ? <option>Cargando...</option> : null}
                 {errorLotteries ? <option disabled>{errorLotteries}</option> : null}
-                {lotteries.map(lottery => (
-                  <option key={lottery.id} value={lottery.id}>{lottery.name}</option>
-                ))}
+                {lotteries.map(lottery => {
+                  const label = lottery.name || lottery.title || lottery.nombre || String(lottery.id);
+                  return <option key={label} value={label}>{label}</option>;
+                })}
               </select>
+              {/* DEBUG: Mostrar estructura de la lotería seleccionada */}
+              {selectedLotteryName && lotteries.length > 0 && (
+                <div className="mt-2 text-xs text-yellow-200 bg-black bg-opacity-30 p-2 rounded">
+                  <div className="font-bold">DEBUG objeto lotería seleccionada:</div>
+                  <pre>{JSON.stringify(lotteries.find(l => l.name === selectedLotteryName), null, 2)}</pre>
+                </div>
+              )}
             </div>
           </div>
           // ...existing code...
           <div className="flex gap-2">
             <button
               className="w-full py-2 mt-2 bg-[#E0E0E0] text-[#4A0018] rounded font-semibold"
-              disabled={!selectedLotteryId || loadingResult}
+              disabled={!selectedLotteryName || loadingResult}
               onClick={handleAnalyze}
             >
               {loadingResult ? "Analizando..." : "Analizar Quedados"}
             </button>
             <button
               className="w-full py-2 mt-2 bg-[#E0E0E0] text-[#4A0018] rounded font-semibold"
-              disabled={!selectedLotteryId || loadingDraws}
+              disabled={!selectedLotteryName || loadingDraws}
               onClick={handleLastDraws}
             >
               {loadingDraws ? "Cargando..." : "Últimos 5 Resultados"}
@@ -275,9 +277,61 @@ async function handleLastDraws() {
                       </div>
                     )}
           {errorResult && <div className="mt-4 text-red-500">{errorResult}</div>}
-          {result && (
+          {result && Array.isArray(result.quedados) && result.quedados.length > 0 && (
             <div className="mt-4">
-              {/* Renderizar resultado aquí */}
+              <div className="font-semibold text-[#E0E0E0] mb-2">Cifras quedadas por posición</div>
+              {/* Agrupar por posición */}
+              {(() => {
+                // Agrupar los dígitos por posición
+                const posMap: Record<number, Array<{ digit: string; lastDate: string | null }>> = {};
+                result.quedados.forEach((q: any) => {
+                  if (!posMap[q.position]) posMap[q.position] = [];
+                  posMap[q.position].push({ digit: q.digit, lastDate: q.lastDate });
+                });
+                // Ordenar por antigüedad (más quedados primero)
+                Object.keys(posMap).forEach(pos => {
+                  posMap[Number(pos)].sort((a, b) => {
+                    if (!a.lastDate) return 1;
+                    if (!b.lastDate) return -1;
+                    return new Date(a.lastDate).getTime() - new Date(b.lastDate).getTime();
+                  });
+                });
+                // Obtener el máximo de cifras por posición para grid
+                const maxCifras = Math.max(...Object.values(posMap).map(arr => arr.length));
+                const posiciones = Object.keys(posMap).map(Number).sort((a, b) => a - b);
+                return (
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-4">
+                      {posiciones.map(pos => (
+                        <div key={pos} className="flex flex-col items-center min-w-20">
+                          <div className="text-xs font-bold mb-2 text-[#E0E0E0]">Posición {pos + 1}</div>
+                          {posMap[pos].map((cifra, idx) => {
+                            // Tamaño decreciente según el orden (más quedados más grande)
+                            const base = 2.5; // rem
+                            const size = base - idx * 0.35;
+                            return (
+                              <div
+                                key={cifra.digit}
+                                className="flex items-center justify-center mb-2"
+                                style={{ fontSize: `${size > 1.2 ? size : 1.2}rem`, fontWeight: 700, background: 'rgba(255,255,255,0.12)', borderRadius: '9999px', width: `${size > 1.2 ? size * 1.8 : 2}rem`, height: `${size > 1.2 ? size * 1.8 : 2}rem`, color: '#fff', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.10)' }}
+                                title={cifra.lastDate ? `Última vez: ${new Date(cifra.lastDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}
+                              >
+                                {cifra.digit}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-300 mt-4">Total de sorteos analizados: <span className="font-semibold">{result.totalDraws}</span></div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          {/* Fallback: si no hay quedados, muestra el JSON crudo */}
+          {result && (!Array.isArray(result.quedados) || result.quedados.length === 0) && (
+            <div className="mt-4">
               <pre className="bg-black bg-opacity-20 text-white p-2 rounded overflow-x-auto text-xs">{JSON.stringify(result, null, 2)}</pre>
             </div>
           )}

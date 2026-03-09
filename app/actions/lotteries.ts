@@ -1,5 +1,5 @@
 "use server"
-import { getAvailableLotteriesForPosting } from "../../lib/lotteries"
+import { getAvailableLotteriesForPosting } from "../../lib/lotteries-server"
 
 export async function getAvailableLotteriesForDate(drawDate: string, country: string) {
   try {

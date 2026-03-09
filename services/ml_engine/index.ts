@@ -1,34 +1,24 @@
-"use server"
-
-/**
- * ML Engine Index - Sistema de análisis de predicciones
- * Combina múltiples modelos para scoring y evaluación
- */
-
 import { buildDataset } from "./data/dataset.builder"
 import { calculateScore } from "./models/scoring.model"
 import { evaluateModel } from "./evaluation/evaluator"
 
-export const MLEngine = {
-  /**
-   * Analizar dataset de predicciones
-   */
-  async analyze() {
-    const dataset = await buildDataset()
-    return dataset
-  },
+/**
+ * Analizar dataset de predicciones
+ */
+export async function analyzeDataset() {
+  return buildDataset()
+}
 
-  /**
-   * Calcular score de una predicción individual
-   */
-  async scorePrediction(prediction: any) {
-    return await calculateScore(prediction)
-  },
+/**
+ * Calcular score de una predicción individual
+ */
+export async function scorePrediction(prediction: any) {
+  return calculateScore(prediction)
+}
 
-  /**
-   * Evaluar desempeño del modelo
-   */
-  async evaluate() {
-    return evaluateModel()
-  },
+/**
+ * Evaluar desempeño del modelo
+ */
+export async function evaluateModelEngine() {
+  return evaluateModel()
 }

@@ -440,7 +440,7 @@ export async function getLastDayResultsByCountry() {
 
     // Crear mapa de país para cada lotería desde la base de datos
     const lotteryCountryMap = new Map<string, string[]>()
-    const lotteries = await (await import("./lotteries")).getLotteriesFromDB();
+    const lotteries = await (await import("./lotteries-server")).getLotteriesFromDB();
     lotteries.forEach(lottery => {
       // Dividir países combinados (ej: "USA y Colombia" -> ["USA", "Colombia"])
       const countries = lottery.country.split(" y ").map(c => c.trim())

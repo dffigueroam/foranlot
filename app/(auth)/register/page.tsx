@@ -1,8 +1,15 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { RegisterForm } from "@/components/auth/register-form"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  title: "Crear Cuenta",
+  description: "Crea tu cuenta en ForanLot para comenzar a compartir pronosticos de loteria.",
+  robots: { index: false, follow: false },
+}
 
 export default async function RegisterPage() {
   const user = await getCurrentUser()

@@ -1,3 +1,10 @@
+// Stubs para compatibilidad con imports existentes
+export async function downloadDropboxExcel() {
+  throw new Error("downloadDropboxExcel no implementado. Usa downloadDropboxFile en su lugar.");
+}
+export async function parseExcelResults() {
+  throw new Error("parseExcelResults no implementado. Usa parseResultsFromBuffer en su lugar.");
+}
 import "server-only"
 
 /**

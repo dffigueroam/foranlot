@@ -1,29 +1,51 @@
 import { MetadataRoute } from "next"
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lotiq.com"
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
 
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/register", "/login", "/pricing", "/ranking"],
+        allow: ["/"],
         disallow: [
           "/api/*",
-          "/dashboard/*",
           "/admin/*",
+          "/contracts/*",
+          "/dashboard/*",
           "/my-payments/*",
+          "/notifications/*",
+          "/premium/*",
+          "/pricing/*",
+          "/profile/*",
+          "/ranking/*",
           "/selections/*",
           "/stats/*",
           "/tools/*",
-          "/contracts/*",
           "/users/*",
+          "/verify-email/*",
         ],
       },
       {
         userAgent: "Googlebot",
-        allow: ["/", "/register", "/login", "/pricing", "/ranking"],
-        disallow: ["/api/*", "/dashboard/*", "/admin/*"],
+        allow: ["/"],
+        disallow: [
+          "/api/*",
+          "/admin/*",
+          "/contracts/*",
+          "/dashboard/*",
+          "/my-payments/*",
+          "/notifications/*",
+          "/premium/*",
+          "/pricing/*",
+          "/profile/*",
+          "/ranking/*",
+          "/selections/*",
+          "/stats/*",
+          "/tools/*",
+          "/users/*",
+          "/verify-email/*",
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

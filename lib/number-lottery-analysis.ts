@@ -1,6 +1,6 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
-import { getLotteriesFromDB } from "./lotteries"
+import { getLotteriesFromDB } from "./lotteries-server"
 
 const sql = neon(process.env.DATABASE_URL!)
 

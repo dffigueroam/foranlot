@@ -1,26 +1,9 @@
-/**
- * Obtiene los últimos 5 sorteos de una lotería por nombre, país y cifras.
- */
-export async function getLastDraws(country: string, lotteryName: string, digitCount: number) {
-  const countryMap: Record<string, string[]> = {
-    COL: ["COL", "Colombia"],
-    ESP: ["ESP", "España"],
-    USA: ["USA", "Estados Unidos", "USA", "United States"],
-  };
-  const countryValues = countryMap[country] || [country];
-  const draws = await sql`
-    SELECT draw_date, result
-    FROM lottery_results
-    WHERE country = ANY(${countryValues})
-      AND lottery_name = ${lotteryName}
-      AND digit_count = ${digitCount}
-    ORDER BY draw_date DESC
-    LIMIT 5
-  `;
-  return draws;
-}
+// ...existing code...
+import { getLastDraws } from "./last-draws"
+// ...existing code...
 import "server-only"
 import { neon } from "@neondatabase/serverless"
+import { getAvailableLotteries } from "./lotteries"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -31,6 +14,13 @@ export interface QuedadosResult {
   quedados: Array<{ position: number; digit: string; lastDate: string | null }>
   totalDraws: number
 }
+
+// Mapa global para normalizar país
+const countryNameMap: Record<string, string> = {
+  COL: "Colombia",
+  ESP: "España",
+  USA: "Estados Unidos"
+};
 
 /**
  * Genera el análisis de quedados por posición.
@@ -43,17 +33,31 @@ export async function generateQuedadosByPosition(
   lotteryName: string,
   digitCount: number
 ): Promise<QuedadosResult> {
-  // Adaptar país: aceptar código o nombre
-  const countryMap: Record<string, string[]> = {
-    COL: ["COL", "Colombia"],
-    ESP: ["ESP", "España"],
-    USA: ["USA", "Estados Unidos", "USA", "United States"],
-  };
-  const countryValues = countryMap[country] || [country];
 
-  // Validar lotería
-  const lotRes = await sql`SELECT name FROM lotteries WHERE country = ANY(${countryValues}) AND name = ${lotteryName} AND ${digitCount} = ANY(digits) AND is_active = true`;
-  if (!lotRes.length) return {
+  // Normalizar nombre de país si viene como código (usar solo la global)
+  const normalizedCountry = countryNameMap[country] || country;
+
+  // Debug: mostrar parámetros recibidos
+  console.log("[quedados][DEBUG] Params:", { country, normalizedCountry, lotteryName, digitCount });
+  // Validar que la lotería esté disponible para el país y cifras
+  const availableLotteries = await getAvailableLotteries(normalizedCountry, digitCount);
+  console.log("[quedados][DEBUG] availableLotteries:", availableLotteries);
+  if (!availableLotteries.includes(lotteryName)) {
+    console.warn("[quedados][DEBUG] Lotería no disponible para país/cifras", { lotteryName, normalizedCountry, digitCount });
+    return {
+      country: normalizedCountry,
+      lotteryName,
+      digitCount,
+      quedados: [],
+      totalDraws: 0,
+    };
+  }
+  const dbLotteryName = lotteryName;
+  let digitsField = null;
+  if (digitCount === 2) digitsField = 'digits_2';
+  else if (digitCount === 3) digitsField = 'digits_3';
+  else if (digitCount === 4) digitsField = 'digits_4';
+  else return {
     country,
     lotteryName,
     digitCount,
@@ -61,15 +65,19 @@ export async function generateQuedadosByPosition(
     totalDraws: 0,
   };
 
-  // Obtener resultados históricos
+  // Obtener resultados históricos usando JOIN con lotteries para asegurar validez (solo filtra país en lotteries)
   const query = `
-    SELECT lr.winning_number, lr.draw_date
+    SELECT lr.winning_number, lr.draw_date, lr.${digitsField}
     FROM lottery_results lr
+    INNER JOIN lotteries l ON lr.lottery_name = l.name
     WHERE lr.lottery_name = $1
-      AND lr.winning_number IS NOT NULL
+      AND l.country = $2
+      AND $3 = ANY(l.digits)
+      AND lr.${digitsField} IS NOT NULL
     ORDER BY lr.draw_date DESC
   `;
-  const results = await sql.query(query, [lotteryName]);
+  const results = await sql.query(query, [dbLotteryName, normalizedCountry, digitCount]);
+  console.log("[quedados][DEBUG] SQL results:", results);
 
   // Mapear por posición y dígito: fecha más reciente
   const positionMap: Map<number, Map<string, string>> = new Map();

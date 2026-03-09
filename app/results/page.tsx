@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { getLastDayResultsByCountry } from "@/lib/verification"
 import { PageWrapper } from "@/components/layout/page-wrapper"
@@ -5,6 +6,45 @@ import { getCurrentUser } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lot-iq.com"
+
+export const metadata: Metadata = {
+  title: "Resultados de Loterias de Hoy | Colombia, Espana y USA",
+  description:
+    "Consulta resultados recientes de loterias por pais, numero ganador y fecha de sorteo. Informacion publica para seguimiento y analisis.",
+  alternates: {
+    canonical: "/results",
+    languages: {
+      "es-CO": "/results",
+      "es": "/results",
+    },
+  },
+  openGraph: {
+    title: "Resultados de Loterias de Hoy | ForanLot",
+    description:
+      "Verifica resultados recientes de loterias en Colombia, Espana y USA con fecha y numero ganador.",
+    url: "/results",
+    siteName: "ForanLot",
+    locale: "es_CO",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "ForanLot - Resultados de Loterias",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Resultados de Loterias de Hoy | ForanLot",
+    description:
+      "Consulta los ultimos resultados de loterias por pais y fecha de sorteo.",
+    images: ["/twitter-image.png"],
+  },
+}
 
 export default async function ResultsPage() {
   const user = await getCurrentUser()
@@ -30,12 +70,60 @@ export default async function ResultsPage() {
 
   const totalResults = resultsByCountry.reduce((sum, group) => sum + group.lotteries.length, 0)
 
+  const recentItems = resultsByCountry
+    .flatMap((group) =>
+      group.lotteries.slice(0, 5).map((item: any) => ({
+        "@type": "ListItem",
+        position: 1,
+        name: `${item.lottery_name} ${item.winning_number}`,
+        url: `${appUrl}/results`,
+      }))
+    )
+    .slice(0, 12)
+    .map((entry, index) => ({ ...entry, position: index + 1 }))
+
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Resultados recientes de loterias",
+    itemListOrder: "https://schema.org/ItemListOrderDescending",
+    numberOfItems: recentItems.length,
+    itemListElement: recentItems,
+  }
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Inicio",
+        item: appUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Resultados",
+        item: `${appUrl}/results`,
+      },
+    ],
+  }
+
   const countryColumns = ["Colombia", "España", "USA"]
   const resultsByCountryMap = new Map(resultsByCountry.map(group => [group.country, group]))
 
   return (
     <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
       <div className="min-h-screen bg-background">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8 space-y-4">
@@ -88,13 +176,20 @@ export default async function ResultsPage() {
                               <td className="px-3 py-2 text-right">
                                 {result.draw_date_formatted
                                   ? result.draw_date_formatted
-                                  : result.draw_date
-                                    ? new Date(result.draw_date + "T00:00:00").toLocaleDateString("es-CO", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric"
-                                      })
-                                    : ""}
+                                  : result.draw_date && (() => {
+                                      const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+                                      let y, m, d;
+                                      if (typeof result.draw_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(result.draw_date)) {
+                                        [y, m, d] = result.draw_date.split("-");
+                                      } else if (result.draw_date instanceof Date) {
+                                        const iso = result.draw_date.toISOString().split("T")[0];
+                                        [y, m, d] = iso.split("-");
+                                      } else {
+                                        return result.draw_date;
+                                      }
+                                      const monthIdx = parseInt(m, 10) - 1;
+                                      return `${months[monthIdx]}-${d}-${y}`;
+                                    })()}
                                 {result.draw_time_formatted
                                   ? (
                                       <span className="block text-xs text-muted-foreground">{result.draw_time_formatted}h</span>
