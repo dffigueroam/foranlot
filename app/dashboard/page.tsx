@@ -76,7 +76,7 @@ export default async function DashboardPage() {
 
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
-      <div className="min-h-screen bg-gradient-to-br from-background via-green-50/20 dark:via-green-950/10 to-background">
+      <div className="min-h-screen bg-linear-to-br from-background via-green-50/20 dark:via-green-950/10 to-background">
         {/* Elementos decorativos de fondo */}
         <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
           <div className="absolute top-20 left-20 w-96 h-96 bg-linear-to-br from-green-400 to-cyan-500 rounded-full blur-3xl"></div>
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
 
           {/* COLUMNA IZQUIERDA - Formulario y solicitudes */}
           <div className="space-y-6">
-            <PredictionFormClient />
+            <PredictionFormClient preferredCountry={user.country || ""} />
             {/* Panel de solicitudes de vinculación (solo usuario gratis, al final de la columna izquierda) */}
             {!user.is_premium && (
               <div className="mt-6">

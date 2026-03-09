@@ -110,7 +110,7 @@ export const NumberAnalyzerTools = React.memo(function NumberAnalyzerTools({ isP
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<HeatmapTool />
+						<HeatmapTool preferredCountry={country === "COL" ? "Colombia" : country === "ESP" ? "España" : "Estados Unidos"} />
 					</CardContent>
 				</Card>
 			</div>

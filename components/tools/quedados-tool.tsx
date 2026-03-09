@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
-export default function QuedadosTool() {
+export default function QuedadosTool({ preferredCountry = "" }: { preferredCountry?: string }) {
   // Estados principales
   const [country, setCountry] = useState("");
   const [digitCount, setDigitCount] = useState("");
@@ -29,12 +29,17 @@ export default function QuedadosTool() {
       fetch("/api/tools/countries")
         .then(res => res.json())
         .then(data => {
-          if (data.success) setCountries(data.countries)
-          else setErrorCountries(data.error || "Error al cargar países")
+          if (data.success && Array.isArray(data.countries)) {
+            setCountries(data.countries)
+            const preferred = data.countries.find((c: { code: string; name: string }) => c.name === preferredCountry)
+            setCountry(prev => prev || preferred?.name || data.countries[0]?.name || "")
+          } else {
+            setErrorCountries(data.error || "Error al cargar países")
+          }
         })
         .catch(() => setErrorCountries("Error de red"))
         .finally(() => setLoadingCountries(false))
-    }, [])
+    }, [preferredCountry])
 
     // Load digits when country changes
     useEffect(() => {
@@ -129,8 +134,9 @@ async function handleAnalyze() {
     }
     if (data.error) setErrorResult(data.error);
     else setResult(data.result);
-  } catch (err) {
-    setErrorResult("Error inesperado: " + (err?.message || String(err)));
+  } catch (err: unknown) {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    setErrorResult("Error inesperado: " + errMessage);
   } finally {
     setLoadingResult(false);
   }
@@ -155,7 +161,9 @@ async function handleLastDraws() {
     }
     let res;
     try {
-      res = await fetch(`/api/tools/quedados?lotteryName=${encodeURIComponent(lotteryName)}&digitCount=${encodeURIComponent(digitCount)}`);
+      res = await fetch(
+        `/api/tools/quedados?country=${encodeURIComponent(country)}&lotteryName=${encodeURIComponent(lotteryName)}&digitCount=${encodeURIComponent(digitCount)}`
+      );
     } catch (fetchErr) {
       setErrorDraws("Error de red: fetch falló (endpoint no existe, ruta mal escrita, server caído, CORS, timeout)");
       return;
@@ -173,12 +181,13 @@ async function handleLastDraws() {
     }
     if (data.error) setErrorDraws(data.error + (data.details ? ": " + data.details : ""));
     else setLastDraws(data.draws);
-  } catch (err) {
-    setErrorDraws("Error inesperado: " + (err?.message || String(err)));
+  } catch (err: unknown) {
+    const errMessage = err instanceof Error ? err.message : String(err);
+    setErrorDraws("Error inesperado: " + errMessage);
   } finally {
     setLoadingDraws(false);
   }
-}    // ...existing code...
+}
     return (
       <Card className="bg-[#4A0018] border-none mt-8">
         <CardHeader>
@@ -237,16 +246,9 @@ async function handleLastDraws() {
                   return <option key={label} value={label}>{label}</option>;
                 })}
               </select>
-              {/* DEBUG: Mostrar estructura de la lotería seleccionada */}
-              {selectedLotteryName && lotteries.length > 0 && (
-                <div className="mt-2 text-xs text-yellow-200 bg-black bg-opacity-30 p-2 rounded">
-                  <div className="font-bold">DEBUG objeto lotería seleccionada:</div>
-                  <pre>{JSON.stringify(lotteries.find(l => l.name === selectedLotteryName), null, 2)}</pre>
-                </div>
-              )}
             </div>
           </div>
-          // ...existing code...
+
           <div className="flex gap-2">
             <button
               className="w-full py-2 mt-2 bg-[#E0E0E0] text-[#4A0018] rounded font-semibold"
@@ -263,78 +265,85 @@ async function handleLastDraws() {
               {loadingDraws ? "Cargando..." : "Últimos 5 Resultados"}
             </button>
           </div>
-                    {errorDraws && <div className="mt-4 text-red-500">{errorDraws}</div>}
-                    {lastDraws.length > 0 && (
-                      <div className="mt-4">
-                        <div className="font-semibold text-[#E0E0E0] mb-2">Últimos 5 sorteos:</div>
-                        <ul className="bg-black bg-opacity-20 text-white p-2 rounded text-xs">
-                          {lastDraws.map((draw, idx) => (
-                            <li key={idx} className="mb-1">
-                              <span className="font-bold">{new Date(draw.draw_date).toLocaleDateString()}</span>: {draw.result}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-          {errorResult && <div className="mt-4 text-red-500">{errorResult}</div>}
-          {result && Array.isArray(result.quedados) && result.quedados.length > 0 && (
-            <div className="mt-4">
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <div className="font-semibold text-[#E0E0E0] mb-2">Cifras quedadas por posición</div>
-              {/* Agrupar por posición */}
-              {(() => {
-                // Agrupar los dígitos por posición
-                const posMap: Record<number, Array<{ digit: string; lastDate: string | null }>> = {};
-                result.quedados.forEach((q: any) => {
-                  if (!posMap[q.position]) posMap[q.position] = [];
-                  posMap[q.position].push({ digit: q.digit, lastDate: q.lastDate });
-                });
-                // Ordenar por antigüedad (más quedados primero)
-                Object.keys(posMap).forEach(pos => {
-                  posMap[Number(pos)].sort((a, b) => {
-                    if (!a.lastDate) return 1;
-                    if (!b.lastDate) return -1;
-                    return new Date(a.lastDate).getTime() - new Date(b.lastDate).getTime();
-                  });
-                });
-                // Obtener el máximo de cifras por posición para grid
-                const maxCifras = Math.max(...Object.values(posMap).map(arr => arr.length));
-                const posiciones = Object.keys(posMap).map(Number).sort((a, b) => a - b);
-                return (
-                  <div className="overflow-x-auto">
-                    <div className="flex gap-4">
-                      {posiciones.map(pos => (
-                        <div key={pos} className="flex flex-col items-center min-w-20">
-                          <div className="text-xs font-bold mb-2 text-[#E0E0E0]">Posición {pos + 1}</div>
-                          {posMap[pos].map((cifra, idx) => {
-                            // Tamaño decreciente según el orden (más quedados más grande)
-                            const base = 2.5; // rem
-                            const size = base - idx * 0.35;
-                            return (
-                              <div
-                                key={cifra.digit}
-                                className="flex items-center justify-center mb-2"
-                                style={{ fontSize: `${size > 1.2 ? size : 1.2}rem`, fontWeight: 700, background: 'rgba(255,255,255,0.12)', borderRadius: '9999px', width: `${size > 1.2 ? size * 1.8 : 2}rem`, height: `${size > 1.2 ? size * 1.8 : 2}rem`, color: '#fff', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.10)' }}
-                                title={cifra.lastDate ? `Última vez: ${new Date(cifra.lastDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}
-                              >
-                                {cifra.digit}
-                              </div>
-                            );
-                          })}
+              {errorResult && <div className="text-red-500 mb-2">{errorResult}</div>}
+              {result && Array.isArray(result.quedados) && result.quedados.length > 0 && (
+                <div>
+                  {/* Agrupar por posición */}
+                  {(() => {
+                    // Agrupar los dígitos por posición
+                    const posMap: Record<number, Array<{ digit: string; lastDate: string | null }>> = {};
+                    result.quedados.forEach((q: any) => {
+                      if (!posMap[q.position]) posMap[q.position] = [];
+                      posMap[q.position].push({ digit: q.digit, lastDate: q.lastDate });
+                    });
+                    // Ordenar por antigüedad (más quedados primero)
+                    Object.keys(posMap).forEach(pos => {
+                      posMap[Number(pos)].sort((a, b) => {
+                        if (!a.lastDate) return 1;
+                        if (!b.lastDate) return -1;
+                        return new Date(a.lastDate).getTime() - new Date(b.lastDate).getTime();
+                      });
+                    });
+                    const posiciones = Object.keys(posMap).map(Number).sort((a, b) => a - b);
+                    return (
+                      <div className="overflow-x-auto bg-black bg-opacity-20 p-3 rounded">
+                        <div className="flex gap-4">
+                          {posiciones.map(pos => (
+                            <div key={pos} className="flex flex-col items-center min-w-20">
+                              <div className="text-xs font-bold mb-2 text-[#E0E0E0]">Posición {pos + 1}</div>
+                              {posMap[pos].map((cifra, idx) => {
+                                // Tamaño decreciente según el orden (más quedados más grande)
+                                const base = 2.5; // rem
+                                const size = base - idx * 0.35;
+                                return (
+                                  <div
+                                    key={cifra.digit}
+                                    className="flex items-center justify-center mb-2"
+                                    style={{ fontSize: `${size > 1.2 ? size : 1.2}rem`, fontWeight: 700, background: 'rgba(255,255,255,0.12)', borderRadius: '9999px', width: `${size > 1.2 ? size * 1.8 : 2}rem`, height: `${size > 1.2 ? size * 1.8 : 2}rem`, color: '#fff', boxShadow: '0 2px 8px 0 rgba(0,0,0,0.10)' }}
+                                    title={cifra.lastDate ? `Última vez: ${new Date(cifra.lastDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}
+                                  >
+                                    {cifra.digit}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-300 mt-4">Total de sorteos analizados: <span className="font-semibold">{result.totalDraws}</span></div>
-                  </div>
-                );
-              })()}
+                        <div className="text-xs text-gray-300 mt-4">Total de sorteos analizados: <span className="font-semibold">{result.totalDraws}</span></div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              {result && (!Array.isArray(result.quedados) || result.quedados.length === 0) && (
+                <div className="text-sm text-[#E0E0E0] bg-black bg-opacity-20 p-3 rounded">
+                  No se encontraron cifras quedadas para los filtros seleccionados.
+                </div>
+              )}
             </div>
-          )}
-          {/* Fallback: si no hay quedados, muestra el JSON crudo */}
-          {result && (!Array.isArray(result.quedados) || result.quedados.length === 0) && (
-            <div className="mt-4">
-              <pre className="bg-black bg-opacity-20 text-white p-2 rounded overflow-x-auto text-xs">{JSON.stringify(result, null, 2)}</pre>
+
+            <div>
+              <div className="font-semibold text-[#E0E0E0] mb-2">Últimos 5 sorteos</div>
+              {errorDraws && <div className="text-red-500 mb-2">{errorDraws}</div>}
+              {lastDraws.length > 0 ? (
+                <ul className="bg-black bg-opacity-20 text-white p-3 rounded text-base">
+                  {lastDraws.map((draw, idx) => (
+                    <li key={idx} className="mb-2 leading-relaxed">
+                      <span className="font-bold">{new Date(draw.draw_date).toLocaleDateString()}</span>: {draw.result}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-[#E0E0E0] bg-black bg-opacity-20 p-3 rounded">
+                  Aún no has consultado los últimos resultados.
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     )

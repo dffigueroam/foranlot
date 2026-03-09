@@ -20,18 +20,24 @@ export function LoginForm({ onGoToPayment, onGoToConfig }: { onGoToPayment?: () 
     setError(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await login(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await login(formData)
 
-    if (result.error) {
-      if (result.error.includes("Este tipo de cuenta no puede iniciar sesión")) {
-        setError("lite-special")
+      if (result.error) {
+        if (result.error.includes("Este tipo de cuenta no puede iniciar sesión")) {
+          setError("lite-special")
+        } else {
+          setError(result.error)
+        }
       } else {
-        setError(result.error)
+        router.push("/dashboard")
+        router.refresh()
       }
+    } catch {
+      setError("No se pudo iniciar sesión. Intenta nuevamente.")
+    } finally {
       setLoading(false)
-    } else {
-      router.push("/dashboard")
     }
   }
 
@@ -70,8 +76,8 @@ export function LoginForm({ onGoToPayment, onGoToConfig }: { onGoToPayment?: () 
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" placeholder="tu@email.com" required disabled={loading} />
+        <Label htmlFor="email">Email o usuario</Label>
+        <Input id="email" name="email" type="text" placeholder="tu@email.com o tu_usuario" required disabled={loading} />
       </div>
 
       <div className="space-y-2">

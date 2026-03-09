@@ -3,38 +3,94 @@ import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
 
+interface LastDrawBaseRow {
+  draw_date: string
+  lottery_name: string
+  digits_2?: string | null
+  digits_3?: string | null
+  digits_4?: string | null
+  winning_number?: string | null
+}
+
 /**
  * Obtiene los últimos 5 sorteos de una lotería por nombre, país y cifras.
  */
 export async function getLastDraws(country: string, lotteryName: string, digitCount: number) {
-  // Debug: mostrar parámetros recibidos
-  console.log("[quedados][DEBUG][getLastDraws] Params:", { country, lotteryName, digitCount });
-  console.log("[quedados][DEBUG][getLastDraws] lotteryName typeof:", typeof lotteryName, lotteryName);
-  console.log("[quedados][DEBUG][getLastDraws] digitCount typeof:", typeof digitCount, digitCount);
-  let digitsField = null;
-  console.log("[quedados][DEBUG][getLastDraws] digitCount received:", digitCount, typeof digitCount);
-  if (digitCount === 2) digitsField = '2';
-  else if (digitCount === 3) digitsField = '3';
-  else if (digitCount === 4) digitsField = '4';
-  else if (digitCount === 5) digitsField = '5';
-  else {
-    console.error("[quedados][DEBUG][getLastDraws] Cifra no soportada", digitCount);
-    throw new Error('Cifra no soportada');
+  const countryNameMap: Record<string, string> = {
+    COL: "Colombia",
+    ESP: "España",
+    USA: "Estados Unidos"
   }
-  let draws;
+  const normalizedCountry = countryNameMap[country] || country
+
+  let draws: LastDrawBaseRow[] = []
   try {
-    const columnName = `digits_${digitsField}`;
-    const queryText = `SELECT draw_date, lottery_name, ${columnName} FROM lottery_results WHERE lottery_name = $1 ORDER BY draw_date DESC LIMIT 5`;
-    console.log("[quedados][DEBUG][getLastDraws] SQL query:", queryText, lotteryName);
-    draws = await sql.query(queryText, [lotteryName]);
-    if (!draws.length) {
-      console.warn("[quedados][DEBUG][getLastDraws] No draws found for params:", { lotteryName, digitCount });
+    if (digitCount === 2) {
+      draws = (await sql`
+        SELECT lr.draw_date, lr.lottery_name, lr.digits_2
+        FROM lottery_results lr
+        INNER JOIN lotteries l ON lr.lottery_name = l.name
+        WHERE lr.lottery_name = ${lotteryName}
+          AND l.country = ${normalizedCountry}
+          AND ${digitCount} = ANY(l.digits)
+          AND lr.digits_2 IS NOT NULL
+        ORDER BY lr.draw_date DESC
+        LIMIT 5
+      `) as LastDrawBaseRow[]
+    } else if (digitCount === 3) {
+      draws = (await sql`
+        SELECT lr.draw_date, lr.lottery_name, lr.digits_3
+        FROM lottery_results lr
+        INNER JOIN lotteries l ON lr.lottery_name = l.name
+        WHERE lr.lottery_name = ${lotteryName}
+          AND l.country = ${normalizedCountry}
+          AND ${digitCount} = ANY(l.digits)
+          AND lr.digits_3 IS NOT NULL
+        ORDER BY lr.draw_date DESC
+        LIMIT 5
+      `) as LastDrawBaseRow[]
+    } else if (digitCount === 4) {
+      draws = (await sql`
+        SELECT lr.draw_date, lr.lottery_name, lr.digits_4
+        FROM lottery_results lr
+        INNER JOIN lotteries l ON lr.lottery_name = l.name
+        WHERE lr.lottery_name = ${lotteryName}
+          AND l.country = ${normalizedCountry}
+          AND ${digitCount} = ANY(l.digits)
+          AND lr.digits_4 IS NOT NULL
+        ORDER BY lr.draw_date DESC
+        LIMIT 5
+      `) as LastDrawBaseRow[]
+    } else if (digitCount === 5) {
+      draws = (await sql`
+        SELECT lr.draw_date, lr.lottery_name, lr.winning_number
+        FROM lottery_results lr
+        INNER JOIN lotteries l ON lr.lottery_name = l.name
+        WHERE lr.lottery_name = ${lotteryName}
+          AND l.country = ${normalizedCountry}
+          AND ${digitCount} = ANY(l.digits)
+          AND lr.winning_number IS NOT NULL
+        ORDER BY lr.draw_date DESC
+        LIMIT 5
+      `) as LastDrawBaseRow[]
+    } else {
+      throw new Error("Cifra no soportada")
     }
   } catch (e) {
-    const errMsg = (e && typeof e === "object" && "message" in e) ? (e as Error).message : String(e);
-    console.error("[quedados][DEBUG][getLastDraws] SQL error:", errMsg, { lotteryName, digitCount });
-    throw new Error("Error de base de datos: " + errMsg);
+    const errMsg = e instanceof Error ? e.message : String(e)
+    throw new Error("Error de base de datos: " + errMsg)
   }
-  console.log("[quedados][DEBUG][getLastDraws] SQL results:", draws);
-  return draws;
+
+  return draws.map((draw) => ({
+    draw_date: draw.draw_date,
+    lottery_name: draw.lottery_name,
+    result:
+      digitCount === 2
+        ? (draw.digits_2 ?? "")
+        : digitCount === 3
+          ? (draw.digits_3 ?? "")
+          : digitCount === 4
+            ? (draw.digits_4 ?? "")
+            : (draw.winning_number ?? "")
+  }))
 }

@@ -1,17 +1,64 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { HeatmapForm } from "./heatmap-form"
 
-export function TablaGuiaTool() {
+interface Country {
+  code: string
+  name: string
+}
+
+function normalizeCountryToCode(country?: string): string {
+  if (!country) return "COL"
+  const map: Record<string, string> = {
+    CO: "COL",
+    COL: "COL",
+    Colombia: "COL",
+    ES: "ESP",
+    ESP: "ESP",
+    España: "ESP",
+    US: "USA",
+    USA: "USA",
+    "Estados Unidos": "USA"
+  }
+  return map[country] || "COL"
+}
+
+export function TablaGuiaTool({ preferredCountry }: { preferredCountry?: string }) {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [lotteryName, setLotteryName] = useState("")
+  const [countries, setCountries] = useState<Country[]>([])
+  const [selectedCountry, setSelectedCountry] = useState(normalizeCountryToCode(preferredCountry))
 
-  // Valores por defecto: Colombia, 3 cifras
-  React.useEffect(() => {
+  // Cargar países desde API
+  useEffect(() => {
+    async function loadCountries() {
+      try {
+        const res = await fetch("/api/tools/countries")
+        const data = await res.json()
+        if (data.success && data.countries) {
+          setCountries(data.countries)
+        }
+      } catch (err) {
+        console.error("Error loading countries:", err)
+      }
+    }
+    loadCountries()
+  }, [])
+
+  // Actualizar país cuando cambia preferredCountry
+  useEffect(() => {
+    if (preferredCountry && countries.length > 0) {
+      const normalized = normalizeCountryToCode(preferredCountry)
+      setSelectedCountry(normalized)
+    }
+  }, [preferredCountry, countries])
+
+  // Valores por defecto: país preferido, 3 cifras
+  useEffect(() => {
     if (!result && !loading) {
-      handleSubmit("COL", 3, lotteryName)
+      handleSubmit(selectedCountry, 3, lotteryName)
     }
     // eslint-disable-next-line
   }, [lotteryName])
@@ -53,10 +100,15 @@ export function TablaGuiaTool() {
             placeholder="Escribe el nombre de la lotería"
           />
         </div>
-        <HeatmapForm onSubmit={(country, digitCount) => handleSubmit(country, digitCount, lotteryName)} />
+        <HeatmapForm 
+          onSubmit={(country, digitCount) => handleSubmit(country, digitCount, lotteryName)} 
+          countries={countries}
+          selectedCountry={selectedCountry}
+          onCountryChange={setSelectedCountry}
+        />
         <button
           className="w-full bg-[#E0E0E0] text-[#4A0018] font-semibold py-2 rounded-md mt-2 mb-4 hover:bg-[#FFD6E0] transition-colors"
-          onClick={() => handleSubmit('COL', 3, lotteryName)}
+          onClick={() => handleSubmit(selectedCountry, 3, lotteryName)}
           disabled={loading}
         >
           Guía de Quedados

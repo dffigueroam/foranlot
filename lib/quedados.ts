@@ -1,9 +1,7 @@
-// ...existing code...
-import { getLastDraws } from "./last-draws"
-// ...existing code...
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { getAvailableLotteries } from "./lotteries"
+export { getLastDraws } from "./last-draws"
 
 const sql = neon(process.env.DATABASE_URL!)
 

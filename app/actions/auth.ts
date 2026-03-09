@@ -145,13 +145,13 @@ export async function checkUsername(username: string) {
 }
 
 export async function login(formData: FormData) {
-  const emailRaw = formData.get("email") as string
+  const identifierRaw = formData.get("email") as string
   const password = formData.get("password") as string
 
-  // Sanitizar email
-  const email = sanitizeInput(emailRaw, "email")
+  // Permitir login por email o username
+  const identifier = sanitizeInput(identifierRaw, "text")
 
-  if (!email || !password) {
+  if (!identifier || !password) {
     const ip = await getClientIp()
     await logSuspiciousActivity(
       `ip_${ip}`,
@@ -159,10 +159,10 @@ export async function login(formData: FormData) {
       "Campos inválidos en login",
       "low"
     )
-    return { error: "Email y contraseña son requeridos" }
+    return { error: "Usuario o email y contraseña son requeridos" }
   }
 
-  const result = await loginUser(email, password)
+  const result = await loginUser(identifier, password)
 
   if (result.error) {
     return { error: result.error }

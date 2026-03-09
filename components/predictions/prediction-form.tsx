@@ -43,7 +43,19 @@ interface LotteryCombination {
 
 const MAX_NUMBERS = 10;
 
-export function PredictionForm() {
+function normalizePreferredCountry(preferredCountry: string) {
+  const map: Record<string, string> = {
+    CO: "Colombia",
+    COL: "Colombia",
+    ES: "España",
+    ESP: "España",
+    US: "Estados Unidos",
+    USA: "Estados Unidos"
+  }
+  return map[preferredCountry] || preferredCountry
+}
+
+export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: string }) {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,15 +116,18 @@ export function PredictionForm() {
       .then(data => {
         if (data.success && Array.isArray(data.countries)) {
           setCountryOptions(data.countries);
-          // Si no hay país seleccionado, usar el primero de la lista
-          setSelectedCountry(prev => prev || (data.countries[0]?.code ?? ""));
+          const normalizedPreferred = normalizePreferredCountry(preferredCountry);
+          const preferredMatch = data.countries.find(
+            (c: { code: string; name: string }) => c.name === normalizedPreferred || c.code === normalizedPreferred
+          );
+          setSelectedCountry(prev => prev || preferredMatch?.name || data.countries[0]?.name || "");
         } else {
           setCountryOptions([]);
         }
       })
       .catch(() => setCountryOptions([]))
       .finally(() => setLoadingCountries(false));
-  }, []);
+  }, [preferredCountry]);
 
   // Cargar combinaciones último al montar
   useEffect(() => {
@@ -390,7 +405,7 @@ const recommendedLotteries = availableLotteries
       setSelectedDigits("3")
       setConfidenceLevel("3")
       setDrawDate("")
-      setSelectedCountry("all")
+      setSelectedCountry(countryOptions[0]?.name || "")
       
       // Recargar combinaciones guardadas
       loadCombinations()
@@ -716,7 +731,7 @@ const recommendedLotteries = availableLotteries
                   <SelectValue /></SelectTrigger>
                 <SelectContent>
                   {countryOptions.map(c => (
-                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                    <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

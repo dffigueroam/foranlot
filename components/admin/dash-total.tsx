@@ -1,17 +1,17 @@
 export default function DashTotal({
-  premiumUsers,
-  freeUsers,
-  expiringIn2Days,
-  expiringIn6Days,
-  notificationCount,
-  tableSizes
+  premiumUsers = 0,
+  freeUsers = 0,
+  expiringIn2Days = 0,
+  expiringIn6Days = 0,
+  notificationCount = 0,
+  tableSizes = []
 }: {
-  premiumUsers: number;
-  freeUsers: number;
-  expiringIn2Days: number;
-  expiringIn6Days: number;
-  notificationCount: number;
-  tableSizes: Array<{ table: string; size_kb: number }>;
+  premiumUsers?: number;
+  freeUsers?: number;
+  expiringIn2Days?: number;
+  expiringIn6Days?: number;
+  notificationCount?: number;
+  tableSizes?: Array<{ table: string; size_kb: number }>;
 }) {
   return (
     <div className="max-w-4xl mx-auto py-8">
@@ -42,12 +42,20 @@ export default function DashTotal({
             </tr>
           </thead>
           <tbody>
-            {tableSizes.map((t: any) => (
-              <tr key={t.table}>
-                <td>{t.table}</td>
-                <td className="text-right font-mono">{t.size_kb}</td>
+            {tableSizes.length > 0 ? (
+              tableSizes.map((t) => (
+                <tr key={t.table}>
+                  <td>{t.table}</td>
+                  <td className="text-right font-mono">{t.size_kb}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={2} className="text-center text-muted-foreground py-4">
+                  Sin datos disponibles.
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

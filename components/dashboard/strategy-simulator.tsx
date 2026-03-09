@@ -24,7 +24,19 @@ interface StrategyRule {
   sourceCountry?: string
 }
 
-export function StrategySimulator() {
+function normalizePreferredCountry(preferredCountry: string) {
+  const map: Record<string, string> = {
+    CO: "Colombia",
+    COL: "Colombia",
+    ES: "España",
+    ESP: "España",
+    US: "Estados Unidos",
+    USA: "Estados Unidos"
+  }
+  return map[preferredCountry] || preferredCountry
+}
+
+export function StrategySimulator({ preferredCountry = "" }: { preferredCountry?: string }) {
   const [hasStrategy, setHasStrategy] = useState<boolean | null>(null)
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -33,7 +45,9 @@ export function StrategySimulator() {
   const [activeTab, setActiveTab] = useState<"config" | "simulate">("config")
   
   // Estado para configurar estrategia
-  const [selectedCountry, setSelectedCountry] = useState<string>("Colombia")
+  const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [countries, setCountries] = useState<Array<{ code: string; name: string }>>([])
+  const [loadingCountries, setLoadingCountries] = useState(false)
   const [strategyName, setStrategyName] = useState<string>("")
   const [selectedLottery, setSelectedLottery] = useState<string>("")
   const [selectedDigits, setSelectedDigits] = useState<number>(4)
@@ -47,6 +61,28 @@ export function StrategySimulator() {
   useEffect(() => {
     checkStrategy()
   }, [])
+
+  // Cargar países disponibles (igual patrón que herramientas)
+  useEffect(() => {
+    setLoadingCountries(true)
+    fetch("/api/tools/countries")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success || !Array.isArray(data.countries)) {
+          setCountries([])
+          return
+        }
+        setCountries(data.countries)
+        const normalizedPreferred = normalizePreferredCountry(preferredCountry)
+        const preferred = data.countries.find((c: { code: string; name: string }) => c.name === normalizedPreferred)
+        const colombia = data.countries.find((c: { code: string; name: string }) => c.name === "Colombia")
+        setSelectedCountry(preferred?.name || colombia?.name || data.countries[0]?.name || "")
+      })
+      .catch(() => {
+        setCountries([])
+      })
+      .finally(() => setLoadingCountries(false))
+  }, [preferredCountry])
 
   // Resetear lotería cuando cambie el país
   useEffect(() => {
@@ -264,9 +300,15 @@ export function StrategySimulator() {
                       <SelectValue placeholder="Selecciona un país" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Colombia">Colombia</SelectItem>
-                      <SelectItem value="USA">Estados Unidos</SelectItem>
-                      <SelectItem value="España">España</SelectItem>
+                      {loadingCountries ? (
+                        <SelectItem value="loading" disabled>Cargando países...</SelectItem>
+                      ) : countries.length > 0 ? (
+                        countries.map((country) => (
+                          <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="empty" disabled>No hay países disponibles</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -329,6 +371,7 @@ export function StrategySimulator() {
                 <div className="border-t pt-4">
                   <StrategyBuilder
                     digits={selectedDigits}
+                    countries={countries}
                     onSave={(rules, logic) => {
                       setStrategyRules(rules)
                       setCombineLogic(logic)

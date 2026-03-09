@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StrategySimulator } from "@/components/dashboard/strategy-simulator"
 import { TrendingUp, Lightbulb } from "lucide-react"
 
-export function StrategiesTab() {
+export function StrategiesTab({ preferredCountry = "" }: { preferredCountry?: string }) {
   return (
     <div className="space-y-6">
       <Card className="bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-500/10 dark:to-pink-500/10 border-purple-200 dark:border-purple-500/30">
@@ -47,7 +47,7 @@ export function StrategiesTab() {
         </CardHeader>
       </Card>
 
-      <StrategySimulator />
+      <StrategySimulator preferredCountry={preferredCountry} />
     </div>
   )
 }

@@ -29,6 +29,7 @@ interface User {
   email: string
   username: string
   is_premium: boolean
+  country?: string | null
 }
 
 // Configuración de dígitos por tipo de lotería
@@ -36,6 +37,22 @@ const LOTTERY_CONFIG: Record<string, { digits: number; maxValue: number; label: 
   "2_cifras": { digits: 2, maxValue: 99, label: "2 Cifras" },
   "3_cifras": { digits: 3, maxValue: 999, label: "3 Cifras" },
   "4_cifras": { digits: 4, maxValue: 9999, label: "4 Cifras" },
+}
+
+function normalizeCountryToCode(country?: string | null) {
+  if (!country) return "COL"
+  const map: Record<string, string> = {
+    CO: "COL",
+    COL: "COL",
+    Colombia: "COL",
+    ES: "ESP",
+    ESP: "ESP",
+    España: "ESP",
+    US: "USA",
+    USA: "USA",
+    "Estados Unidos": "USA"
+  }
+  return map[country] || "COL"
 }
 
 // Validar lista de números
@@ -71,7 +88,7 @@ function validateNumberList(
 }
 
 export function ToolsClient({ user }: { user: User }) {
-      const [selectedCountry, setSelectedCountry] = useState<string>("COL")
+    const [selectedCountry, setSelectedCountry] = useState<string>(() => normalizeCountryToCode(user.country))
     // Estado para filtro de lotería
     const [selectedLottery, setSelectedLottery] = useState<string>("3_cifras")
     const [lotteryName, setLotteryName] = useState("")
@@ -477,13 +494,19 @@ export function ToolsClient({ user }: { user: User }) {
 
         <TabsContent value="free" className="space-y-4">
                     {/* Análisis de Quedados por Posición */}
-                    <QuedadosTool />
+                    <QuedadosTool preferredCountry={
+                      selectedCountry === "ESP"
+                        ? "España"
+                        : selectedCountry === "USA"
+                          ? "Estados Unidos"
+                          : "Colombia"
+                    } />
           {/* Card de Herramientas Gratis eliminada, solo visualización directa de Tabla Guía y grid de ToolCard */}
           {/* Card de Tabla Guía eliminada, solo mapa de calor arriba */}
           {/* Visualización directa de Tabla Guía */}
           <div className="mt-8">
             {/* @ts-expect-error Server Component */}
-            {typeof window === "undefined" && require("@/components/tools/tabla-guia-tool").TablaGuiaTool()}
+            {typeof window === "undefined" && require("@/components/tools/tabla-guia-tool").TablaGuiaTool({ preferredCountry: selectedCountry === "ESP" ? "España" : selectedCountry === "USA" ? "Estados Unidos" : "Colombia" })}
           </div>
           <div className="grid md:grid-cols-2 gap-4 mt-8">
             {freeTools.filter(tool => tool.name !== "Tabla Guía").map((tool) => (

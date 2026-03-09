@@ -94,10 +94,19 @@ export interface User {
   id: number
   email: string
   username: string
+  full_name?: string | null
   is_premium: boolean
   stripe_customer_id: string | null
   subscription_status: string | null
   role: "user" | "admin"
+  country?: string | null
+  city?: string | null
+  municipality?: string | null
+  company?: string | null
+  profession?: string | null
+  estrato?: string | null
+  gender?: string | null
+  accepts_marketing_emails?: boolean
 }
 
 export interface SessionData extends Record<string, any> {
@@ -106,6 +115,50 @@ export interface SessionData extends Record<string, any> {
   username: string
   isPremium: boolean
   role: "user" | "admin"
+}
+
+async function resolveCountryData(country?: string | null): Promise<{ name: string | null; code: string | null }> {
+  if (!country) return { name: null, code: null }
+  const trimmed = country.trim()
+  if (!trimmed) return { name: null, code: null }
+
+  const aliasToCode: Record<string, string> = {
+    COL: "CO",
+    ESP: "ES",
+    USA: "US",
+  }
+
+  const normalizedInput = aliasToCode[trimmed.toUpperCase()] || trimmed
+
+  const byCode = await sql`
+    SELECT code, name
+    FROM countries
+    WHERE UPPER(code) = UPPER(${normalizedInput})
+    LIMIT 1
+  `
+
+  if (byCode.length > 0) {
+    return {
+      name: byCode[0].name as string,
+      code: byCode[0].code as string,
+    }
+  }
+
+  const byName = await sql`
+    SELECT code, name
+    FROM countries
+    WHERE LOWER(name) = LOWER(${normalizedInput})
+    LIMIT 1
+  `
+
+  if (byName.length > 0) {
+    return {
+      name: byName[0].name as string,
+      code: byName[0].code as string,
+    }
+  }
+
+  return { name: null, code: null }
 }
 
 /* ======================================================
@@ -163,6 +216,11 @@ export async function registerUser(
 ) {
   try {
     const passwordHash = await bcrypt.hash(password, 10)
+    const countryData = await resolveCountryData(profile?.country)
+
+    if (profile?.country && !countryData.name) {
+      return { error: "País inválido" }
+    }
 
     // Generar username automático si no se provee
     let assignedUsername = username
@@ -196,9 +254,9 @@ export async function registerUser(
         ${profile?.fullName || null},
         ${profile?.phone || null},
         ${profile?.city || null},
-        ${profile?.country || null},
+        ${countryData.name},
         ${profile?.idDocument || null},
-        ${profile?.idDocument ? profile.country : null},
+        ${profile?.idDocument ? countryData.code : null},
         'email'
       )
       RETURNING id, email, username, is_premium, role, stripe_customer_id, subscription_status
@@ -260,12 +318,14 @@ export async function registerUser(
    LOGIN
 ====================================================== */
 
-export async function loginUser(email: string, password: string) {
+export async function loginUser(identifier: string, password: string) {
   try {
     const result = await sql`
       SELECT id, email, username, password_hash, is_premium, role, stripe_customer_id, subscription_status
       FROM users
-      WHERE email = ${email}
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(${identifier}))
+         OR LOWER(TRIM(username)) = LOWER(TRIM(${identifier}))
+      LIMIT 1
     `
 
     if (result.length === 0) {
@@ -274,9 +334,9 @@ export async function loginUser(email: string, password: string) {
 
 
     const user = result[0] as User & { password_hash: string }
-    // Bloqueo para usuarios con rol user_email
-    if (user.role === "user_email") {
-      return { error: "Este tipo de cuenta no puede iniciar sesión por este método." }
+
+    if (!user.password_hash) {
+      return { error: "Esta cuenta no tiene contraseña configurada" }
     }
 
     const isValid = await bcrypt.compare(password, user.password_hash)
@@ -303,8 +363,19 @@ export async function loginUser(email: string, password: string) {
     })
 
     return { user }
-  } catch {
-    return { error: "Error al iniciar sesión" }
+  } catch (error: any) {
+    console.log("[v0] loginUser error:", error)
+
+    // Mensajes mas utiles para depuracion y soporte
+    if (error?.code === "42P01") {
+      return { error: "Error de base de datos: tabla de usuarios no encontrada" }
+    }
+
+    if (error?.code === "42703") {
+      return { error: "Error de base de datos: faltan columnas requeridas en usuarios" }
+    }
+
+    return { error: "Error al iniciar sesión. Verifica configuración de base de datos y variables de entorno" }
   }
 }
 
@@ -322,15 +393,40 @@ export async function getCurrentUser(): Promise<User | null> {
     const sessionData = await verifyToken(sessionCookie.value)
     if (!sessionData) return null
 
-    const result = await sql`
-      SELECT id, email, username, is_premium, role, stripe_customer_id, subscription_status
-      FROM users
-      WHERE id = ${sessionData.userId}
-    `
+    try {
+      const result = await sql`
+        SELECT id, email, username, full_name, is_premium, role, stripe_customer_id, subscription_status,
+               country, city, municipality, company, profession, estrato, gender, accepts_marketing_emails
+        FROM users
+        WHERE id = ${sessionData.userId}
+      `
 
-    if (result.length === 0) return null
+      if (result.length === 0) return null
+      return result[0] as User
+    } catch (error: any) {
+      // Fallback para esquemas antiguos que aun no tengan columnas opcionales de perfil
+      console.log("[v0] getCurrentUser extended profile query failed, using fallback:", error)
 
-    return result[0] as User
+      const fallbackResult = await sql`
+        SELECT id, email, username, full_name, is_premium, role, stripe_customer_id, subscription_status,
+               country, city
+        FROM users
+        WHERE id = ${sessionData.userId}
+      `
+
+      if (fallbackResult.length === 0) return null
+
+      const user = fallbackResult[0] as User
+      return {
+        ...user,
+        municipality: null,
+        company: null,
+        profession: null,
+        estrato: null,
+        gender: null,
+        accepts_marketing_emails: false,
+      }
+    }
   } catch {
     return null
   }

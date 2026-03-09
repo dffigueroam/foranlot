@@ -14,10 +14,16 @@ export default async function ProfilePage() {
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
       <EditProfileForm
         initialData={{
+          fullName: user.full_name || "",
+          email: user.email || "",
+          username: user.username || "",
+          country: user.country || "",
           city: user.city || "",
-          municipality: user.municipality || "",
+          company: user.company || "",
           profession: user.profession || "",
-          estrato: user.estrato || ""
+          estrato: user.estrato || "",
+          gender: user.gender || "",
+          acceptsMarketingEmails: user.accepts_marketing_emails || false
         }}
       />
     </div>

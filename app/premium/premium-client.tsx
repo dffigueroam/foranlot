@@ -15,6 +15,7 @@ interface PremiumClientProps {
     email: string
     is_premium: boolean
     role: string
+    country?: string | null
   }
   activeContracts: any[]
   groupedByDate: Record<string, any[]>
@@ -53,7 +54,7 @@ export function PremiumClient({
       </TabsContent>
 
       <TabsContent value="strategies">
-        <StrategiesTab />
+        <StrategiesTab preferredCountry={user.country || ""} />
       </TabsContent>
 
       <TabsContent value="experts">

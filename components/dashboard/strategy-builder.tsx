@@ -25,6 +25,7 @@ interface StrategyRule {
 
 interface StrategyBuilderProps {
   digits: number
+  countries?: Array<{ code: string; name: string }>
   onSave: (rules: StrategyRule[], combineLogic: "sequential" | "combinations") => void
   initialRules?: StrategyRule[]
   initialLogic?: "sequential" | "combinations"
@@ -32,6 +33,7 @@ interface StrategyBuilderProps {
 
 export function StrategyBuilder({ 
   digits, 
+  countries = [],
   onSave, 
   initialRules = [], 
   initialLogic = "sequential" 
@@ -201,9 +203,17 @@ export function StrategyBuilder({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="default">Mismo país</SelectItem>
-                    <SelectItem value="Colombia">Colombia</SelectItem>
-                    <SelectItem value="USA">Estados Unidos</SelectItem>
-                    <SelectItem value="España">España</SelectItem>
+                    {countries.length > 0 ? (
+                      countries.map((country) => (
+                        <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Colombia">Colombia</SelectItem>
+                        <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
+                        <SelectItem value="España">España</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

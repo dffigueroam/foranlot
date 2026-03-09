@@ -1,14 +1,58 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { HeatmapForm } from "./heatmap-form"
 
-export function HeatmapTool() {
+interface Country {
+  code: string
+  name: string
+}
+
+function normalizePreferredCountry(preferred?: string): string {
+  if (!preferred) return "Colombia"
+  const map: Record<string, string> = {
+    COL: "Colombia",
+    Colombia: "Colombia",
+    ESP: "España",
+    España: "España",
+    USA: "Estados Unidos",
+    "Estados Unidos": "Estados Unidos"
+  }
+  return map[preferred] || "Colombia"
+}
+
+export function HeatmapTool({ preferredCountry }: { preferredCountry?: string }) {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [country, setCountry] = useState("Colombia")
+  const [country, setCountry] = useState(normalizePreferredCountry(preferredCountry))
   const [digitCount, setDigitCount] = useState(3)
+  const [countries, setCountries] = useState<Country[]>([])
 
-  // No se carga loterías, solo país y cifras
+  // Cargar países desde API
+  useEffect(() => {
+    async function loadCountries() {
+      try {
+        const res = await fetch("/api/tools/countries")
+        const data = await res.json()
+        if (data.success && data.countries) {
+          setCountries(data.countries)
+        }
+      } catch (err) {
+        console.error("Error loading countries:", err)
+      }
+    }
+    loadCountries()
+  }, [])
+
+  // Actualizar país cuando cambia preferredCountry
+  useEffect(() => {
+    if (preferredCountry && countries.length > 0) {
+      const normalized = normalizePreferredCountry(preferredCountry)
+      const found = countries.find(c => c.name === normalized)
+      if (found) {
+        setCountry(found.name)
+      }
+    }
+  }, [preferredCountry, countries])
 
   async function handleSubmit(country: string, digitCount: number) {
     setLoading(true)
@@ -37,9 +81,17 @@ export function HeatmapTool() {
         <div>
           <label className="text-sm font-medium block mb-2 text-[#E0E0E0]">País:</label>
           <select value={country} onChange={e => setCountry(e.target.value)} className="border rounded px-2 py-1">
-            <option value="Colombia">Colombia</option>
-            <option value="España">España</option>
-            <option value="Estados Unidos">Estados Unidos</option>
+            {countries.length > 0 ? (
+              countries.map(c => (
+                <option key={c.code} value={c.name}>{c.name}</option>
+              ))
+            ) : (
+              <>
+                <option value="Colombia">Colombia</option>
+                <option value="España">España</option>
+                <option value="Estados Unidos">Estados Unidos</option>
+              </>
+            )}
           </select>
         </div>
         <div>
