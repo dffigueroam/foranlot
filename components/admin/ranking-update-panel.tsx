@@ -7,6 +7,7 @@ import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2, CheckCircle, AlertCircle, TrendingUp, Users, Clock, AlertTriangle } from "lucide-react"
 
 const RankingUpdatePanel = React.memo(function RankingUpdatePanel() {
