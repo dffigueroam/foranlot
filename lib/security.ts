@@ -39,6 +39,24 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 }
 
 /**
+ * Limpiar registros antiguos de rate limit (lazy — sin cron)
+ * Se ejecuta con ~2% de probabilidad en cada checkRateLimit
+ */
+async function maybeLazyCleanup() {
+  if (Math.random() > 0.02) return
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    await sql`
+      DELETE FROM api_rate_limit
+      WHERE created_at < ${oneDayAgo.toISOString()}
+        AND (blocked_until IS NULL OR blocked_until < NOW())
+    `
+  } catch {
+    // silencioso: limpieza no crítica
+  }
+}
+
+/**
  * Verificar rate limit para un identificador
  * @returns { allowed: boolean, remaining: number, resetAt: Date | null }
  */
@@ -50,6 +68,9 @@ export async function checkRateLimit(
     const config = RATE_LIMITS[limitType]
     const now = new Date()
     const windowStart = new Date(now.getTime() - config.windowMs)
+
+    // Limpieza lazy, sin bloquear el request
+    maybeLazyCleanup().catch(() => {})
 
     // Verificar si está bloqueado
     const blocked = await sql`

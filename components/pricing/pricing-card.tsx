@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Product } from "@/lib/products"
-import { createCheckoutSession } from "@/app/actions/stripe"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, Loader2 } from "lucide-react"
+import { Check } from "lucide-react"
 
 
 const formatCOP = (value: number) =>  value.toLocaleString("es-CO", { maximumFractionDigits: 0 })
@@ -19,22 +17,10 @@ interface PricingCardProps {
 }
 
 export function PricingCard({ product, userIsPremium }: PricingCardProps) {
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleSubscribe() {
-    setLoading(true)
-    try {
-      const { url } = await createCheckoutSession(product.id)
-      if (url) {
-        window.location.href = url
-      }
-    } catch (error) {
-      console.error("Error al crear sesión de checkout:", error)
-      alert("Error al procesar el pago. Por favor intenta de nuevo.")
-    } finally {
-      setLoading(false)
-    }
+  function handleSubscribe() {
+    router.push("/my-payments")
   }
 
   const isYearly = product.id.includes("yearly")
@@ -74,17 +60,8 @@ export function PricingCard({ product, userIsPremium }: PricingCardProps) {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" disabled={loading || userIsPremium} onClick={handleSubscribe} size="lg">
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Procesando...
-            </>
-          ) : userIsPremium ? (
-            "Ya eres Premium"
-          ) : (
-            "Suscribirse"
-          )}
+        <Button className="w-full" disabled={userIsPremium} onClick={handleSubscribe} size="lg">
+          {userIsPremium ? "Ya eres Premium" : "Suscribirse"}
         </Button>
       </CardFooter>
     </Card>

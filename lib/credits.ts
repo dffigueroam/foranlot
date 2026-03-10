@@ -160,32 +160,46 @@ export async function createSelection(
     throw new Error("No tienes créditos")
   }
 
-  // 🧮 Calcular días del contrato
-  let requiredCredits = 1
-  let creditsPerDay = 1
+  // 🧮 Calcular costo según tipo de selección
+  let requiredCredits = 0
+  let creditsPerDay = 0
 
-  if (selectionType === "user" && selectedUserId) {
-    const targetUser = await sql`
-      SELECT is_synthetic_pending FROM users WHERE id = ${selectedUserId}
-    `
+  if (selectionType === "user") {
+    // Contratos de experto: gratis el primero, 1 crédito por cada adicional simultáneo
+    const activeExpertCount = await sql`
+      SELECT COUNT(*)::int AS cnt
+      FROM user_selections
+      WHERE subscriber_id = ${subscriberId}
+        AND selection_type = 'user'
+        AND is_active = true
+    ` as unknown as Array<{ cnt: number }>
 
-    if (targetUser[0]?.is_synthetic_pending) {
-      creditsPerDay = 2
+    const currentActiveExperts = activeExpertCount[0]?.cnt ?? 0
+
+    if (currentActiveExperts > 0) {
+      // Ya tiene al menos uno activo → cuesta 1 crédito activar otro
+      requiredCredits = 1
+      creditsPerDay = 0
+    } else {
+      // Ninguno activo → gratis
+      requiredCredits = 0
+      creditsPerDay = 0
+    }
+  } else {
+    // Selecciones de número: lógica original por días
+    creditsPerDay = 1
+    if (startDate && endDate) {
+      const days =
+        Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        ) + 1
+      requiredCredits = days * creditsPerDay
+    } else {
+      requiredCredits = creditsPerDay
     }
   }
 
-  if (startDate && endDate) {
-    const days =
-      Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-      ) + 1
-
-    requiredCredits = days * creditsPerDay
-  } else {
-    requiredCredits = creditsPerDay
-  }
-
-  if (credits.available_credits < requiredCredits) {
+  if (requiredCredits > 0 && credits.available_credits < requiredCredits) {
     throw new Error(
       `Créditos insuficientes. Necesitas ${requiredCredits} y tienes ${credits.available_credits}`,
     )
@@ -219,6 +233,28 @@ export async function createSelection(
   `
 
   const selection = result[0] as UserSelection
+
+  // Descontar crédito si aplica (contratos de experto adicionales)
+  if (requiredCredits > 0) {
+    const newAvailable = credits.available_credits - requiredCredits
+    await sql`
+      UPDATE user_credits
+      SET used_credits = used_credits + ${requiredCredits},
+          last_updated = CURRENT_TIMESTAMP
+      WHERE user_id = ${subscriberId}
+    `
+    await sql`
+      INSERT INTO credit_transactions (
+        user_id, selection_id, amount, transaction_type, description, balance_after
+      )
+      VALUES (
+        ${subscriberId}, ${selection.id}, ${-requiredCredits},
+        'expert_contract',
+        'Contrato de experto adicional (simultáneo)',
+        ${newAvailable}
+      )
+    `
+  }
 
   // 🔔 👉 AQUÍ VA LA NOTIFICACIÓN (ESTE ES EL PUNTO EXACTO)
   await createNotification(
@@ -405,10 +441,12 @@ y no garantizan resultados. Juegue responsablemente.
 }
 
 // Solo verifica expiración de selecciones sin créditos
+// Los contratos de experto (selection_type = 'user') no se desactivan por créditos
 export async function checkExpiredSelections() {
   const selections = await sql`
     SELECT * FROM user_selections
     WHERE is_active = true
+      AND selection_type != 'user'
   `
 
   for (const selection of selections as UserSelection[]) {

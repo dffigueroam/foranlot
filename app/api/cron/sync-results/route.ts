@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { downloadDropboxExcel, parseExcelResults } from "@/lib/dropbox"
+import { verifyPendingPredictions } from "@/lib/verification"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -100,6 +101,13 @@ export async function GET(request: NextRequest) {
     })
 
     console.log(`[v0] Sync completed: ${insertedCount} new, ${duplicateCount} duplicates`)
+
+    // Disparar verificación automática (fire-and-forget)
+    if (insertedCount > 0) {
+      verifyPendingPredictions().catch((err) =>
+        console.error("[v0] Error auto-verificando tras sync Dropbox cron:", err)
+      )
+    }
 
     return NextResponse.json({
       success: true,

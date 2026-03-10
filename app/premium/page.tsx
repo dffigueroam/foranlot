@@ -6,7 +6,8 @@ export const metadata = {
 }
 import { PageWrapper } from "@/components/layout/page-wrapper"
 import { PremiumClientWrapper } from "./premium-client-wrapper"
-import { getUserSelections, getSelectedPredictions } from "@/lib/credits"
+import { getUserSelections, getSelectedPredictions, getUserCredits } from "@/lib/credits"
+import { getLatestPlatformRecommendations } from "@/lib/premium-recommendations"
 
 export default async function PremiumPage() {
   const user = await getCurrentUser()
@@ -42,6 +43,12 @@ export default async function PremiumPage() {
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
     .slice(0, 1)
 
+  // Recomendaciones pre-generadas por cron + créditos del usuario
+  const [platformRecs, userCredits] = await Promise.all([
+    getLatestPlatformRecommendations(),
+    getUserCredits(user.id),
+  ])
+
   return (
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
       <div className="min-h-screen bg-linear-to-br from-background via-amber-50/20 dark:via-amber-950/10 to-background relative">
@@ -71,6 +78,10 @@ export default async function PremiumPage() {
           activeContracts={activeContracts}
           groupedByDate={groupedByDate}
           recentDates={recentDates}
+          initialRecommendations={platformRecs.recommendations}
+          initialRunId={platformRecs.runId}
+          initialGeneratedAt={platformRecs.generatedAt}
+          availableCredits={userCredits?.available_credits ?? 0}
         />
         </div>
       </div>

@@ -7,3 +7,5 @@ const PremiumClient = dynamic(() => import("./premium-client").then(m => m.Premi
 export function PremiumClientWrapper(props: PremiumClientProps) {
   return <PremiumClient {...props} />
 }
+
+export type { PremiumClientProps }

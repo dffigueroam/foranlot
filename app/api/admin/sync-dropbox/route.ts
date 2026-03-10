@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { neon } from "@neondatabase/serverless"
 import { downloadDropboxExcel, parseExcelResults } from "@/lib/dropbox"
+import { verifyPendingPredictions } from "@/lib/verification"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -103,6 +104,13 @@ export async function POST(request: NextRequest) {
       error_message: duplicateCount > 0 ? `${duplicateCount} duplicados actualizados` : null,
       synced_by: user.id,
     })
+
+    // Disparar verificación automática (fire-and-forget)
+    if (insertedCount > 0) {
+      verifyPendingPredictions().catch((err) =>
+        console.error("[v0] Error auto-verificando tras sync Dropbox manual:", err)
+      )
+    }
 
     return NextResponse.json({
       success: true,

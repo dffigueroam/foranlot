@@ -126,6 +126,11 @@ export async function analyzeHotNumbersAction(
       )
     `
 
+    // Limpieza lazy de filas viejas de daily_tool_limits (~3% probabilidad)
+    if (Math.random() < 0.03) {
+      sql`DELETE FROM daily_tool_limits WHERE usage_date < CURRENT_DATE - 7`.catch(() => {})
+    }
+
     revalidatePath("/tools")
 
     return { success: true, result }

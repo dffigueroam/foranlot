@@ -127,7 +127,21 @@ export default async function ResultsPage() {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8 space-y-4">
-            <Button variant="ghost" asChild className="mb-4 group" />
+            <Button variant="ghost" asChild className="mb-4 group">
+              <Link href="/" className="inline-flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                Volver al inicio
+              </Link>
+            </Button>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Resultados Recientes
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Consulta los ultimos resultados de loterias por pais.
+              </p>
+            </div>
           </div>
           {/* Tabla de resultados por país */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

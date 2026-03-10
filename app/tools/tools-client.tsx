@@ -471,7 +471,7 @@ export function ToolsClient({ user }: { user: User }) {
             {!user.is_premium && <Badge className="ml-2 bg-green-600">Gratis</Badge>}
           </TabsTrigger>
           <TabsTrigger value="free">
-            Herramientas Gratis
+            Herramientas para Análisis
             <Badge variant="outline" className="ml-2">{freeTools.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="premium">

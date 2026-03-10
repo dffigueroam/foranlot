@@ -3,6 +3,7 @@
 import { getCurrentUser } from "@/lib/auth"
 import { neon } from "@neondatabase/serverless"
 import { revalidatePath } from "next/cache"
+import { verifyPendingPredictions } from "@/lib/verification"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -134,6 +135,14 @@ export async function uploadLotteryResultsAction(formData: FormData) {
     // Refrescar los datos en la UI
     revalidatePath("/admin")
     revalidatePath("/results")
+
+    // Disparar verificación automática de pronósticos contra los resultados recién cargados
+    // Es fire-and-forget: no bloquea la respuesta al admin
+    if (inserted > 0) {
+      verifyPendingPredictions().catch((err) =>
+        console.error("[v0] Error auto-verificando tras upload:", err)
+      )
+    }
 
     return {
       success: true,

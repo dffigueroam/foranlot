@@ -79,7 +79,6 @@ export function BuySlotsCard({
       const result = await purchaseSlotAction(slotType, billingPeriod)
 
       if (result.success && result.checkoutUrl) {
-        // Redirigir a Stripe Checkout
         window.location.href = result.checkoutUrl
       } else {
         toast({

@@ -56,6 +56,9 @@ export async function getActiveSubscribersCount(userId: number) {
  */
 export async function getContractLimits(userId: number): Promise<ContractLimits> {
   try {
+    // Expirar slots vencidos antes de verificar límites (sin bloquear)
+    sql`SELECT deactivate_expired_slots()`.catch(() => {})
+
     const result = await sql`
       SELECT * FROM get_user_contract_limits(${userId})
     `
@@ -480,8 +483,6 @@ export interface SlotPrice {
   priceCents: number
   currency: string
   billingPeriod: "monthly" | "yearly"
-  stripeProductId: string | null
-  stripePriceId: string | null
 }
 
 export async function getSlotPrices(): Promise<SlotPrice[]> {
@@ -491,9 +492,7 @@ export async function getSlotPrices(): Promise<SlotPrice[]> {
         slot_type,
         price_cents,
         currency,
-        billing_period,
-        stripe_product_id,
-        stripe_price_id
+        billing_period
       FROM contract_slot_prices
       WHERE is_active = TRUE
       ORDER BY slot_type, billing_period
@@ -504,8 +503,6 @@ export async function getSlotPrices(): Promise<SlotPrice[]> {
       priceCents: row.price_cents,
       currency: row.currency,
       billingPeriod: row.billing_period,
-      stripeProductId: row.stripe_product_id,
-      stripePriceId: row.stripe_price_id,
     }))
   } catch (error) {
     console.error("[v0] Error getting slot prices:", error)
@@ -521,8 +518,8 @@ export async function purchaseContractSlot(
   slotType: "synthetic" | "organic",
   quantity: number,
   priceCents: number,
-  stripePaymentIntentId: string,
-  stripeSubscriptionId?: string | null,
+  paymentReference: string,
+  paymentSubscriptionRef?: string | null,
   billingPeriod: "monthly" | "yearly" = "monthly"
 ): Promise<{ success: boolean; error?: string; slotId?: number }> {
   try {
@@ -532,8 +529,8 @@ export async function purchaseContractSlot(
         ${slotType},
         ${quantity},
         ${priceCents},
-        ${stripePaymentIntentId},
-        ${stripeSubscriptionId || null},
+        ${paymentReference},
+        ${paymentSubscriptionRef || null},
         ${billingPeriod}
       ) as slot_id
     `

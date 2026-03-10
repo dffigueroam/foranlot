@@ -70,7 +70,7 @@ export function Header({ user }: HeaderProps) {
               </Link>
 
               <Link href={user.is_premium ? "/premium" : "/tools"} className="px-3 py-2 rounded hover:bg-accent transition-colors flex items-center gap-1.5" target="_blank" rel="noopener noreferrer">
-                <Crown size={16} /> <span className="hidden xl:inline">{user.is_premium ? "Zona Premium" : "Herramientas Gratis"}</span>
+                <Crown size={16} /> <span className="hidden xl:inline">{user.is_premium ? "Zona Premium" : "Herramientas para Análisis"}</span>
               </Link>
 
 
@@ -145,7 +145,7 @@ export function Header({ user }: HeaderProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   target="_blank" rel="noopener noreferrer"
                 >
-                  <Crown size={18} /> {user.is_premium ? "Zona Premium" : "Herramientas Gratis"}
+                  <Crown size={18} /> {user.is_premium ? "Zona Premium" : "Herramientas para Análisis"}
                 </Link>
 
                 <Link 

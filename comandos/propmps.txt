@@ -1,0 +1,28 @@
+Trabaja de forma autonoma en este cambio.
+
+OBJETIVO:
+[Describe claramente que quieres lograr]
+
+CONTEXTO:
+[Que problema actual hay / que comportamiento esperado quieres]
+
+ALCANCE (archivos o modulo):
+[Ej: app/actions/predictions.ts, lib/predictions.ts, components/predictions/*]
+
+CRITERIOS DE EXITO:
+- [Regla funcional 1]
+- [Regla funcional 2]
+- [Validacion tecnica: lint/build/test]
+
+RESTRICCIONES:
+- No tocar: [rutas, estilos, tablas, etc.]
+- Mantener: [patrones existentes del proyecto]
+
+ENTREGABLE:
+- Implementa los cambios directamente en el codigo
+- Ejecuta validaciones necesarias
+- Dame resumen final con:
+  1) archivos modificados
+  2) que se cambio
+  3) resultado de validaciones
+  4) riesgos o pendientes (si hay)

@@ -134,6 +134,12 @@ export async function verifyEmailToken(
       WHERE id = ${verification.user_id}
     `
 
+    // Limpiar tokens expirados de una vez (no bloqueante)
+    sql`
+      DELETE FROM email_verifications
+      WHERE expires_at < NOW() AND verified_at IS NULL
+    `.catch(() => {})
+
     console.log(`[v0] Email verified for user ${verification.user_id}`)
     return { success: true }
 

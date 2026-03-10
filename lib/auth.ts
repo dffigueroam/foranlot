@@ -38,7 +38,7 @@ export async function registerUserEmailLite({
         'email',
         false
       )
-      RETURNING id, email, username, is_premium, role, stripe_customer_id, subscription_status
+      RETURNING id, email, username, is_premium, role, subscription_status
     `
     if (result.length === 0) {
       return { error: "Error al crear usuario" }
@@ -96,7 +96,6 @@ export interface User {
   username: string
   full_name?: string | null
   is_premium: boolean
-  stripe_customer_id: string | null
   subscription_status: string | null
   role: "user" | "admin"
   country?: string | null
@@ -321,7 +320,7 @@ export async function registerUser(
 export async function loginUser(identifier: string, password: string) {
   try {
     const result = await sql`
-      SELECT id, email, username, password_hash, is_premium, role, stripe_customer_id, subscription_status
+      SELECT id, email, username, password_hash, is_premium, role, subscription_status
       FROM users
       WHERE LOWER(TRIM(email)) = LOWER(TRIM(${identifier}))
          OR LOWER(TRIM(username)) = LOWER(TRIM(${identifier}))
@@ -395,7 +394,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
     try {
       const result = await sql`
-        SELECT id, email, username, full_name, is_premium, role, stripe_customer_id, subscription_status,
+        SELECT id, email, username, full_name, is_premium, role, subscription_status,
                country, city, municipality, company, profession, estrato, gender, accepts_marketing_emails
         FROM users
         WHERE id = ${sessionData.userId}
@@ -408,7 +407,7 @@ export async function getCurrentUser(): Promise<User | null> {
       console.log("[v0] getCurrentUser extended profile query failed, using fallback:", error)
 
       const fallbackResult = await sql`
-        SELECT id, email, username, full_name, is_premium, role, stripe_customer_id, subscription_status,
+        SELECT id, email, username, full_name, is_premium, role, subscription_status,
                country, city
         FROM users
         WHERE id = ${sessionData.userId}
@@ -448,7 +447,6 @@ export async function logoutUser() {
 export async function updateUserPremiumStatus(
   userId: number,
   isPremium: boolean,
-  stripeCustomerId?: string,
   subscriptionId?: string,
   subscriptionStatus?: string,
 ) {
@@ -457,7 +455,6 @@ export async function updateUserPremiumStatus(
       UPDATE users
       SET 
         is_premium = ${isPremium},
-        stripe_customer_id = ${stripeCustomerId || null},
         subscription_id = ${subscriptionId || null},
         subscription_status = ${subscriptionStatus || null},
         updated_at = CURRENT_TIMESTAMP

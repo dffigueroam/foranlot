@@ -37,7 +37,7 @@ const FAQS = [
   {
     question: "¿Cuáles son los métodos de pago disponibles?",
     answer:
-      "Aceptamos: 1) BRE-B, 2) Transferencia Bancolombia a cuenta de ahorros, 3) Giros directos. También aceptamos pagos vía Stripe si usas tarjeta de crédito internacional.",
+      "Aceptamos: 1) BRE-B, 2) Transferencia Bancolombia a cuenta de ahorros, 3) Giros directos.",
   },
   {
     question: "¿Cómo funcionan los avatares?",
