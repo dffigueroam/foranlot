@@ -50,6 +50,8 @@ export default function SelectionManager() {
   const [rankingUsers, setRankingUsers] = useState<RankingUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
+  const todaysExpertSelection = selections.find((selection) => selection.selection_type === "user")
+
   useEffect(() => {
     loadData()
   }, [])
@@ -98,7 +100,7 @@ export default function SelectionManager() {
     if (result.error) {
       setMessage(result.error)
     } else {
-      setMessage(`¡Ahora sigues a ${username}!`)
+      setMessage(`Elegiste a ${username} como tu experto del día. Mañana podrás escoger otro sin gastar créditos.`)
       loadData()
     }
   }
@@ -164,11 +166,27 @@ export default function SelectionManager() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            Seguir Usuarios del Ranking
+            Elegir Experto del Día
           </CardTitle>
-          <CardDescription>Busca y sigue a los mejores pronosticadores</CardDescription>
+          <CardDescription>Listado en orden del ranking. Puedes elegir solo un experto por día sin usar créditos.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {todaysExpertSelection ? (
+                <>
+                  Hoy ya elegiste a <strong>{todaysExpertSelection.selected_username || `Usuario #${todaysExpertSelection.selected_user_id}`}</strong>.
+                  Puedes ver sus pronósticos del día en la zona premium y mañana podrás cambiar a otro experto sin costo.
+                </>
+              ) : (
+                <>
+                  La elección del experto dura solo por hoy. Verás únicamente sus pronósticos del mismo día y mañana podrás seleccionar otro sin costo.
+                </>
+              )}
+            </AlertDescription>
+          </Alert>
+
           {/* Filtros */}
           <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
@@ -270,9 +288,14 @@ export default function SelectionManager() {
                             <Button
                               size="sm"
                               onClick={() => handleCreateUserSelection(user.user_id, user.username)}
-                              disabled={loading}
+                              disabled={loading || (!!todaysExpertSelection && todaysExpertSelection.selected_user_id !== user.user_id)}
+                              variant={todaysExpertSelection?.selected_user_id === user.user_id ? "secondary" : "default"}
                             >
-                              Seguir
+                              {todaysExpertSelection?.selected_user_id === user.user_id
+                                ? "Elegido hoy"
+                                : todaysExpertSelection
+                                  ? "Disponible mañana"
+                                  : "Elegir hoy"}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -300,9 +323,9 @@ export default function SelectionManager() {
       {/* Active Selections */}
       <Card>
         <CardHeader>
-          <CardTitle>Mis Selecciones Activas</CardTitle>
+          <CardTitle>Mi Experto y Selecciones Activas</CardTitle>
           <CardDescription>
-            Cada selección consume {selections.length > 0 ? selections[0].credits_per_day : 1} crédito por día
+            El experto del día no consume créditos. Las selecciones de números mantienen su lógica habitual.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -28,15 +28,15 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
           Perfil del pronosticador
         </h1>
 
-        {/* 🔥 ANUNCIO DE CONTRATOS */}
+        {/* Indicador de seguimiento */}
         {subscribersCount > 0 && (
           <Card className="border-green-200 bg-green-50 mb-6">
             <CardContent className="py-4">
               <p className="font-semibold text-green-900">
-                🔥 Este pronosticador tiene {subscribersCount} suscriptores activos
+                🔥 Este pronosticador tiene {subscribersCount} seguidores activos
               </p>
               <p className="text-sm text-green-700">
-                Usuarios Premium están recibiendo sus pronósticos
+                Usuarios premium están viendo sus pronósticos del día
               </p>
             </CardContent>
           </Card>

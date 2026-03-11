@@ -6,10 +6,10 @@ import { verifyPendingPredictions } from "@/lib/verification"
 // Agregar: 0 22 * * * (todos los días a las 10 PM)
 
 export async function GET(request: Request) {
-  // Verificar token de autenticación del cron (opcional pero recomendado)
   const authHeader = request.headers.get("authorization")
+  const cronSecret = process.env.CRON_SECRET
 
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronSecret || !authHeader || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

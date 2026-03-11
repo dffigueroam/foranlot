@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
   try {
     // Verificar autorización del cron job
     const authHeader = req.headers.get("authorization")
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
+    const cronSecret = process.env.CRON_SECRET
 
-    if (authHeader !== expectedAuth) {
+    if (!cronSecret || !authHeader || authHeader !== `Bearer ${cronSecret}`) {
       console.error("[cron-expire-slots] Unauthorized")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

@@ -83,6 +83,23 @@ export function getCurrentTimeInTimezone(timezone: string): Date {
   )
 }
 
+export function getDateStringInTimezone(date: Date, timezone: string): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+
+  const parts = formatter.formatToParts(date)
+  const dateParts: Record<string, string> = {}
+  parts.forEach(({ type, value }) => {
+    dateParts[type] = value
+  })
+
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`
+}
+
 /**
  * Verifica si aún se puede publicar una predicción
  * Regla: La predicción se puede publicar hasta 1 hora antes del sorteo
@@ -105,6 +122,19 @@ export function canPublishPrediction(
 
     // Obtener zona horaria del país
     const timezone = getTimezoneByCountry(country)
+    const currentDate = getDateStringInTimezone(new Date(), timezone)
+
+    if (drawDate > currentDate) {
+      return { allowed: true }
+    }
+
+    if (drawDate < currentDate) {
+      return {
+        allowed: false,
+        message: "El sorteo ya pasó. No puedes publicar predicciones para sorteos pasados",
+        remainingMinutes: -1,
+      }
+    }
     
     // Parsear hora (puede venir como "21:00" o "9:00 PM")
     let hours = 0
@@ -142,15 +172,6 @@ export function canPublishPrediction(
       return {
         allowed: false,
         message: `El sorteo es muy pronto. Debes publicar con al menos 1 hora de anticipación. Tiempo restante: ${diffMinutes} minutos`,
-        remainingMinutes: diffMinutes,
-      }
-    }
-    
-    // Si el sorteo ya pasó
-    if (diffMinutes < 0) {
-      return {
-        allowed: false,
-        message: "El sorteo ya pasó. No puedes publicar predicciones para sorteos pasados",
         remainingMinutes: diffMinutes,
       }
     }

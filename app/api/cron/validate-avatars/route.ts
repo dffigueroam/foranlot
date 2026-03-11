@@ -13,9 +13,9 @@ export async function GET(request: Request) {
   try {
     // Verificar token CRON_SECRET
     const authHeader = request.headers.get("authorization")
-    const expectedToken = `Bearer ${process.env.CRON_SECRET}`
-    
-    if (authHeader !== expectedToken) {
+    const cronSecret = process.env.CRON_SECRET
+
+    if (!cronSecret || !authHeader || authHeader !== `Bearer ${cronSecret}`) {
       console.log("[v0] Unauthorized cron request")
       return NextResponse.json(
         { error: "Unauthorized" },

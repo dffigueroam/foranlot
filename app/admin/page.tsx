@@ -1,4 +1,3 @@
-import CompensationPanel from "@/components/admin/compensation-panel"
 import SyntheticUsersPanel from "@/components/admin/synthetic-users-panel"
 import DropboxSyncPanel from "@/components/admin/dropbox-sync-panel"
 import RankingUpdatePanel from "@/components/admin/ranking-update-panel"
@@ -20,6 +19,7 @@ import { ArrowLeft } from "lucide-react"
 import AdminDashboardSummary from "@/components/admin/dashboard-summary"
 import AdminTabsPanel, { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
 import { getCurrentUser } from "@/lib/auth"
+import PostedPredictionsPanel from "@/components/admin/posted-predictions-panel"
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -133,7 +133,6 @@ export default async function AdminPage() {
             <Tabs defaultValue="payments">
               <TabsList>
                 <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
-                <TabsTrigger value="compensation">Compensación</TabsTrigger>
               </TabsList>
               <TabsContent value="payments">
                 <div className="max-w-4xl space-y-4">
@@ -144,13 +143,6 @@ export default async function AdminPage() {
                       <ManualPaymentsPanel />
                     </Suspense>
                   </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="compensation">
-                <div className="max-w-4xl space-y-4">
-                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-                    <CompensationPanel />
-                  </Suspense>
                 </div>
               </TabsContent>
             </Tabs>
@@ -193,6 +185,7 @@ export default async function AdminPage() {
                 <TabsTrigger value="dropbox">Sincronización Dropbox</TabsTrigger>
                 <TabsTrigger value="verification">Verificación</TabsTrigger>
                 <TabsTrigger value="results">Resultados</TabsTrigger>
+                <TabsTrigger value="posted-predictions">Pronósticos</TabsTrigger>
               </TabsList>
               <TabsContent value="dropbox">
                 <div className="max-w-4xl space-y-4">
@@ -226,6 +219,13 @@ export default async function AdminPage() {
                   </div>
                   <Suspense fallback={<TablePlaceholder />}>
                     <ResultsList page={1} pageSize={20} />
+                  </Suspense>
+                </div>
+              </TabsContent>
+              <TabsContent value="posted-predictions">
+                <div className="max-w-5xl space-y-4">
+                  <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                    <PostedPredictionsPanel />
                   </Suspense>
                 </div>
               </TabsContent>

@@ -12,7 +12,7 @@ export async function getLotteriesFromDB() {
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 const sql = neon(process.env.DATABASE_URL!)
-import { canPublishPrediction } from "./timezones-server"
+import { canPublishPrediction, getDateStringInTimezone, getTimezoneByCountry } from "./timezones-server"
 
 export interface Lottery {
   id: number
@@ -31,6 +31,9 @@ export async function getAvailableLotteriesForPosting(date: Date | string, count
   const dayNames = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]
   const dayName = dayNames[drawDate.getDay()]
   const nowDate = now || new Date()
+  const timezone = getTimezoneByCountry(country)
+  const currentDateInCountry = getDateStringInTimezone(nowDate, timezone)
+  const isFutureDate = drawDateStr > currentDateInCountry
   const currentHour = nowDate.getHours()
   console.log(`[v0] getAvailableLotteriesForPosting: country=${country}, date=${drawDateStr}, day=${dayName}, currentHour=${currentHour}`)
 
@@ -55,6 +58,10 @@ export async function getAvailableLotteriesForPosting(date: Date | string, count
 
   // Filtrar por deadline de hora local (hora_actual < hora_sorteo-1)
   const available = filteredByDay.filter(lottery => {
+    if (isFutureDate) {
+      return true
+    }
+
     const drawTimeStr = `${lottery.time.toString().padStart(2, "0")}:00`
     const result = canPublishPrediction(drawDateStr, drawTimeStr, country)
     if (!result.allowed) {

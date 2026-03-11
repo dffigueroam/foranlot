@@ -21,7 +21,7 @@ export default async function BrebPilotPage() {
     <PageWrapper user={{ username: user.username, role: user.role, is_premium: user.is_premium }}>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Laboratorio Bre-B</h1>
+          <h1 className="text-3xl font-bold">Prueb de QR y datos Bre-B</h1>
           <p className="text-muted-foreground mt-1">
             Version separada para pruebas. Cuando quede validada, se integra a la pagina de pricing.
           </p>

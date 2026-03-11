@@ -31,22 +31,22 @@ export async function POST(request: NextRequest) {
 
     const dropboxUrl = "https://www.dropbox.com/scl/fi/txc8lg5lhhiu4wjhf9vt5/UltResultsApp.xlsx?rlkey=4p1xkz3kgv1opuv0xtq449q6b&st=upg2nzb8&dl=0"
 
-    // Descargar archivo Excel
+    // Descargar y validar archivo Excel (rechaza CSV disfrazados)
     const buffer = await downloadDropboxExcel(dropboxUrl)
-    
+
     if (!buffer) {
       await logSyncAudit({
         source: "dropbox_manual",
         file_path: dropboxUrl,
         status: "failed",
         rows_processed: 0,
-        error_message: "Error descargando archivo desde Dropbox",
+        error_message: "El archivo no es un Excel válido o no pudo descargarse desde Dropbox",
         synced_by: user.id,
       })
 
       return NextResponse.json(
-        { error: "Error descargando archivo desde Dropbox" },
-        { status: 500 }
+        { error: "El archivo no es un Excel válido (.xlsx/.xls). Verifique que Dropbox no envía un CSV." },
+        { status: 422 }
       )
     }
 

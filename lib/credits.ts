@@ -165,26 +165,45 @@ export async function createSelection(
   let creditsPerDay = 0
 
   if (selectionType === "user") {
-    // Contratos de experto: gratis el primero, 1 crédito por cada adicional simultáneo
-    const activeExpertCount = await sql`
-      SELECT COUNT(*)::int AS cnt
+    if (!selectedUserId) {
+      throw new Error("Debes seleccionar un experto válido")
+    }
+
+    const todayExpertSelection = await sql`
+      SELECT s.*, u.username as selected_username
       FROM user_selections
+      LEFT JOIN users u ON s.selected_user_id = u.id
       WHERE subscriber_id = ${subscriberId}
         AND selection_type = 'user'
         AND is_active = true
-    ` as unknown as Array<{ cnt: number }>
+        AND start_date::date = CURRENT_DATE
+      ORDER BY created_at DESC
+      LIMIT 1
+    ` as unknown as UserSelection[]
 
-    const currentActiveExperts = activeExpertCount[0]?.cnt ?? 0
+    if (todayExpertSelection.length > 0) {
+      const existingSelection = todayExpertSelection[0]
 
-    if (currentActiveExperts > 0) {
-      // Ya tiene al menos uno activo → cuesta 1 crédito activar otro
-      requiredCredits = 1
-      creditsPerDay = 0
-    } else {
-      // Ninguno activo → gratis
-      requiredCredits = 0
-      creditsPerDay = 0
+      if (existingSelection.selected_user_id === selectedUserId) {
+        return existingSelection
+      }
+
+      throw new Error(
+        `Hoy ya elegiste a ${existingSelection.selected_username || "este experto"}. Puedes ver sus pronósticos durante todo el día y mañana escoger otro sin gastar créditos.`,
+      )
     }
+
+    await sql`
+      UPDATE user_selections
+      SET is_active = false
+      WHERE subscriber_id = ${subscriberId}
+        AND selection_type = 'user'
+        AND is_active = true
+        AND start_date::date < CURRENT_DATE
+    `
+
+    requiredCredits = 0
+    creditsPerDay = 0
   } else {
     // Selecciones de número: lógica original por días
     creditsPerDay = 1
@@ -260,9 +279,11 @@ export async function createSelection(
   await createNotification(
     subscriberId,
     "contract_created",
-    `Contrato activo hasta ${endDate?.toLocaleDateString("es-CO")}`,
     selectionType === "user"
-      ? "Recibirás pronósticos diarios del usuario seleccionado."
+      ? "Experto del dia activado"
+      : `Contrato activo hasta ${endDate?.toLocaleDateString("es-CO")}`,
+    selectionType === "user"
+      ? "Verás los pronósticos de hoy del experto seleccionado. Mañana podrás elegir otro sin gastar créditos."
       : "Recibirás pronósticos diarios del número seleccionado.",
     selection.id,
   )
@@ -284,6 +305,10 @@ export async function getUserSelections(userId: number): Promise<UserSelection[]
     LEFT JOIN users u ON s.selected_user_id = u.id
     WHERE s.subscriber_id = ${userId}
       AND s.is_active = true
+      AND (
+        s.selection_type != 'user'
+        OR s.start_date::date = CURRENT_DATE
+      )
     ORDER BY s.created_at DESC
   `
   return result as UserSelection[]
@@ -335,10 +360,9 @@ export async function generateAndDownloadPrediction(
       FROM predictions p
       JOIN users u ON p.user_id = u.id
       WHERE p.user_id = ${sel.selected_user_id}
-        AND p.lottery_type = ${sel.lottery_type}
-        AND p.draw_date >= CURRENT_DATE
+        AND p.draw_date = CURRENT_DATE
         AND p.status = 'pending'
-      ORDER BY p.draw_date ASC, p.confidence_level DESC
+      ORDER BY p.confidence_level DESC, p.created_at DESC
       LIMIT 1
     `
   }
@@ -542,7 +566,7 @@ export async function markAllNotificationsAsRead(userId: number) {
 // Obtener pronósticos de selecciones activas
 export async function getSelectedPredictions(userId: number) {
   const selections = await getUserSelections(userId)
-  const predictions = []
+  const predictions: any[] = []
 
   for (const selection of selections) {
     if (selection.selection_type === "number") {
@@ -557,7 +581,7 @@ export async function getSelectedPredictions(userId: number) {
         ORDER BY p.draw_date ASC, p.confidence_level DESC
         LIMIT 10
       `
-      predictions.push(...result)
+      predictions.push(...result.map((row: any) => ({ ...row, selection_type: selection.selection_type })))
     } else if (selection.selection_type === "user") {
       // Buscar pronósticos del usuario seleccionado
       const result = await sql`
@@ -565,12 +589,18 @@ export async function getSelectedPredictions(userId: number) {
         FROM predictions p
         JOIN users u ON p.user_id = u.id
         WHERE p.user_id = ${selection.selected_user_id}
-          AND p.lottery_type = ${selection.lottery_type}
-          AND p.draw_date >= CURRENT_DATE
-        ORDER BY p.draw_date ASC, p.confidence_level DESC
+          AND p.draw_date = CURRENT_DATE
+          AND p.status = 'pending'
+        ORDER BY p.confidence_level DESC, p.created_at DESC
         LIMIT 10
       `
-      predictions.push(...result)
+      predictions.push(
+        ...result.map((row: any) => ({
+          ...row,
+          selection_type: selection.selection_type,
+          selected_user_id: selection.selected_user_id,
+        })),
+      )
     }
   }
 

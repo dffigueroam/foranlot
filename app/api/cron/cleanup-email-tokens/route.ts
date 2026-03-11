@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization")
     const cronSecret = process.env.CRON_SECRET
 
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || !authHeader || authHeader !== `Bearer ${cronSecret}`) {
       console.log("[v0] Unauthorized cron attempt for cleanup-email-tokens")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

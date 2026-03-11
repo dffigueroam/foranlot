@@ -1,4 +1,5 @@
 import "server-only"
+import { normalizeCountryCode } from "./country-utils"
 
 /* ======================================================
    VALIDATION HELPERS
@@ -180,9 +181,7 @@ export function validateCountry(country: string): ValidationResult {
     return { isValid: false, error: "El país es requerido" }
   }
 
-  const validCountries = ["CO", "ES", "MX", "AR", "CL", "PE", "VE", "EC", "US", "CA", "BR"]
-
-  if (!validCountries.includes(country)) {
+  if (!normalizeCountryCode(country)) {
     return { isValid: false, error: "País inválido" }
   }
 
@@ -226,7 +225,7 @@ export function validateIdDocument(idDocument: string | null, country: string): 
   }
 
   // Validaciones específicas por país
-  switch (country) {
+  switch (normalizeCountryCode(country)) {
     case "CO": // Colombia - Cédula
       // Formato: 7-10 dígitos
       if (!/^\d{7,10}$/.test(doc)) {

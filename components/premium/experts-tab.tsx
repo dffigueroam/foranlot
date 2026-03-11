@@ -30,7 +30,7 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
             Recomendaciones de Expertos
           </CardTitle>
           <CardDescription>
-            Pronósticos de los mejores predictores que sigues mediante contratos
+            Pronósticos del experto del día que elegiste en premium
           </CardDescription>
         </CardHeader>
       </Card>
@@ -44,10 +44,10 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
               </div>
               <div>
                 <h3 className="text-lg font-semibold mb-2">
-                  No tienes contratos activos
+                  No has elegido experto hoy
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Crea contratos con los mejores predictores para recibir sus recomendaciones diarias
+                  Elige un experto del ranking para ver sus pronósticos vigentes del día
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -60,7 +60,7 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
                 <Button variant="outline" asChild>
                     <Link href="/selections" target="_blank" rel="noopener noreferrer">
                     <Crown className="w-4 h-4 mr-2" />
-                    Gestionar Contratos
+                    Elegir Experto
                   </Link>
                 </Button>
               </div>
@@ -72,9 +72,9 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Contratos activos: {activeContracts.length}</strong>
+              <strong>Experto del día: {activeContracts.length}</strong>
               <br />
-              Cada contrato gasta 1 crédito por día. Aquí ves los últimos pronósticos de cada experto.
+              Solo puedes ver al mismo experto durante el día actual. Mañana podrás elegir otro sin gastar créditos.
             </AlertDescription>
           </Alert>
 
@@ -138,7 +138,7 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
                       </Button>
                     </div>
                     <CardDescription>
-                      Gasta 1 crédito/día • Última fecha posteada
+                      Pronósticos vigentes del día
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -175,6 +175,9 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
                                   month: 'short', 
                                   year: 'numeric' 
                                 })}
+                              </p>
+                              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                                Solo ves pronósticos publicados para hoy.
                               </p>
                               
                               <div className="border-l-2 border-blue-500 pl-3 space-y-2">
@@ -221,9 +224,9 @@ export function ExpertsTab({ activeContracts, groupedByDate, recentDates }: Expe
             <CardContent className="py-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold">¿Quieres seguir a más expertos?</p>
+                  <p className="font-semibold">¿Quieres elegir tu experto de mañana?</p>
                   <p className="text-sm text-muted-foreground">
-                    Explora el ranking y crea nuevos contratos
+                    Revisa el ranking. Podrás cambiar de experto al iniciar el siguiente día.
                   </p>
                 </div>
                 <Button asChild>

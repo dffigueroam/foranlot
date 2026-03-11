@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { neon } from "@neondatabase/serverless"
+import { normalizeCountryCode } from "@/lib/country-utils"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -9,13 +10,7 @@ async function resolveCountryName(country?: string | null): Promise<string | nul
   const trimmed = country.trim()
   if (!trimmed) return null
 
-  const aliasToCode: Record<string, string> = {
-    COL: "CO",
-    ESP: "ES",
-    USA: "US",
-  }
-
-  const normalizedInput = aliasToCode[trimmed.toUpperCase()] || trimmed
+  const normalizedInput = normalizeCountryCode(trimmed) || trimmed
 
   const byCode = await sql`
     SELECT name

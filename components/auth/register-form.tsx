@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PasswordStrength } from "@/components/auth/password-strength"
+import { findCountryOption, getCountryDocumentPlaceholder, type CountryOption } from "@/lib/country-utils"
 import { Mail, Phone, MapPin, User, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 
@@ -22,20 +23,6 @@ interface City {
   name: string
   state: string
 }
-
-const COUNTRIES = [
-  { code: "CO", name: "🇨🇴 Colombia" },
-  { code: "ES", name: "🇪🇸 España" },
-  { code: "MX", name: "🇲🇽 México" },
-  { code: "AR", name: "🇦🇷 Argentina" },
-  { code: "CL", name: "🇨🇱 Chile" },
-  { code: "PE", name: "🇵🇪 Perú" },
-  { code: "VE", name: "🇻🇪 Venezuela" },
-  { code: "EC", name: "🇪🇨 Ecuador" },
-  { code: "US", name: "🇺🇸 Estados Unidos" },
-  { code: "CA", name: "🇨🇦 Canadá" },
-  { code: "BR", name: "🇧🇷 Brasil" },
-]
 
 const CITIES_BY_COUNTRY: Record<string, City[]> = {
   CO: [
@@ -72,7 +59,9 @@ const CITIES_BY_COUNTRY: Record<string, City[]> = {
 export function RegisterForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([])
+  const [loadingCountries, setLoadingCountries] = useState(true)
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("")
   const [availableCities, setAvailableCities] = useState<City[]>([])
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
@@ -85,12 +74,38 @@ export function RegisterForm() {
   const debouncedUsername = useDebounce(username, 500)
 
   useEffect(() => {
-    if (selectedCountry && CITIES_BY_COUNTRY[selectedCountry]) {
-      setAvailableCities(CITIES_BY_COUNTRY[selectedCountry])
+    async function loadCountries() {
+      try {
+        setLoadingCountries(true)
+        const response = await fetch("/api/tools/countries")
+        const data = await response.json()
+
+        if (!data.success || !Array.isArray(data.countries)) {
+          setCountryOptions([])
+          return
+        }
+
+        setCountryOptions(data.countries)
+        const defaultCountry = findCountryOption("CO", data.countries) || data.countries[0] || null
+        setSelectedCountryCode((current) => current || defaultCountry?.code || "")
+      } catch (fetchError) {
+        console.error("Error loading countries:", fetchError)
+        setCountryOptions([])
+      } finally {
+        setLoadingCountries(false)
+      }
+    }
+
+    loadCountries()
+  }, [])
+
+  useEffect(() => {
+    if (selectedCountryCode && CITIES_BY_COUNTRY[selectedCountryCode]) {
+      setAvailableCities(CITIES_BY_COUNTRY[selectedCountryCode])
     } else {
       setAvailableCities([])
     }
-  }, [selectedCountry])
+  }, [selectedCountryCode])
 
   // Verificar disponibilidad de username
   useEffect(() => {
@@ -340,26 +355,8 @@ export function RegisterForm() {
             id="idDocument"
             name="idDocument"
             type="text"
-            placeholder={
-              selectedCountry === "CO"
-                ? "1234567890"
-                : selectedCountry === "ES"
-                ? "12345678A"
-                : selectedCountry === "MX"
-                ? "CURP o RFC"
-                : selectedCountry === "AR"
-                ? "12345678"
-                : selectedCountry === "CL"
-                ? "12345678-9"
-                : selectedCountry === "PE"
-                ? "12345678"
-                : selectedCountry === "VE"
-                ? "V-12345678"
-                : selectedCountry === "EC"
-                ? "1234567890"
-                : "Número de documento"
-            }
-            disabled={loading || !selectedCountry}
+            placeholder={getCountryDocumentPlaceholder(selectedCountryCode)}
+            disabled={loading || !selectedCountryCode}
           />
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md p-2">
             <p className="text-xs text-blue-700 dark:text-blue-300">
@@ -385,26 +382,26 @@ export function RegisterForm() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="country">País *</Label>
-            <Select value={selectedCountry} onValueChange={(value) => setSelectedCountry(value)}>
-              <SelectTrigger id="country" disabled={loading}>
+            <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
+              <SelectTrigger id="country" disabled={loading || loadingCountries}>
                 <SelectValue placeholder="Selecciona país" />
               </SelectTrigger>
               <SelectContent>
-                {COUNTRIES.map((country) => (
+                {countryOptions.map((country) => (
                   <SelectItem key={country.code} value={country.code}>
                     {country.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <input type="hidden" name="country" value={selectedCountry} />
+            <input type="hidden" name="country" value={selectedCountryCode} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad *</Label>
-            <Select name="city" disabled={loading || !selectedCountry}>
+            <Select name="city" disabled={loading || !selectedCountryCode}>
               <SelectTrigger id="city">
-                <SelectValue placeholder={selectedCountry ? "Selecciona ciudad" : "Elige país primero"} />
+                <SelectValue placeholder={selectedCountryCode ? "Selecciona ciudad" : "Elige país primero"} />
               </SelectTrigger>
               <SelectContent>
                 {availableCities.map((city) => (
@@ -497,7 +494,7 @@ export function RegisterForm() {
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={loading || !selectedCountry || !acceptedTerms || usernameAvailable === false}
+        disabled={loading || loadingCountries || !selectedCountryCode || !acceptedTerms || usernameAvailable === false}
       >
         {loading ? "Registrando..." : "Crear Cuenta"}
       </Button>

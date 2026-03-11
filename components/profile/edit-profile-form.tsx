@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "../ui/button"
+import { findCountryOption, type CountryOption } from "@/lib/country-utils"
 
 interface EditProfileFormProps {
   initialData: {
@@ -33,7 +34,7 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
   const [estrato, setEstrato] = useState(initialData.estrato || "")
   const [gender, setGender] = useState(initialData.gender || "")
   const [acceptsMarketingEmails, setAcceptsMarketingEmails] = useState(initialData.acceptsMarketingEmails || false)
-  const [countryOptions, setCountryOptions] = useState<Array<{ code: string; name: string }>>([])
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([])
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saveAndReturn, setSaveAndReturn] = useState(false)
@@ -48,11 +49,14 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
         if (!data.success || !Array.isArray(data.countries)) return
         
         setCountryOptions(data.countries)
+        const normalizedInitialCountry = findCountryOption(initialData.country, data.countries)
         
         // Solo setear default si initialData.country estaba vacío desde el inicio
         if (!initialData.country || initialData.country.trim() === "") {
-          const colombia = data.countries.find((c: { code: string; name: string }) => c.name === "Colombia")
-          setCountry(colombia?.name || data.countries[0]?.name || "")
+          const colombia = findCountryOption("CO", data.countries)
+          setCountry(colombia?.code || data.countries[0]?.code || "")
+        } else if (normalizedInitialCountry) {
+          setCountry(normalizedInitialCountry.code)
         }
       } catch (err) {
         console.error("Error loading countries:", err)
@@ -87,7 +91,10 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
         setFullName(profile.full_name || "")
         setEmail(profile.email || "")
         setUsername(profile.username || "")
-        setCountry(profile.country || "")
+        setCountry((currentCountry) => {
+          const normalizedCountry = findCountryOption(profile.country, countryOptions)
+          return normalizedCountry?.code || profile.country || currentCountry
+        })
         setCity(profile.city || "")
         setCompany(profile.company || "")
         setProfession(profile.profession || "")
@@ -102,7 +109,7 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
     }
 
     loadProfileFromDb()
-  }, [])
+  }, [countryOptions])
 
   useEffect(() => {
     if (company.trim().length < 2) {
@@ -218,7 +225,7 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
         <select value={country} onChange={e => setCountry(e.target.value)} className="input input-bordered w-full" aria-label="País de preferencia">
           <option value="">Selecciona país</option>
           {countryOptions.map((c) => (
-            <option key={c.code} value={c.name}>{c.name}</option>
+            <option key={c.code} value={c.code}>{c.name}</option>
           ))}
         </select>
       </div>

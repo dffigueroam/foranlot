@@ -80,11 +80,16 @@ import { SignJWT, jwtVerify } from "jose"
 import { neon } from "@neondatabase/serverless"
 import { createEmailVerificationToken, sendVerificationEmail } from "./email-verification"
 import { setSuggestedAvatar, SUGGESTED_AVATARS } from "./avatars"
+import { normalizeCountryCode } from "./country-utils"
 
 const sql = neon(process.env.DATABASE_URL!)
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production",
-)
+const jwtSecret = process.env.JWT_SECRET
+
+if (!jwtSecret || jwtSecret.length < 32) {
+  throw new Error("JWT_SECRET no configurado o inseguro. Debe tener al menos 32 caracteres.")
+}
+
+const SECRET_KEY = new TextEncoder().encode(jwtSecret)
 
 /* ======================================================
    TYPES
@@ -121,13 +126,7 @@ async function resolveCountryData(country?: string | null): Promise<{ name: stri
   const trimmed = country.trim()
   if (!trimmed) return { name: null, code: null }
 
-  const aliasToCode: Record<string, string> = {
-    COL: "CO",
-    ESP: "ES",
-    USA: "US",
-  }
-
-  const normalizedInput = aliasToCode[trimmed.toUpperCase()] || trimmed
+  const normalizedInput = normalizeCountryCode(trimmed) || trimmed
 
   const byCode = await sql`
     SELECT code, name

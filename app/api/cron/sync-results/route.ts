@@ -26,22 +26,22 @@ export async function GET(request: NextRequest) {
 
     console.log("[v0] Starting automatic sync from Dropbox")
 
-    // Descargar archivo Excel
+    // Descargar y validar archivo Excel (rechaza CSV disfrazados)
     const buffer = await downloadDropboxExcel(dropboxUrl)
-    
+
     if (!buffer) {
       await logSyncAudit({
         source: "dropbox_auto",
         file_path: dropboxUrl,
         status: "failed",
         rows_processed: 0,
-        error_message: "Error descargando archivo desde Dropbox",
+        error_message: "Error descargando archivo o formato no es Excel válido (.xlsx/.xls)",
         synced_by: null,
       })
 
       return NextResponse.json(
-        { error: "Error descargando archivo" },
-        { status: 500 }
+        { error: "El archivo no es un Excel válido o no pudo descargarse" },
+        { status: 422 }
       )
     }
 

@@ -289,6 +289,19 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
 
   const drawDayName = getDrawDayName()
 
+  const getLotteryDrawHour = (lottery: any): number | null => {
+    const rawHour = lottery?.time ?? lottery?.availableHour
+    const parsed = Number(rawHour)
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 23) return null
+    return parsed
+  }
+
+  const formatLotteryDrawTime = (lottery: any): string => {
+    const hour = getLotteryDrawHour(lottery)
+    if (hour === null) return "Sin hora"
+    return `${hour.toString().padStart(2, "0")}:00`
+  }
+
 const recommendedLotteries = availableLotteries
   .filter(l => {
     const matchesDigits = l.digits && l.digits.includes(digitsNum)
@@ -849,19 +862,19 @@ const recommendedLotteries = availableLotteries
 
             {!loadingLotteries && availableLotteries.length > 0 && (
               <>
-                <div className="mb-3 p-2 bg-white dark:bg-slate-900 rounded border border-green-200 dark:border-green-700">
+                <div className="mb-3 p-2 bg-white dark:bg-slate-950 rounded border border-green-200 dark:border-green-600">
                   <p className="text-xs text-muted-foreground mb-2">
                     <strong>{availableLotteries.length}</strong> loterías disponibles para este día
                   </p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {Array.from(new Set(availableLotteries.map(l => `${l.name}|${l.availableHour}`)))
+                    {Array.from(new Set(availableLotteries.map(l => `${l.name}|${formatLotteryDrawTime(l)}`)))
                       .slice(0, 5)
                       .map((item) => {
-                        const [name, hour] = item.split("|")
+                        const [name, time] = item.split("|")
                         return (
-                          <Badge key={item} variant="outline" className="text-xs">
+                          <Badge key={item} variant="outline" className="text-xs dark:border-green-500 dark:text-green-200">
                             <Clock className="w-3 h-3 mr-1" />
-                            {hour}:00 - {name}
+                            {time} - {name}
                           </Badge>
                         )
                       })}
@@ -888,20 +901,35 @@ const recommendedLotteries = availableLotteries
                     .filter(l => l.name.toLowerCase().includes(lotterySearch.toLowerCase()))
                     .map(l => {
                       const key = `${l.name}|${l.country}`
+                      const isSelected = selectedLotteries.has(key)
                       return (
-                        <div key={key} className="flex items-center gap-2 p-2 rounded hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-green-200 dark:hover:border-green-700">
+                        <div
+                          key={key}
+                          className={`flex items-center gap-2 p-2 rounded border transition-colors ${
+                            isSelected
+                              ? "bg-green-100 border-green-300 dark:bg-green-900/40 dark:border-green-500"
+                              : "bg-white/60 border-green-100 hover:bg-white dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800"
+                          }`}
+                        >
                           <Checkbox
-                            checked={selectedLotteries.has(key)}
+                            checked={isSelected}
                             onCheckedChange={() => toggleLottery(l.name, l.country)}
                             disabled={loading}
+                            className={isSelected
+                              ? "border-green-600 bg-green-600 text-white dark:border-green-400 dark:bg-green-500 dark:text-white"
+                              : "border-green-400 bg-white text-transparent dark:border-slate-300 dark:bg-slate-950"
+                            }
                           />
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium">{l.name}</span>
+                            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{l.name}</span>
                             <span className="text-xs text-muted-foreground ml-2">({l.country})</span>
                           </div>
-                          <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs whitespace-nowrap bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          >
                             <Clock className="w-3 h-3 mr-1" />
-                            {l.availableHour}:00
+                            Juega {formatLotteryDrawTime(l)}
                           </Badge>
                         </div>
                       )

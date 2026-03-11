@@ -304,12 +304,11 @@ export async function createPrediction(
     }
 
     if (lotteryName !== "sin_definir") {
-      // Validación avanzada: consultar lotería desde la BD y aplicar lógica de disponibilidad
-      const { getAvailableLotteriesForPosting } = await import("./lotteries")
-      const availableLotteries = await getAvailableLotteriesForPosting(drawDate, "Colombia")
-      const lottery = availableLotteries.find(l => l.name === lotteryName)
+      const lotteries = await getLotteriesFromDB()
+      const lottery = lotteries.find((item) => item.name === lotteryName)
+
       if (!lottery) {
-        return { error: "La lotería no está disponible para postear en la fecha/hora seleccionada (verifica el día y la hora límite)." }
+        return { error: "La lotería seleccionada no existe o no está activa" }
       }
 
       const digitCount = parseInt(lotteryType.split("_")[0])
@@ -317,6 +316,12 @@ export async function createPrediction(
         return {
           error: `La lotería ${lotteryName} no soporta ${digitCount} cifras`,
         }
+      }
+
+      const resolvedDrawTime = drawTime || `${lottery.time.toString().padStart(2, "0")}:00`
+      const timeValidation = canPublishPrediction(drawDate, resolvedDrawTime, lottery.country)
+      if (!timeValidation.allowed) {
+        return { error: timeValidation.message || "La lotería no está disponible para postear en la fecha/hora seleccionada." }
       }
     }
 

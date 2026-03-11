@@ -27,9 +27,12 @@ export default async function PremiumPage() {
 
   // Obtener pronósticos de selecciones activas (expertos y números)
   const selectedPredictions = await getSelectedPredictions(user.id)
+  const expertPredictions = selectedPredictions.filter(
+    (prediction: any) => prediction.selection_type === "user",
+  )
 
   // Agrupar pronósticos por fecha
-  const groupedByDate = selectedPredictions.reduce((acc, pred) => {
+  const groupedByDate = expertPredictions.reduce((acc, pred) => {
     const dateKey = pred.draw_date
     if (!acc[dateKey]) {
       acc[dateKey] = []

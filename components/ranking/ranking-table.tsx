@@ -131,7 +131,7 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                   </TooltipProvider>
                 </TableHead>
                 <TableHead className="text-right">Ganado/Perdido</TableHead>
-                <TableHead className="text-right">Contrato</TableHead>
+                <TableHead className="text-right">Acción</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -226,13 +226,13 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                         </Button>
                       ) : currentUser?.is_premium ? (
                         <Button size="sm" asChild>
-                          <a href={`/contracts?userId=${user.user_id}`} target="_blank" rel="noopener noreferrer">
-                            Contratar
+                          <a href="/premium" target="_blank" rel="noopener noreferrer">
+                            Ver en premium
                           </a>
                         </Button>
                       ) : (
                         <Button size="sm" disabled>
-                          Contratar
+                          Premium
                         </Button>
                       )}
                     </TableCell>
