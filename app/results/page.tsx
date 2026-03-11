@@ -115,7 +115,11 @@ export default async function ResultsPage() {
 
   return (
     <PageWrapper user={user ? { username: user.username, role: user.role, is_premium: user.is_premium } : null}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-linear-to-br from-background via-emerald-50/20 dark:via-emerald-950/10 to-background relative">
+        <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+          <div className="absolute top-24 left-20 w-96 h-96 bg-linear-to-br from-cyan-400 to-blue-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-linear-to-br from-emerald-400 to-teal-500 rounded-full blur-3xl"></div>
+        </div>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
@@ -126,7 +130,7 @@ export default async function ResultsPage() {
         />
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
-          <div className="mb-8 space-y-4">
+          <div className="mb-8 space-y-4 rounded-2xl border border-emerald-300/40 dark:border-emerald-700/30 bg-white/60 dark:bg-slate-900/30 backdrop-blur-sm p-5">
             <Button variant="ghost" asChild className="mb-4 group">
               <Link href="/" className="inline-flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -135,7 +139,7 @@ export default async function ResultsPage() {
             </Button>
 
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight bg-linear-to-r from-emerald-700 via-cyan-700 to-blue-700 dark:from-emerald-300 dark:via-cyan-300 dark:to-blue-300 bg-clip-text text-transparent">
                 Resultados Recientes
               </h1>
               <p className="text-sm text-muted-foreground mt-1">

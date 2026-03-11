@@ -42,10 +42,14 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
+    let isActive = true
+
     async function loadCountries() {
       try {
         const res = await fetch("/api/tools/countries")
         const data = await res.json()
+
+        if (!isActive) return
         if (!data.success || !Array.isArray(data.countries)) return
         
         setCountryOptions(data.countries)
@@ -59,20 +63,29 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
           setCountry(normalizedInitialCountry.code)
         }
       } catch (err) {
+        if (!isActive) return
         console.error("Error loading countries:", err)
         setCountryOptions([])
       }
     }
+
     loadCountries()
-  }, [])
+
+    return () => {
+      isActive = false
+    }
+  }, [initialData.country])
 
   useEffect(() => {
+    let isActive = true
+
     async function loadProfileFromDb() {
       try {
         setLoadingProfile(true)
         const res = await fetch("/api/profile/update", { method: "GET", cache: "no-store" })
         const data = await res.json()
 
+        if (!isActive) return
         if (!data?.success || !data?.profile) return
 
         const profile = data.profile as {
@@ -104,14 +117,22 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
       } catch {
         // Si falla esta consulta, se mantienen initialData como fallback
       } finally {
-        setLoadingProfile(false)
+        if (isActive) {
+          setLoadingProfile(false)
+        }
       }
     }
 
     loadProfileFromDb()
+
+    return () => {
+      isActive = false
+    }
   }, [countryOptions])
 
   useEffect(() => {
+    let isActive = true
+
     if (company.trim().length < 2) {
       setCompanySuggestions([])
       return
@@ -119,9 +140,14 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
 
     const timeoutId = setTimeout(async () => {
       try {
-        setLoadingCompanySuggestions(true)
+        if (isActive) {
+          setLoadingCompanySuggestions(true)
+        }
+
         const res = await fetch(`/api/companies/search?q=${encodeURIComponent(company.trim())}`)
         const data = await res.json()
+
+        if (!isActive) return
 
         if (data.success && Array.isArray(data.companies)) {
           setCompanySuggestions(data.companies)
@@ -130,13 +156,20 @@ export function EditProfileForm({ initialData, onSave }: EditProfileFormProps) {
 
         setCompanySuggestions([])
       } catch {
-        setCompanySuggestions([])
+        if (isActive) {
+          setCompanySuggestions([])
+        }
       } finally {
-        setLoadingCompanySuggestions(false)
+        if (isActive) {
+          setLoadingCompanySuggestions(false)
+        }
       }
     }, 250)
 
-    return () => clearTimeout(timeoutId)
+    return () => {
+      isActive = false
+      clearTimeout(timeoutId)
+    }
   }, [company])
 
   const handleSubmit = async (e: React.FormEvent) => {

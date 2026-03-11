@@ -15,9 +15,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ShieldCheck } from "lucide-react"
 import AdminDashboardSummary from "@/components/admin/dashboard-summary"
-import AdminTabsPanel, { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
 import { getCurrentUser } from "@/lib/auth"
 import PostedPredictionsPanel from "@/components/admin/posted-predictions-panel"
 
@@ -97,22 +97,38 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-linear-to-br from-background via-emerald-50/20 dark:via-emerald-950/10 to-background relative">
+      <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-linear-to-br from-emerald-400 to-cyan-500 rounded-full blur-3xl"></div>
+        <div className="absolute top-80 right-0 w-80 h-80 bg-linear-to-bl from-sky-400 to-blue-500 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-linear-to-t from-amber-400 to-orange-500 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 space-y-6">
         {/* Navegación y Título */}
-        <header className="mb-8">
+        <header className="rounded-2xl border border-emerald-300/40 dark:border-emerald-700/30 bg-white/65 dark:bg-slate-900/35 backdrop-blur-sm p-5">
           <Button variant="ghost" asChild className="mb-4 group">
             <Link href="/dashboard">
               <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
               Volver al Dashboard
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Panel de Administración</h1>
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-sm backdrop-blur dark:border-emerald-500/40 dark:bg-slate-900/70 dark:text-emerald-200 mb-3">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Zona de control interno
+          </div>
+
+          <h1 className="text-3xl font-black tracking-tight mb-2 bg-linear-to-r from-emerald-700 via-cyan-700 to-blue-700 dark:from-emerald-300 dark:via-cyan-300 dark:to-blue-300 bg-clip-text text-transparent">Panel de Administración</h1>
           <p className="text-muted-foreground">Gestión de verificación, pagos y sincronización de resultados.</p>
         </header>
-        <AdminDashboardSummary />
+
+        <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-3 md:p-4">
+          <AdminDashboardSummary />
+        </div>
+
         <Tabs defaultValue="clientes" className="space-y-6">
-          <TabsList>
+          <TabsList className="bg-white/70 dark:bg-slate-900/70 border border-emerald-200/50 dark:border-emerald-700/40 rounded-xl p-1.5 backdrop-blur-sm">
             <TabsTrigger value="clientes">Clientes</TabsTrigger>
             <TabsTrigger value="ml">Machine Learning</TabsTrigger>
             <TabsTrigger value="sync">Sincronización</TabsTrigger>
@@ -130,8 +146,8 @@ export default async function AdminPage() {
           </TabsContent>
           {/* Clientes */}
           <TabsContent value="clientes">
-            <Tabs defaultValue="payments">
-              <TabsList>
+            <Tabs defaultValue="payments" className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4 space-y-4">
+              <TabsList className="bg-white/70 dark:bg-slate-900/70 border border-emerald-200/50 dark:border-emerald-700/40 rounded-xl p-1.5 backdrop-blur-sm">
                 <TabsTrigger value="payments">Pagos Pendientes</TabsTrigger>
               </TabsList>
               <TabsContent value="payments">
@@ -149,8 +165,8 @@ export default async function AdminPage() {
           </TabsContent>
           {/* Machine Learning */}
           <TabsContent value="ml">
-            <Tabs defaultValue="ml-clustering">
-              <TabsList>
+            <Tabs defaultValue="ml-clustering" className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4 space-y-4">
+              <TabsList className="bg-white/70 dark:bg-slate-900/70 border border-emerald-200/50 dark:border-emerald-700/40 rounded-xl p-1.5 backdrop-blur-sm">
                 <TabsTrigger value="ml-clustering">ML Clustering</TabsTrigger>
                 <TabsTrigger value="ml-utilities">ML Utilities</TabsTrigger>
                 <TabsTrigger value="synthetics">Usuarios AI</TabsTrigger>
@@ -180,8 +196,8 @@ export default async function AdminPage() {
           </TabsContent>
           {/* Sincronización */}
           <TabsContent value="sync">
-            <Tabs defaultValue="dropbox">
-              <TabsList>
+            <Tabs defaultValue="dropbox" className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4 space-y-4">
+              <TabsList className="bg-white/70 dark:bg-slate-900/70 border border-emerald-200/50 dark:border-emerald-700/40 rounded-xl p-1.5 backdrop-blur-sm">
                 <TabsTrigger value="dropbox">Sincronización Dropbox</TabsTrigger>
                 <TabsTrigger value="verification">Verificación</TabsTrigger>
                 <TabsTrigger value="results">Resultados</TabsTrigger>
@@ -233,31 +249,39 @@ export default async function AdminPage() {
           </TabsContent>
           {/* Marketing */}
           <TabsContent value="marketing">
-            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-              <MarketingPanel />
-            </Suspense>
+            <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                <MarketingPanel />
+              </Suspense>
+            </div>
           </TabsContent>
           {/* Notificaciones */}
           <TabsContent value="notificaciones">
-            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-              <AdminNotificationsPanel />
-            </Suspense>
+            <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                <AdminNotificationsPanel />
+              </Suspense>
+            </div>
           </TabsContent>
           {/* Ranking */}
           <TabsContent value="ranking">
-            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-              <div className="max-w-6xl space-y-4">
-                <RankingUpdatePanel />
-              </div>
-            </Suspense>
+            <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                <div className="max-w-6xl space-y-4">
+                  <RankingUpdatePanel />
+                </div>
+              </Suspense>
+            </div>
           </TabsContent>
           {/* Debug */}
           <TabsContent value="debug">
-            <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-              <div className="max-w-4xl space-y-4">
-                <TableStructureChecker />
-              </div>
-            </Suspense>
+            <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                <div className="max-w-4xl space-y-4">
+                  <TableStructureChecker />
+                </div>
+              </Suspense>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

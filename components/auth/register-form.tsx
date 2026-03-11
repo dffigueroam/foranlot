@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { register, checkUsername } from "@/app/actions/auth"
 import { SUGGESTED_AVATARS } from "@/lib/avatars"
@@ -70,15 +70,31 @@ export function RegisterForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null)
   const router = useRouter()
+  const isMountedRef = useRef(true)
   
   const debouncedUsername = useDebounce(username, 500)
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let isActive = true
+
     async function loadCountries() {
       try {
-        setLoadingCountries(true)
+        if (isActive && isMountedRef.current) {
+          setLoadingCountries(true)
+        }
+
         const response = await fetch("/api/tools/countries")
         const data = await response.json()
+
+        if (!isActive || !isMountedRef.current) {
+          return
+        }
 
         if (!data.success || !Array.isArray(data.countries)) {
           setCountryOptions([])
@@ -89,14 +105,24 @@ export function RegisterForm() {
         const defaultCountry = findCountryOption("CO", data.countries) || data.countries[0] || null
         setSelectedCountryCode((current) => current || defaultCountry?.code || "")
       } catch (fetchError) {
+        if (!isActive || !isMountedRef.current) {
+          return
+        }
+
         console.error("Error loading countries:", fetchError)
         setCountryOptions([])
       } finally {
-        setLoadingCountries(false)
+        if (isActive && isMountedRef.current) {
+          setLoadingCountries(false)
+        }
       }
     }
 
     loadCountries()
+
+    return () => {
+      isActive = false
+    }
   }, [])
 
   useEffect(() => {
@@ -109,24 +135,42 @@ export function RegisterForm() {
 
   // Verificar disponibilidad de username
   useEffect(() => {
+    let isActive = true
+
     async function checkUsernameAvailability() {
       if (debouncedUsername.length < 3) {
-        setUsernameAvailable(null)
+        if (isActive && isMountedRef.current) {
+          setUsernameAvailable(null)
+        }
         return
       }
 
-      setUsernameChecking(true)
+      if (isActive && isMountedRef.current) {
+        setUsernameChecking(true)
+      }
+
       try {
         const result = await checkUsername(debouncedUsername)
-        setUsernameAvailable(result.available)
+
+        if (isActive && isMountedRef.current) {
+          setUsernameAvailable(result.available)
+        }
       } catch (err) {
-        console.error("Error checking username:", err)
+        if (isActive && isMountedRef.current) {
+          console.error("Error checking username:", err)
+        }
       } finally {
-        setUsernameChecking(false)
+        if (isActive && isMountedRef.current) {
+          setUsernameChecking(false)
+        }
       }
     }
 
     checkUsernameAvailability()
+
+    return () => {
+      isActive = false
+    }
   }, [debouncedUsername])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

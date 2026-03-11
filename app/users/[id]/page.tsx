@@ -22,11 +22,16 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
 
   return (
     <PageWrapper user={currentUser ? { username: currentUser.username, role: currentUser.role, is_premium: currentUser.is_premium } : null}>
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="min-h-screen bg-linear-to-br from-background via-emerald-50/20 dark:via-emerald-950/10 to-background relative">
+        <div className="fixed inset-0 -z-10 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+          <div className="absolute top-20 right-16 w-80 h-80 bg-linear-to-br from-emerald-400 to-cyan-500 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* HEADER */}
-        <h1 className="text-3xl font-bold mb-6">
-          Perfil del pronosticador
-        </h1>
+          <h1 className="text-3xl font-black mb-6 bg-linear-to-r from-emerald-700 via-cyan-700 to-blue-700 dark:from-emerald-300 dark:via-cyan-300 dark:to-blue-300 bg-clip-text text-transparent">
+            Perfil del pronosticador
+          </h1>
 
         {/* Indicador de seguimiento */}
         {subscribersCount > 0 && (
@@ -59,6 +64,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </PageWrapper>
   )
