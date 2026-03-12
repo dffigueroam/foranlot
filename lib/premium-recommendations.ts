@@ -30,6 +30,7 @@ interface Contributor {
 export interface RecommendedNumber {
   number: string
   score: number
+  probability: number
   signals: string[]
   contributorCount: number
   topContributors: Array<{ userId: number; weight: number }>
@@ -43,8 +44,17 @@ export interface LotteryRecommendation {
   numbers: RecommendedNumber[]
 }
 
+interface RecommendationFilterOptions {
+  lotteryNames?: string[]
+  countries?: string[]
+}
+
 function round(num: number) {
   return Math.round(num * 1000) / 1000
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
 }
 
 function daysSince(isoDate: string | null) {
@@ -54,15 +64,54 @@ function daysSince(isoDate: string | null) {
   return Math.floor((now.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-export async function generateLotteryRecommendations(limitPerLottery = 10): Promise<LotteryRecommendation[]> {
-  const futureLotteries = await sql`
-    SELECT DISTINCT lottery_name, lottery_type
-    FROM predictions
-    WHERE draw_date >= CURRENT_DATE
-      AND draw_date <= (CURRENT_DATE + INTERVAL '2 days')
-    ORDER BY lottery_name ASC
-    LIMIT 40
-  ` as Array<{ lottery_name: string; lottery_type: string }>
+export async function generateLotteryRecommendations(
+  limitPerLottery = 10,
+  options?: RecommendationFilterOptions,
+): Promise<LotteryRecommendation[]> {
+  const safeLotteryNames = (options?.lotteryNames || []).filter(Boolean)
+  const safeCountries = (options?.countries || []).filter(Boolean)
+
+  const futureLotteries = safeLotteryNames.length > 0 && safeCountries.length > 0
+    ? await sql`
+        SELECT DISTINCT p.lottery_name, p.lottery_type
+        FROM predictions p
+        JOIN lotteries l ON l.name = p.lottery_name
+        WHERE p.draw_date >= CURRENT_DATE
+          AND p.draw_date <= (CURRENT_DATE + INTERVAL '2 days')
+          AND p.lottery_name = ANY(${safeLotteryNames})
+          AND l.country = ANY(${safeCountries})
+        ORDER BY p.lottery_name ASC
+        LIMIT 40
+      `
+    : safeLotteryNames.length > 0
+      ? await sql`
+          SELECT DISTINCT lottery_name, lottery_type
+          FROM predictions
+          WHERE draw_date >= CURRENT_DATE
+            AND draw_date <= (CURRENT_DATE + INTERVAL '2 days')
+            AND lottery_name = ANY(${safeLotteryNames})
+          ORDER BY lottery_name ASC
+          LIMIT 40
+        `
+      : safeCountries.length > 0
+        ? await sql`
+            SELECT DISTINCT p.lottery_name, p.lottery_type
+            FROM predictions p
+            JOIN lotteries l ON l.name = p.lottery_name
+            WHERE p.draw_date >= CURRENT_DATE
+              AND p.draw_date <= (CURRENT_DATE + INTERVAL '2 days')
+              AND l.country = ANY(${safeCountries})
+            ORDER BY p.lottery_name ASC
+            LIMIT 40
+          `
+        : await sql`
+            SELECT DISTINCT lottery_name, lottery_type
+            FROM predictions
+            WHERE draw_date >= CURRENT_DATE
+              AND draw_date <= (CURRENT_DATE + INTERVAL '2 days')
+            ORDER BY lottery_name ASC
+            LIMIT 40
+          ` as Array<{ lottery_name: string; lottery_type: string }>
 
   const output: LotteryRecommendation[] = []
 
@@ -184,6 +233,19 @@ export async function generateLotteryRecommendations(limitPerLottery = 10): Prom
 
     const ranked = Array.from(accumulator.entries())
       .map(([number, data]) => {
+        const stat = resultMetricMap.get(number)
+        const historicalFrequency = stat?.freq || 0
+        const averageContributorWeight =
+          data.contributors.length > 0
+            ? data.contributors.reduce((sum, c) => sum + c.weight, 0) / data.contributors.length
+            : 0
+
+        // Probabilidad estimada (0.01 - 0.95): mezcla de histórico, consenso y calidad del predictor.
+        const historicalProb = clamp(historicalFrequency / 20, 0, 0.45)
+        const consensusProb = clamp(data.contributors.length / 30, 0, 0.3)
+        const qualityProb = clamp(averageContributorWeight * 0.35, 0, 0.2)
+        const probability = round(clamp(0.02 + historicalProb + consensusProb + qualityProb, 0.01, 0.95))
+
         const topContributors = data.contributors
           .sort((a, b) => b.weight - a.weight)
           .slice(0, 3)
@@ -192,12 +254,18 @@ export async function generateLotteryRecommendations(limitPerLottery = 10): Prom
         return {
           number,
           score: round(data.score),
+          probability,
           signals: Array.from(data.signalSet).slice(0, 4),
           contributorCount: data.contributors.length,
           topContributors,
         }
       })
-      .sort((a, b) => b.score - a.score)
+      // Ranking final prioriza probabilidad y usa score como desempate.
+      .sort((a, b) => {
+        const probDiff = b.probability - a.probability
+        if (probDiff !== 0) return probDiff
+        return b.score - a.score
+      })
 
     output.push({
       lotteryName: lot.lottery_name,
@@ -209,6 +277,137 @@ export async function generateLotteryRecommendations(limitPerLottery = 10): Prom
   }
 
   return output
+}
+
+export async function refreshPlatformRecommendationsAfterPublish(lotteryNames: string[]) {
+  try {
+    const safeLotteryNames = lotteryNames.filter(Boolean)
+    if (safeLotteryNames.length === 0) return { skipped: true, reason: "NO_LOTTERIES" }
+
+    const recentRuns = await sql`
+      SELECT id
+      FROM premium_recommendation_runs
+      WHERE source_channel = 'cron'
+        AND status = 'completed'
+        AND filters::text LIKE '%"trigger":"post_publish"%'
+        AND created_at >= (NOW() - INTERVAL '3 minutes')
+      ORDER BY created_at DESC
+      LIMIT 1
+    ` as Array<{ id: number }>
+
+    if (recentRuns.length > 0) {
+      return { skipped: true, reason: "COOLDOWN_ACTIVE" }
+    }
+
+    const countriesRows = await sql`
+      SELECT DISTINCT country
+      FROM lotteries
+      WHERE name = ANY(${safeLotteryNames})
+    ` as Array<{ country: string }>
+
+    const countries = countriesRows.map((row) => row.country).filter(Boolean)
+    if (countries.length === 0) return { skipped: true, reason: "NO_COUNTRIES_FOUND" }
+
+    const admins = await sql`
+      SELECT id FROM users WHERE role = 'admin' LIMIT 1
+    ` as Array<{ id: number }>
+
+    if (!admins.length) return { skipped: true, reason: "NO_ADMIN" }
+
+    const recommendations = await generateLotteryRecommendations(10, {
+      lotteryNames: safeLotteryNames,
+      countries,
+    })
+
+    if (!recommendations.length) {
+      return { skipped: true, reason: "NO_FUTURE_DATA" }
+    }
+
+    const runRows = await sql`
+      INSERT INTO premium_recommendation_runs (
+        user_id,
+        source_channel,
+        algorithm_version,
+        filters,
+        credits_spent,
+        status
+      )
+      VALUES (
+        ${admins[0].id},
+        'cron',
+        'v1',
+        ${JSON.stringify({
+          limitPerLottery: 10,
+          trigger: "post_publish",
+          countries,
+          lotteryNames: safeLotteryNames,
+        })},
+        0,
+        'completed'
+      )
+      RETURNING id
+    ` as Array<{ id: number }>
+
+    const runId = Number(runRows[0].id)
+    let totalItems = 0
+
+    for (const lottery of recommendations) {
+      for (let i = 0; i < lottery.numbers.length; i++) {
+        const item = lottery.numbers[i]
+        const itemRows = await sql`
+          INSERT INTO premium_recommendation_items (
+            run_id,
+            lottery_name,
+            lottery_type,
+            ranking_position,
+            recommended_number,
+            score,
+            signals,
+            contributor_count
+          )
+          VALUES (
+            ${runId},
+            ${lottery.lotteryName},
+            ${lottery.lotteryType},
+            ${i + 1},
+            ${item.number},
+            ${item.score},
+            ${JSON.stringify(item.signals)},
+            ${item.contributorCount}
+          )
+          RETURNING id
+        ` as Array<{ id: number }>
+
+        const itemId = Number(itemRows[0].id)
+
+        for (let j = 0; j < item.topContributors.length; j++) {
+          const c = item.topContributors[j]
+          await sql`
+            INSERT INTO premium_recommendation_contributors (
+              recommendation_item_id,
+              predictor_user_id,
+              contribution_weight,
+              rank_in_item
+            )
+            VALUES (${itemId}, ${c.userId}, ${c.weight}, ${j + 1})
+          `
+        }
+
+        totalItems++
+      }
+    }
+
+    return {
+      skipped: false,
+      runId,
+      totalLotteries: recommendations.length,
+      totalItems,
+      countries,
+    }
+  } catch (error) {
+    console.log("[v0] refreshPlatformRecommendationsAfterPublish error:", error)
+    return { skipped: true, reason: "ERROR" }
+  }
 }
 
 interface RecommendationItemRow {
@@ -286,6 +485,7 @@ export async function getLatestPlatformRecommendations(): Promise<{
     grouped.get(key)!.numbers.push({
       number: row.recommended_number,
       score: Number(row.score),
+      probability: 0,
       signals,
       contributorCount: row.contributor_count,
       topContributors: [],

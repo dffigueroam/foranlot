@@ -1,6 +1,7 @@
 // Crear múltiples predicciones en varias loterías (uno por número)
 import { getLotteriesFromDB } from "./lotteries-server"
 import { canPublishPrediction } from "./timezones"
+import { addDailyPnGInvestment } from "./daily-pyg"
 export async function submitMultiplePredictionsLib(
   userId: number,
   lotteryNames: string[],
@@ -109,15 +110,23 @@ export async function submitMultiplePredictionsLib(
 /* ======================================================
    ACERTOS VERIFICADOS (para dashboard)
 ====================================================== */
-export async function getVerifiedCorrectPredictionsWithUser() {
+export async function getVerifiedCorrectPredictionsWithUser(userId?: number) {
   try {
-    const result = await sql`
-      SELECT p.*, u.username
-      FROM predictions p
-      JOIN users u ON p.user_id = u.id
-      WHERE p.is_verified = TRUE AND p.is_correct = TRUE
-      ORDER BY p.created_at DESC
-    `;
+    const result = userId
+      ? await sql`
+          SELECT p.*, u.username
+          FROM predictions p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.is_verified = TRUE AND p.is_correct = TRUE AND p.user_id = ${userId}
+          ORDER BY p.created_at DESC
+        `
+      : await sql`
+          SELECT p.*, u.username
+          FROM predictions p
+          JOIN users u ON p.user_id = u.id
+          WHERE p.is_verified = TRUE AND p.is_correct = TRUE
+          ORDER BY p.created_at DESC
+        `;
     return result as Prediction[];
   } catch (error) {
     console.error("[predictions] Error getting verified correct predictions:", error);
@@ -230,30 +239,120 @@ export async function getPredictions(userId: number | null, limit?: number) {
    RESUMEN ÚLTIMO POSTEADO (global)
 ====================================================== */
 export interface LatestPostedPrediction {
+  user_id?: number
   predicted_number: string
   lottery_name: string
+  lottery_type?: string
   created_at: string
   draw_date: string
   draw_time: string | null
 }
 
-export async function getLatestPostedPredictions(userId: number) {
+export async function getLatestPostedPredictions(userId?: number, todayOnly = false) {
   try {
+    // Reconstruye el último lote publicado usando una predicción ancla reciente.
+    // Esto evita traer un rango arbitrario por fecha y permite resumir el bloque más reciente.
+    if (userId) {
+      const result = todayOnly
+        ? await sql`
+            WITH latest_anchor AS (
+              SELECT
+                p.user_id,
+                p.draw_date,
+                p.lottery_type,
+                p.confidence_level,
+                p.notes,
+                p.created_at
+              FROM predictions p
+              WHERE p.user_id = ${userId}
+                AND (p.created_at AT TIME ZONE 'America/Bogota')::date = (NOW() AT TIME ZONE 'America/Bogota')::date
+              ORDER BY p.created_at DESC
+              LIMIT 1
+            )
+            SELECT
+              p.user_id,
+              p.predicted_number,
+              p.lottery_name,
+              p.lottery_type,
+              p.created_at,
+              p.draw_date,
+              p.draw_time
+            FROM predictions p
+            JOIN latest_anchor a
+              ON p.user_id = a.user_id
+             AND p.draw_date = a.draw_date
+             AND p.lottery_type = a.lottery_type
+             AND p.confidence_level = a.confidence_level
+             AND p.created_at >= (a.created_at - INTERVAL '5 minutes')
+             AND ((p.notes IS NULL AND a.notes IS NULL) OR p.notes = a.notes)
+            ORDER BY p.created_at DESC, p.lottery_name ASC, p.predicted_number ASC
+          `
+        : await sql`
+        WITH latest_anchor AS (
+          SELECT
+            p.user_id,
+            p.draw_date,
+            p.lottery_type,
+            p.confidence_level,
+            p.notes,
+            p.created_at
+          FROM predictions p
+          WHERE p.user_id = ${userId}
+          ORDER BY p.created_at DESC
+          LIMIT 1
+        )
+        SELECT
+          p.user_id,
+          p.predicted_number,
+          p.lottery_name,
+          p.lottery_type,
+          p.created_at,
+          p.draw_date,
+          p.draw_time
+        FROM predictions p
+        JOIN latest_anchor a
+          ON p.user_id = a.user_id
+         AND p.draw_date = a.draw_date
+         AND p.lottery_type = a.lottery_type
+         AND p.confidence_level = a.confidence_level
+         AND p.created_at >= (a.created_at - INTERVAL '5 minutes')
+         AND ((p.notes IS NULL AND a.notes IS NULL) OR p.notes = a.notes)
+        ORDER BY p.created_at DESC, p.lottery_name ASC, p.predicted_number ASC
+      `
+
+      return result as LatestPostedPrediction[]
+    }
+
     const result = await sql`
+      WITH latest_anchor AS (
+        SELECT
+          p.user_id,
+          p.draw_date,
+          p.lottery_type,
+          p.confidence_level,
+          p.notes,
+          p.created_at
+        FROM predictions p
+        ORDER BY p.created_at DESC
+        LIMIT 1
+      )
       SELECT
+        p.user_id,
         p.predicted_number,
         p.lottery_name,
+        p.lottery_type,
         p.created_at,
         p.draw_date,
         p.draw_time
       FROM predictions p
-      WHERE p.user_id = ${userId}
-      AND DATE(p.created_at) = (
-        SELECT DATE(MAX(created_at))
-        FROM predictions
-        WHERE user_id = ${userId}
-      )
-      ORDER BY p.created_at DESC
+      JOIN latest_anchor a
+        ON p.user_id = a.user_id
+       AND p.draw_date = a.draw_date
+       AND p.lottery_type = a.lottery_type
+       AND p.confidence_level = a.confidence_level
+       AND p.created_at >= (a.created_at - INTERVAL '5 minutes')
+       AND ((p.notes IS NULL AND a.notes IS NULL) OR p.notes = a.notes)
+      ORDER BY p.created_at DESC, p.lottery_name ASC, p.predicted_number ASC
     `
 
     return result as LatestPostedPrediction[]
@@ -361,6 +460,12 @@ export async function createPrediction(
 
     // Guardar la combinación de loterías para reutilización rápida
     if (result.length > 0) {
+      await addDailyPnGInvestment({
+        userId,
+        predictionDate: drawDate,
+        predictedNumber,
+      })
+
       await saveLotteryCombination(userId, [lotteryName], lotteryType)
     }
 

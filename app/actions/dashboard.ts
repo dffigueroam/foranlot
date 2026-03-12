@@ -1,10 +1,12 @@
 "use server"
 
+import { getCurrentUser } from "@/lib/auth"
 import { getVerifiedCorrectPredictionsWithUser } from "@/lib/predictions"
-import { revalidatePath } from "next/cache"
 
 export async function fetchVerifiedCorrectPredictions() {
-  const predictions = await getVerifiedCorrectPredictionsWithUser()
-  revalidatePath("/dashboard")
+  const user = await getCurrentUser()
+  if (!user) return []
+
+  const predictions = await getVerifiedCorrectPredictionsWithUser(user.id)
   return predictions
 }

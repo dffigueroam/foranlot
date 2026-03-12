@@ -1,3 +1,5 @@
+import { LOTTERY_PAYOUT_CONFIG, OCCASIONAL_WITHHOLDING_PERCENTAGE } from "@/lib/payout-config"
+
 /**
  * SCORING RULES CONFIGURATION - Lotiq
  * 
@@ -19,14 +21,14 @@ export const LOTTERY_PAYOUTS = {
    */
   direct: {
     "3_digits": {
-      payout: 400, // Apuestas 100, recibes 400 (ganancia 300)
+      payout: LOTTERY_PAYOUT_CONFIG.direct["3_digits"], // Apuestas 100, el premio bruto es 100 × 400 = 40,000
       baseWager: 100,
-      netProfit: 300,
+      netProfit: 27900,
     },
     "4_digits": {
-      payout: 4500, // Apuestas 100, recibes 4500 (ganancia 4400)
+      payout: LOTTERY_PAYOUT_CONFIG.direct["4_digits"], // Apuestas 100, el premio bruto es 100 × 4500 = 450,000
       baseWager: 100,
-      netProfit: 4400,
+      netProfit: 314900,
     },
   },
 
@@ -35,14 +37,14 @@ export const LOTTERY_PAYOUTS = {
    */
   combined: {
     "3_digits": {
-      payout: 83, // Por cada acuerdo
+      payout: LOTTERY_PAYOUT_CONFIG.combined["3_digits"], // Apuestas 100, el premio bruto es 100 × 83 = 8,300
       baseWager: 100,
-      netProfit: -17, // Es una pérdida
+      netProfit: 5710,
     },
     "4_digits": {
-      payout: 208,
+      payout: LOTTERY_PAYOUT_CONFIG.combined["4_digits"], // Apuestas 100, el premio bruto es 100 × 208 = 20,800
       baseWager: 100,
-      netProfit: 108,
+      netProfit: 14460,
     },
   },
 
@@ -50,9 +52,9 @@ export const LOTTERY_PAYOUTS = {
    * ÚLTIMAS DOS CIFRAS
    */
   lastTwoDigits: {
-    payout: 50,
+    payout: LOTTERY_PAYOUT_CONFIG.lastTwoDigits,
     baseWager: 100,
-    netProfit: -50,
+    netProfit: 3400,
   },
 } as const;
 
@@ -62,31 +64,99 @@ export const LOTTERY_PAYOUTS = {
 
 export const COMMISSION_RULES = {
   /**
-   * GANANCIA OCASIONAL: 20% a plataforma, 80% al usuario
+   * GANANCIA OCASIONAL / RETENCIÓN: 30% sobre el premio bruto
    * 
    * Ejemplo con acierto de 3 cifras directo:
    * - Apuestas: 100 pesos
-   * - Payout bruto: 400 pesos
-   * - Ganancia bruta: 300 pesos
-   * - Comisión (20%): 60 pesos (a plataforma)
-   * - Ganancia neta: 240 pesos (al usuario)
+  * - Payout bruto: 40,000 pesos
+  * - Retención (30%): 12,000 pesos
+  * - Premio neto: 28,000 pesos
+  * - P&G final: 27,900 pesos
    * 
-   * CASO USUARIO: "Apuesto 100 y gano 3 cifras me dan 40,000"
-   * - Si esto es 10 números acertados: 10 × 400 = 4,000 pesos
-   * - Ganancia bruta: 3,000 pesos
-   * - Comisión: 600 pesos
-   * - Al usuario: 2,400 pesos
+   * Ejemplo con 4 cifras directo:
+   * - Apuestas: 100 pesos
+  * - Payout bruto: 450,000 pesos
+  * - Retención (30%): 135,000 pesos
+  * - Premio neto: 315,000 pesos
+  * - P&G final: 314,900 pesos
    */
-  occasionalGainPercentage: 20, // Porcentaje que va a plataforma
-  userKeepPercentage: 80, // Porcentaje que va al usuario
-  applicableTo: "Toda ganancia ocasional (payout - wager)",
+  occasionalGainPercentage: OCCASIONAL_WITHHOLDING_PERCENTAGE,
+  userKeepPercentage: 100 - OCCASIONAL_WITHHOLDING_PERCENTAGE,
+  applicableTo: "Todo premio bruto liquidado por apuesta ganadora",
   
   formula: {
-    grossProfit: "payout - wager",
-    platformCommission: "grossProfit × 0.20",
-    userProfit: "grossProfit × 0.80",
+    withholding: "payout × 0.30",
+    netPayout: "payout - withholding",
+    netProfit: "netPayout - wager",
   },
 } as const;
+
+export type SupportedLotteryType = "3_digits" | "4_digits"
+export type SupportedWagerType = "direct" | "combined" | "lastTwoDigits"
+
+export interface WagerOutcome {
+  wagerAmount: number
+  payoutMultiplier: number
+  grossPayout: number
+  withholdingAmount: number
+  netPayout: number
+  netProfit: number
+  isPositivePnG: boolean
+}
+
+function getPayoutRule(lotteryType: SupportedLotteryType, wagerType: SupportedWagerType) {
+  if (wagerType === "lastTwoDigits") {
+    return LOTTERY_PAYOUTS.lastTwoDigits
+  }
+
+  return LOTTERY_PAYOUTS[wagerType][lotteryType]
+}
+
+/**
+ * Calcula el resultado financiero real de una apuesta individual.
+ *
+ * Regla confirmada:
+ * - Inversión base por defecto: 100
+ * - Retención: 30% sobre el payout bruto cuando hay acierto
+ * - P&G = payout neto - inversión
+ */
+export function calculateWagerOutcome(params: {
+  lotteryType: SupportedLotteryType
+  wagerType: SupportedWagerType
+  wagerAmount?: number
+  isWinning: boolean
+}): WagerOutcome {
+  const wagerAmount = params.wagerAmount ?? 100
+
+  if (!params.isWinning) {
+    return {
+      wagerAmount,
+      payoutMultiplier: 0,
+      grossPayout: 0,
+      withholdingAmount: 0,
+      netPayout: 0,
+      netProfit: -wagerAmount,
+      isPositivePnG: false,
+    }
+  }
+
+  const rule = getPayoutRule(params.lotteryType, params.wagerType)
+  const payoutMultiplier = rule.payout
+  const grossPayout = wagerAmount * payoutMultiplier
+  const withholdingAmount = grossPayout * (COMMISSION_RULES.occasionalGainPercentage / 100)
+  const netPayout = grossPayout - withholdingAmount
+  const netProfit = netPayout - wagerAmount
+
+  return {
+    wagerAmount,
+    payoutMultiplier,
+    grossPayout,
+    withholdingAmount,
+    netPayout,
+    netProfit,
+    isPositivePnG: netProfit > 0,
+  }
+}
 
 // ============================================================================
 // ESTRUCTURA DE DATOS PARA SCORING
@@ -106,7 +176,7 @@ export const REQUIRED_DATA_STRUCTURE = {
    * - is_verified: ¿Se verificó contra resultado?
    * - is_correct: ¿Acertó?
    * - actual_payout: Lo que realmente se ganó
-   * - net_profit: Ganancia neta (post-comisión 20%)
+  * - net_profit: Ganancia neta (post-retención 30%)
    * - created_at: Cuándo se hizo la apuesta
    */
   wagers: {
@@ -187,7 +257,7 @@ export const SCORING_CALCULATION = {
    * - totalWagered: Suma de todas las apuestas
    * - totalWon: Suma de payouts brutos
    * - totalLost: Suma de pérdidas
-   * - totalNetProfit: Ganancia neta (post-comisión 20%)
+  * - totalNetProfit: Ganancia neta (post-retención 30%)
    * - successfulWagers: Cantidad de apuestas ganadoras
    * - totalWagers: Cantidad total de apuestas
    * - hitRate: (successfulWagers / totalWagers) × 100

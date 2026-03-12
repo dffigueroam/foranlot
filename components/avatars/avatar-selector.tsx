@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +21,13 @@ interface AvatarSelectorProps {
 export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }: AvatarSelectorProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string | undefined>(currentAvatarId)
+  const [selectedAvatarType, setSelectedAvatarType] = useState<"suggested" | "custom" | undefined>(currentAvatarType)
+
+  useEffect(() => {
+    setSelectedAvatarId(currentAvatarId)
+    setSelectedAvatarType(currentAvatarType)
+  }, [currentAvatarId, currentAvatarType])
 
   async function handleSelectAvatar(avatarId: string) {
     setIsLoading(true)
@@ -31,6 +38,8 @@ export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }
     if (result.error) {
       setMessage({ type: "error", text: result.error })
     } else {
+      setSelectedAvatarId(avatarId)
+      setSelectedAvatarType("suggested")
       setMessage({ type: "success", text: `Avatar cambió a ${result.avatar?.name}` })
       onSuccess?.()
     }
@@ -53,6 +62,7 @@ export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }
     if (result.error) {
       setMessage({ type: "error", text: result.error })
     } else {
+      setSelectedAvatarType("custom")
       setMessage({ type: "success", text: "Avatar personalizado cargado exitosamente" })
       onSuccess?.()
     }
@@ -84,7 +94,7 @@ export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }
                   className={`
                     relative p-4 rounded-lg border-2 transition-all
                     ${
-                      currentAvatarId === avatar.id
+                      selectedAvatarType === "suggested" && selectedAvatarId === avatar.id
                         ? "border-purple-500 bg-purple-50 dark:bg-purple-950/50"
                         : "border-gray-200 dark:border-gray-700 hover:border-purple-300"
                     }
@@ -96,7 +106,7 @@ export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
                     {avatar.description}
                   </p>
-                  {currentAvatarId === avatar.id && (
+                  {selectedAvatarType === "suggested" && selectedAvatarId === avatar.id && (
                     <div className="absolute top-2 right-2">
                       <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     </div>
@@ -154,8 +164,16 @@ export function AvatarSelector({ currentAvatarId, currentAvatarType, onSuccess }
 
             <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
               <p className="text-sm text-blue-900 dark:text-blue-200">
-                💡 <strong>Consejo:</strong> Crea tu SVG en herramientas como Figma, Illustrator o usa un generador de avatares online. 
-                Asegúrate de que sea simple y legible en pequeño tamaño.
+                💡 <strong>Consejo:</strong> Crea tu SVG en herramientas como Figma, Illustrator o usa un generador de avatares online. También puedes ver SVG ya hechos en{" "}
+                <a
+                  href="https://www.svgrepo.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-semibold"
+                >
+                  SVG Repo
+                </a>
+                . Asegúrate de que sea simple y legible en pequeño tamaño.
               </p>
             </div>
           </TabsContent>

@@ -24,8 +24,8 @@ export async function updateRankingManually() {
     // 1. Actualizar estadísticas básicas (user_stats)
     await updateRankings()
 
-    // 2. Calcular scores detallados para usuarios activos
-    const userScores = await calculateRankingScoresForPeriod(15)
+    // 2. Calcular scores detallados con histórico acumulado (sin ventana por días)
+    const userScores = await calculateRankingScoresForPeriod()
 
     if (userScores.length > 0) {
       // 3. Guardar scores en user_ranking_scores con fecha actual

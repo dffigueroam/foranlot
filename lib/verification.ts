@@ -1,6 +1,7 @@
 import "server-only"
 import { neon } from "@neondatabase/serverless"
 import { updateRankings } from "./ranking"
+import { updateDailyPnGWonValue } from "./daily-pyg"
 // import { getLotteriesFromDB } from "./lotteries" // Usar función si se requiere consultar loterías
 import { 
   notifyOfficialResults, 
@@ -85,7 +86,7 @@ export async function verifyPredictionsForDate(date: string) {
       
       // Obtener pronósticos pendientes para esta lotería y fecha
       const pendingPredictions = await sql`
-        SELECT id, lottery_type, predicted_number
+        SELECT id, user_id, lottery_type, predicted_number
         FROM predictions
         WHERE DATE(draw_date) = DATE(${result.draw_date})
           AND LOWER(TRIM(lottery_name)) = LOWER(TRIM(${result.lottery_name}))
@@ -122,6 +123,13 @@ export async function verifyPredictionsForDate(date: string) {
             updated_at = CURRENT_TIMESTAMP
           WHERE id = ${pred.id}
         `
+
+        await updateDailyPnGWonValue({
+          userId: pred.user_id,
+          predictionDate: String(result.draw_date),
+          lotteryType: pred.lottery_type,
+          isExactHit: bestMatch.matchType === 'exact',
+        })
         
         verifiedCount++
         if (bestMatch.matchType === 'exact') correctCount++
@@ -171,7 +179,7 @@ export async function verifyPredictionsFromStoredResults(date: string) {
 
       // Obtener pronósticos pendientes
       const pendingPredictions = await sql`
-        SELECT id, lottery_type, predicted_number
+        SELECT id, user_id, lottery_type, predicted_number
         FROM predictions
         WHERE DATE(draw_date) = DATE(${result.draw_date})
           AND LOWER(TRIM(lottery_name)) = LOWER(TRIM(${result.lottery_name}))
@@ -205,6 +213,13 @@ export async function verifyPredictionsFromStoredResults(date: string) {
             updated_at = CURRENT_TIMESTAMP
           WHERE id = ${pred.id}
         `
+
+        await updateDailyPnGWonValue({
+          userId: pred.user_id,
+          predictionDate: String(result.draw_date),
+          lotteryType: pred.lottery_type,
+          isExactHit: bestMatch.matchType === 'exact',
+        })
         
         verifiedCount++
         if (bestMatch.matchType === 'exact') correctCount++
@@ -309,6 +324,13 @@ export async function verifyPendingPredictions() {
               updated_at = CURRENT_TIMESTAMP
             WHERE id = ${pred.id}
           `
+
+          await updateDailyPnGWonValue({
+            userId: pred.user_id,
+            predictionDate: String(result.draw_date),
+            lotteryType: pred.lottery_type,
+            isExactHit: bestMatch.matchType === 'exact',
+          })
           
           totalVerified++
           

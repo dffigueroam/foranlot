@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
+import { getCurrentUser } from "@/lib/auth"
 import { submitMultiplePredictionsLib } from "@/lib/predictions"
+import { refreshPlatformRecommendationsAfterPublish } from "@/lib/premium-recommendations"
 
 export async function POST(req: Request) {
   try {
-    const { userId, lotteryNames, lotteryType, predictedNumbersStr, drawDate, drawTime, confidenceLevel, notes } = await req.json()
-    // userId must be provided by the caller (API route)
-    if (!userId) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 })
     }
+
+    const { lotteryNames, lotteryType, predictedNumbersStr, drawDate, drawTime, confidenceLevel, notes } = await req.json()
+
     const result = await submitMultiplePredictionsLib(
-      userId,
+      user.id,
       lotteryNames,
       lotteryType,
       predictedNumbersStr,
@@ -18,6 +23,14 @@ export async function POST(req: Request) {
       confidenceLevel,
       notes
     )
+    
+    if (result.success) {
+      revalidatePath("/dashboard")
+
+      // Recalcular recomendaciones de plataforma para países/loterías impactadas.
+      await refreshPlatformRecommendationsAfterPublish(lotteryNames)
+    }
+
     return NextResponse.json(result)
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || "Error al crear múltiples predicciones" }, { status: 500 })

@@ -69,6 +69,12 @@ export interface UserScore {
   totalScore: number         // Suma ponderada
 }
 
+export interface EligibleCompensationUser {
+  userId: number
+  username: string
+  profitAndLoss: number
+}
+
 function getNormalizedWeights() {
   const weights = ENVIRONMENT_CONFIG.SCORING_WEIGHTS
   const total = weights.contribution + weights.recurrence + weights.consistency
@@ -80,21 +86,17 @@ function getNormalizedWeights() {
 }
 
 /**
- * Calcular scores de ranking basados en los últimos N días
- * Criterios: Aporte (50%), Recurrencia (30%), Consistencia (20%)
+ * Calcular scores de ranking basados en histórico acumulado.
+ * Criterios: Aporte económico P&G acumulado (50%), Recurrencia (30%), Consistencia (20%)
  */
-export async function calculateRankingScoresForPeriod(days = 15): Promise<UserScore[]> {
+export async function calculateRankingScoresForPeriod(_days = 0): Promise<UserScore[]> {
   try {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
-    const startDateStr = startDate.toISOString().split("T")[0]
-
     const weights = getNormalizedWeights()
 
     const totalPredictions = await sql`
       SELECT COUNT(*)::int as total
       FROM predictions
-      WHERE draw_date >= ${startDateStr}
+      WHERE is_verified = true
     `
 
     const totalCorrect = await sql`
@@ -102,13 +104,12 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
       FROM predictions
       WHERE is_verified = true
         AND is_correct = true
-        AND draw_date >= ${startDateStr}
     `
 
     const perUserPredictions = await sql`
       SELECT user_id, COUNT(*)::int as total
       FROM predictions
-      WHERE draw_date >= ${startDateStr}
+      WHERE is_verified = true
       GROUP BY user_id
     `
 
@@ -117,7 +118,6 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
       FROM predictions
       WHERE is_verified = true
         AND is_correct = true
-        AND draw_date >= ${startDateStr}
       GROUP BY user_id
     `
 
@@ -128,7 +128,14 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
         COUNT(*) FILTER (WHERE is_correct = true)::int as correct
       FROM predictions
       WHERE is_verified = true
-        AND draw_date >= ${startDateStr}
+      GROUP BY user_id
+    `
+
+    const perUserPnG = await sql`
+      SELECT
+        user_id,
+        COALESCE(SUM(valor_ganado - valor_inversion), 0)::bigint as total_pyg
+      FROM user_daily_pyg
       GROUP BY user_id
     `
 
@@ -139,6 +146,7 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
     perUserPredictions.forEach((row: any) => userIdSet.add(row.user_id))
     perUserCorrect.forEach((row: any) => userIdSet.add(row.user_id))
     perUserAccuracy.forEach((row: any) => userIdSet.add(row.user_id))
+    perUserPnG.forEach((row: any) => userIdSet.add(row.user_id))
 
     const userIds = Array.from(userIdSet)
     if (userIds.length === 0) return []
@@ -161,12 +169,20 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
     const accuracyMap = new Map<number, { total: number; correct: number }>()
     perUserAccuracy.forEach((row: any) => accuracyMap.set(row.user_id, { total: row.total, correct: row.correct }))
 
+    const pygMap = new Map<number, number>()
+    perUserPnG.forEach((row: any) => pygMap.set(row.user_id, Number(row.total_pyg || 0)))
+
+    const totalPositivePnG = Array.from(pygMap.values())
+      .filter((value) => value > 0)
+      .reduce((sum, value) => sum + value, 0)
+
     const scores: UserScore[] = userIds.map((userId) => {
       const userPred = predMap.get(userId) || 0
       const userCorrect = correctMap.get(userId) || 0
       const accuracy = accuracyMap.get(userId)
+      const userPnG = pygMap.get(userId) || 0
 
-      const contributionScore = totalPred > 0 ? userPred / totalPred : 0
+      const contributionScore = totalPositivePnG > 0 && userPnG > 0 ? userPnG / totalPositivePnG : 0
       const recurrenceScore = totalCorr > 0 ? userCorrect / totalCorr : 0
       const consistencyScore = accuracy && accuracy.total > 0 ? accuracy.correct / accuracy.total : 0
 
@@ -194,7 +210,7 @@ export async function calculateRankingScoresForPeriod(days = 15): Promise<UserSc
 
     return scores.sort((a, b) => b.totalScore - a.totalScore)
   } catch (error) {
-    console.error("[v0] Error calculating ranking scores for period:", error)
+    console.error("[v0] Error calculating ranking scores:", error)
     return []
   }
 }
@@ -335,10 +351,46 @@ async function calculateConsistencyScore(userId: number): Promise<number> {
 }
 
 /**
+ * Obtener pronosticadores elegibles para compensación por P&G histórico acumulado.
+ */
+export async function getEligiblePredictorsByPositivePnG(
+  userIds: number[]
+): Promise<EligibleCompensationUser[]> {
+  try {
+    const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)))
+
+    if (uniqueUserIds.length === 0) return []
+
+    const results = await sql`
+      SELECT
+        d.user_id,
+        u.username,
+        COALESCE(SUM(d.valor_ganado - d.valor_inversion), 0)::bigint as total_pyg
+      FROM user_daily_pyg d
+      JOIN users u ON u.id = d.user_id
+      WHERE d.user_id = ANY(${uniqueUserIds})
+      GROUP BY d.user_id, u.username
+    `
+
+    return (results as any[])
+      .map((row) => ({
+        userId: row.user_id,
+        username: row.username,
+        profitAndLoss: Number(row.total_pyg || 0),
+      }))
+      .filter((user) => user.profitAndLoss > 0)
+      .sort((a, b) => b.profitAndLoss - a.profitAndLoss || a.username.localeCompare(b.username))
+  } catch (error) {
+    console.error("[v0] Error getting eligible predictors by positive P&G:", error)
+    return []
+  }
+}
+
+/**
  * Distribuir compensación entre usuarios según scores
  */
 export function distributeCompensation(
-  userScores: UserScore[],
+  eligibleUsers: EligibleCompensationUser[],
   totalCompensationFund: number
 ): Array<{
   userId: number
@@ -346,12 +398,19 @@ export function distributeCompensation(
   score: number
   compensation: number  // En centavos
 }> {
-  
-  return userScores.map(user => ({
+  if (eligibleUsers.length === 0 || totalCompensationFund <= 0) {
+    return []
+  }
+
+  const score = 1 / eligibleUsers.length
+  const baseCompensation = Math.floor(totalCompensationFund / eligibleUsers.length)
+  const remainder = totalCompensationFund - (baseCompensation * eligibleUsers.length)
+
+  return eligibleUsers.map((user, index) => ({
     userId: user.userId,
     username: user.username,
-    score: user.totalScore,
-    compensation: Math.round(totalCompensationFund * user.totalScore),
+    score,
+    compensation: baseCompensation + (index < remainder ? 1 : 0),
   }))
 }
 
@@ -367,11 +426,13 @@ export async function simulateCompensation(scenario: CompensationScenario) {
   const userFund = Math.round(grossPrize * (ENVIRONMENT_CONFIG.USERS_PRIZE_PERCENTAGE / 100))
   const platformShare = grossPrize - userFund
   
-  // 3. Calcular scores de usuarios
-  const userScores = await calculateUserScores(scenario)
-  
-  // 4. Distribuir compensación
-  const distribution = distributeCompensation(userScores, userFund)
+  // 3. Filtrar elegibles por P&G positivo, sin depender del ranking
+  const eligibleUsers = await getEligiblePredictorsByPositivePnG(
+    scenario.userContributions.map((contribution) => contribution.userId)
+  )
+
+  // 4. Distribuir compensación únicamente entre elegibles
+  const distribution = distributeCompensation(eligibleUsers, userFund)
   
   // 5. Registrar en compensation_log
   for (const payout of distribution) {
@@ -384,7 +445,7 @@ export async function simulateCompensation(scenario: CompensationScenario) {
       ) VALUES (
         ${payout.userId},
         ${payout.compensation},
-        ${`Compensación por acierto: ${scenario.winningNumber} (${scenario.lotteryType})`},
+        ${`Compensación por acierto con P&G positivo: ${scenario.winningNumber} (${scenario.lotteryType})`},
         CURRENT_TIMESTAMP
       )
     `
@@ -397,6 +458,8 @@ export async function simulateCompensation(scenario: CompensationScenario) {
       grossPrize,
       userFund,
       platformShare,
+      eligibleUsersCount: eligibleUsers.length,
+      excludedUsersCount: Math.max(scenario.userContributions.length - eligibleUsers.length, 0),
     },
     distribution,
   }

@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "start": "next start",
     "load-results": "tsx scripts/load-ult-results.ts",
+    "load-lotteries": "tsx scripts/import-historical-results-xlsb.ts",
     "fix-csv": "powershell -ExecutionPolicy Bypass -File scripts/fix-csv-encoding.ps1",
     "sync-holidays": "tsx scripts/parse-holidays-excel.ts"
   },

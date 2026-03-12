@@ -8,11 +8,11 @@ const bingVerification = process.env.BING_SITE_VERIFICATION || process.env.NEXT_
 
 export const metadata: Metadata = {
   title: {
-    default: "Lot-IQ - Predicciones de Lotería Inteligentes | Gana Dinero Real",
+    default: "Lot-IQ - Predicciones de Lotería Inteligentes",
     template: "%s | Lot-IQ",
   },
   description:
-    "Únete a la comunidad de pronósticos de lotería más grande de Colombia. Predice números, sigue expertos, analiza patrones y gana dinero por tus aciertos. Sin comisiones ocultas. 100% transparente.",
+    "Comunidad de pronósticos de lotería en Colombia. Predice números, sigue expertos y analiza patrones. Información comercial en proceso de consolidación.",
   keywords: [
     "lotería Colombia",
     "predicciones lotería",
@@ -45,9 +45,9 @@ export const metadata: Metadata = {
     locale: "es_CO",
     url: "/",
     siteName: "Lot-IQ",
-    title: "Lot-IQ - Predicciones de Lotería Inteligentes | Gana Dinero Real",
+    title: "Lot-IQ - Predicciones de Lotería Inteligentes",
     description:
-      "Comunidad de pronósticos de lotería en Colombia. Predice números, sigue expertos y gana dinero por tus aciertos. Sin comisiones ocultas.",
+      "Comunidad de pronósticos de lotería en Colombia. Predice números, sigue expertos y analiza patrones.",
     images: [
       {
         url: "/og-image.png",
@@ -59,9 +59,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lot-IQ - Predicciones de Lotería Inteligentes | Gana Dinero Real",
+    title: "Lot-IQ - Predicciones de Lotería Inteligentes",
     description:
-      "Comunidad de pronósticos de lotería en Colombia. Predice, sigue expertos y gana dinero real.",
+      "Comunidad de pronósticos de lotería en Colombia. Predice, sigue expertos y analiza patrones.",
     images: ["/twitter-image.png"],
     creator: "@lot_iq",
   },
@@ -104,23 +104,10 @@ export default function RootLayout({
     "@type": "WebApplication",
     name: "Lot-IQ",
     description:
-      "Plataforma de predicciones de lotería con comunidad de expertos, análisis de patrones y sistema de ganancias transparente",
+      "Plataforma de predicciones de lotería con comunidad, análisis de patrones y funcionalidades en evolución.",
     url: appUrl,
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "9.99",
-      priceCurrency: "USD",
-      description: "Membresía Premium Mensual",
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "15234",
-      bestRating: "5",
-      worstRating: "1",
-    },
     provider: {
       "@type": "Organization",
       name: "Lot-IQ",
@@ -143,7 +130,7 @@ export default function RootLayout({
       "Predicciones de lotería colaborativas",
       "Ranking de pronosticadores",
       "Análisis de patrones numéricos",
-      "Sistema de recompensas transparente",
+      "Sistema de beneficios en consolidación",
       "Seguimiento de expertos",
     ],
     screenshot: `${appUrl}/screenshot.png`,

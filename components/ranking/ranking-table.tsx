@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Trophy, Medal, Award, UserPlus, TrendingUp, Target, Zap, Link, Users } from "lucide-react"
+import Link from "next/link"
+import { Trophy, Medal, Award, UserPlus, TrendingUp, Target, Zap, Users } from "lucide-react"
 
 
 interface RankingTableProps {
@@ -17,6 +18,17 @@ interface RankingTableProps {
   title?: string
   description?: string
   showWaitlistBadge?: boolean
+}
+
+const AVATAR_EMOJI_MAP: Record<string, string> = {
+  avatar_1: "🔍",
+  avatar_2: "♟️",
+  avatar_3: "🏆",
+  avatar_4: "🐯",
+  avatar_5: "🔥",
+  avatar_6: "🦅",
+  avatar_7: "🧙",
+  avatar_8: "⚡",
 }
 
 export function RankingTable({ users, currentUser, onFollowUser, showDetailedScores = false, title, description, showWaitlistBadge = false }: RankingTableProps) {
@@ -38,6 +50,27 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
     if (accuracy >= 50) return "bg-yellow-100 text-yellow-800 border-yellow-200"
     if (accuracy >= 30) return "bg-orange-100 text-orange-800 border-orange-200"
     return "bg-red-100 text-red-800 border-red-200"
+  }
+
+  const renderUserAvatar = (user: any) => {
+    if (user.avatar_type === "custom" && typeof user.avatar_data === "string" && user.avatar_data.length > 0) {
+      return (
+        <img
+          src={user.avatar_data}
+          alt={`Avatar de ${user.username}`}
+          className="w-8 h-8 rounded-full border border-border object-cover"
+        />
+      )
+    }
+
+    const avatarId = typeof user.avatar_id === "string" ? user.avatar_id : ""
+    const emoji = AVATAR_EMOJI_MAP[avatarId] || "👤"
+
+    return (
+      <span className="inline-flex w-8 h-8 items-center justify-center rounded-full border border-border bg-muted text-base">
+        {emoji}
+      </span>
+    )
   }
 
   return (
@@ -149,6 +182,7 @@ export function RankingTable({ users, currentUser, onFollowUser, showDetailedSco
                     <TableCell className="font-medium">{getRankIcon(position)}</TableCell>                  
                     <TableCell className="font-semibold">
                       <div className="flex items-center gap-2">
+                        {renderUserAvatar(user)}
                         <Link
                           href={`/users/${user.user_id}`}
                           className="hover:underline text-primary"

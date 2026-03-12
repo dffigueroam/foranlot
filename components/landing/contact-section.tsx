@@ -20,7 +20,7 @@ export function ContactSection() {
               Ponte en Contacto
             </h2>
             <p className="text-gray-600 dark:text-gray-300 text-lg">
-              ¿Preguntas? Estamos aquí para ayudarte 24/7
+              ¿Preguntas? Estamos aquí para ayudarte
             </p>
           </div>
 
@@ -44,7 +44,7 @@ export function ContactSection() {
                     {contactEmail}
                   </a>
                   <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    ⏱️ Respuesta en 24 horas
+                    ⏱️ Respuesta según disponibilidad del equipo
                   </p>
                 </CardContent>
               </Card>
@@ -69,7 +69,7 @@ export function ContactSection() {
               </Card>
             </div>
 
-            {/* Soporte 24/7 */}
+            {/* Soporte */}
             <div className="relative group">
               <div className="absolute inset-0 bg-linear-to-br from-purple-400 to-pink-400 rounded-2xl opacity-0 group-hover:opacity-20 dark:opacity-0 dark:group-hover:opacity-30 transition-opacity duration-300 blur-xl"></div>
               <Card className="border-0 relative h-full bg-linear-to-br from-white to-purple-50 dark:from-gray-800/50 dark:to-purple-900/20 dark:backdrop-blur dark:border dark:border-purple-700/50 hover:shadow-lg dark:hover:shadow-purple-500/20 transition-all">
@@ -80,7 +80,7 @@ export function ContactSection() {
                   <CardTitle className="text-gray-900 dark:text-white">Soporte</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-3">
-                  <p className="text-gray-700 dark:text-gray-300 font-semibold">🕐 24/7 Disponible</p>
+                  <p className="text-gray-700 dark:text-gray-300 font-semibold">🕐 Atención continua</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                     Vía email y chat
                   </p>
@@ -133,7 +133,7 @@ export function ContactSection() {
                   </Button>
 
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center font-medium">
-                    ✓ No compartimos tu información. Respuesta garantizada en 24 horas.
+                    ✓ No compartimos tu información. El tiempo de respuesta puede variar.
                   </p>
                 </form>
               </CardContent>

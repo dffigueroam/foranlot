@@ -12,22 +12,22 @@ const FAQS = [
   {
     question: "¿Cómo funciona Lot-IQ?",
     answer:
-      "Puedes predecir números de loterías, compartir tus predicciones con la comunidad y ganar dinero cuando tus predicciones son acertadas. También puedes seguir a otros pronosticadores y contratar sus predicciones si eres miembro premium.",
+      "Publicas pronósticos, el sistema los verifica con resultados oficiales y la comunidad visualiza el desempeño histórico de cada perfil. Con esa trazabilidad, los usuarios pueden decidir a quién seguir según evidencia y no por intuición.",
   },
   {
     question: "¿Cómo puedo ganar dinero en Lot-IQ?",
     answer:
-      "Ganas dinero de dos formas: 1) Teniendo predicciones acertadas: recibes compensación basada en tu aporte económico, recurrencia y consistencia. 2) Siendo seguido: otros usuarios pagan por seguir tus predicciones.",
+      "La compensación se basa en rendimiento verificado y en el valor que generas dentro de la comunidad. Si tus pronósticos son consistentes, mejoras en ranking, recibes más seguimiento y participas en el esquema de beneficios de la plataforma.",
   },
   {
     question: "¿Qué es una membresía premium?",
     answer:
-      "Con la membresía premium obtienes créditos para seguir predicciones de otros usuarios y acceder a su información detallada. Puedes elegir plan mensual (30 créditos) o anual (365 créditos).",
+      "La membresía premium da acceso a funciones avanzadas para seguimiento y análisis de pronosticadores. El detalle de beneficios y condiciones se mantiene en actualización mientras consolidamos la propuesta final.",
   },
   {
     question: "¿Cuál es la diferencia entre membresía mensual y anual?",
     answer:
-      "Plan Mensual: $9.99/mes = 30 créditos. Plan Anual: $99.99/año = 365 créditos. El plan anual te da mejor precio por crédito. Los créditos se deducen diariamente mientras sigas usuarios.",
+      "Los planes y valores están temporalmente en revisión. En esta etapa mostramos información preliminar mientras se consolida la propuesta final.",
   },
   {
     question: "¿Cómo reporto un pago manual?",
@@ -42,7 +42,7 @@ const FAQS = [
   {
     question: "¿Cómo funcionan los avatares?",
     answer:
-      "Puedes elegir un avatar de nuestras 8 opciones sugeridas o subir tu propio avatar en formato SVG (máximo 50KB). El avatar aparece en tu perfil y ranking.",
+      "Puedes elegir un avatar en la sección Mi Perfil: selecciona una de las 8 opciones sugeridas o sube tu propio SVG (máximo 50KB). El avatar te ayuda a diferenciarte en los listados de pronosticadores.",
   },
   {
     question: "¿Qué es un usuario sintético?",
@@ -52,7 +52,7 @@ const FAQS = [
   {
     question: "¿Cómo se calcula mi posición en el ranking?",
     answer:
-      "Tu posición se calcula con tres factores: 1) Aporte económico (50%), 2) Recurrencia de números acertados (30%), 3) Consistencia histórica (20%). El ranking se actualiza automáticamente.",
+      "La posición considera principalmente precisión, recurrencia y consistencia histórica. El objetivo es destacar a quienes sostienen resultados reales y ayudar a la comunidad a identificar mejores números pronosticados.",
   },
   {
     question: "¿Puedo cambiar mi contraseña?",
@@ -67,7 +67,7 @@ const FAQS = [
   {
     question: "¿Puedo contactar al soporte?",
     answer:
-      "Claro, usa el formulario en la sección Contacto o envía un email a soporte@lot-iq.com. Responderemos en máximo 24 horas.",
+      "Claro, usa el formulario en la sección Contacto o envía un email a soporte@lot-iq.com. Te responderemos tan pronto como sea posible.",
   },
 ]
 

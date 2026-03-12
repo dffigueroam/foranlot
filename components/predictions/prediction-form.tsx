@@ -3,6 +3,7 @@
 import type React from "react"
 // No importar LOTTERIES directamente, usar API
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 // ...existing code...
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,6 +57,7 @@ function normalizePreferredCountry(preferredCountry: string) {
 }
 
 export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: string }) {
+  const router = useRouter()
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +71,12 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
   // Loterías dinámicas desde API
   const [lotteries, setLotteries] = useState<any[]>([]);
   const [loadingLotteries, setLoadingLotteries] = useState(true);
+  
+  // localStorage para recordar la última selección completa
+  const LAST_LOTTERY_KEY = "prediction_form_last_lottery";
+  const LAST_GROUP_KEY = "prediction_form_last_group";
+  const LAST_DIGITS_KEY = "prediction_form_last_digits";
+  const LAST_COUNTRY_KEY = "prediction_form_last_country";
 
   useEffect(() => {
     setLoadingLotteries(true);
@@ -106,6 +114,35 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
 
   const digitsNum = parseInt(selectedDigits);
 
+  const persistSelectionState = ({
+    lotteries,
+    digits,
+    country,
+  }: {
+    lotteries?: Iterable<string>
+    digits?: string
+    country?: string
+  }) => {
+    if (typeof window === "undefined") return
+
+    const lotteryValues = lotteries ? Array.from(lotteries) : Array.from(selectedLotteries)
+    const digitsValue = digits ?? selectedDigits
+    const countryValue = country ?? selectedCountry
+
+    localStorage.setItem(LAST_GROUP_KEY, JSON.stringify(lotteryValues))
+    localStorage.setItem(LAST_DIGITS_KEY, digitsValue)
+
+    if (countryValue) {
+      localStorage.setItem(LAST_COUNTRY_KEY, countryValue)
+    }
+
+    if (lotteryValues.length > 0) {
+      localStorage.setItem(LAST_LOTTERY_KEY, lotteryValues[0])
+    } else {
+      localStorage.removeItem(LAST_LOTTERY_KEY)
+    }
+  }
+
   // Países dinámicos desde API
   const [countryOptions, setCountryOptions] = useState<{ code: string; name: string }[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
@@ -133,6 +170,35 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
   useEffect(() => {
     setMounted(true)
     loadCombinations()
+    
+    // Restaurar última selección persistida
+    if (typeof window !== "undefined") {
+      const lastGroup = localStorage.getItem(LAST_GROUP_KEY);
+      const lastLottery = localStorage.getItem(LAST_LOTTERY_KEY);
+      const lastDigits = localStorage.getItem(LAST_DIGITS_KEY);
+      const lastCountry = localStorage.getItem(LAST_COUNTRY_KEY);
+      
+      if (lastDigits) {
+        setSelectedDigits(lastDigits);
+      }
+      if (lastCountry) {
+        setSelectedCountry(lastCountry);
+      }
+      if (lastGroup) {
+        try {
+          const parsedGroup = JSON.parse(lastGroup)
+          if (Array.isArray(parsedGroup) && parsedGroup.length > 0) {
+            setSelectedLotteries(new Set(parsedGroup))
+            return
+          }
+        } catch {
+          // fallback legacy key
+        }
+      }
+      if (lastLottery) {
+        setSelectedLotteries(new Set([lastLottery]));
+      }
+    }
   }, [])
 
   // NUEVO: Cargar loterias disponibles cuando cambien fecha o país
@@ -222,7 +288,13 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
     } else if (detectedCountry) {
       setSelectedCountry(detectedCountry);
     }
-    setSelectedLotteries(new Set(validLotteryKeys))
+    const nextLotteries = new Set(validLotteryKeys)
+    setSelectedLotteries(nextLotteries)
+    persistSelectionState({
+      lotteries: nextLotteries,
+      digits: digitType.toString(),
+      country: countryMap[detectedCountry] || detectedCountry || selectedCountry,
+    })
     await applyCombinationAction(combination.id)
     if (invalidLotteries.length > 0) {
       setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
@@ -243,7 +315,12 @@ export function PredictionForm({ preferredCountry = "" }: { preferredCountry?: s
         invalidLotteries.push(name)
       }
     }
-    setSelectedLotteries(new Set(validLotteryKeys))
+    const nextLotteries = new Set(validLotteryKeys)
+    setSelectedLotteries(nextLotteries)
+    persistSelectionState({
+      lotteries: nextLotteries,
+      digits: digitNum.toString(),
+    })
     if (invalidLotteries.length > 0) {
       setError(`Advertencia: Las siguientes loterías ya no están disponibles: ${invalidLotteries.join(", ")}`)
     } else {
@@ -339,12 +416,32 @@ const recommendedLotteries = availableLotteries
     const next = new Set(selectedLotteries)
     next.has(key) ? next.delete(key) : next.add(key)
     setSelectedLotteries(next)
+    persistSelectionState({ lotteries: next, country })
   }
 
-  const selectAllRecommended = () =>
-    setSelectedLotteries(new Set(recommendedLotteries.map(l => `${l.name}|${l.country}`)))
+  const selectAllRecommended = () => {
+    const nextLotteries = new Set(recommendedLotteries.map(l => `${l.name}|${l.country}`))
+    setSelectedLotteries(nextLotteries)
+    persistSelectionState({ lotteries: nextLotteries })
+  }
 
-  const clearAllLotteries = () => setSelectedLotteries(new Set())
+  const clearAllLotteries = () => {
+    const nextLotteries = new Set<string>()
+    setSelectedLotteries(nextLotteries)
+    persistSelectionState({ lotteries: nextLotteries })
+  }
+
+  const isCombinationSelected = (combination: LotteryCombination) => {
+    const currentDigitType = `${selectedDigits}_digits`
+    const currentLotteryNames = Array.from(selectedLotteries)
+      .map((value) => value.split("|")[0])
+      .sort((a, b) => a.localeCompare(b, "es"))
+    const combinationLotteryNames = [...combination.lottery_names].sort((a, b) => a.localeCompare(b, "es"))
+
+    return combination.digit_type === currentDigitType
+      && currentLotteryNames.length === combinationLotteryNames.length
+      && currentLotteryNames.every((name, index) => name === combinationLotteryNames[index])
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -400,10 +497,10 @@ const recommendedLotteries = availableLotteries
       })
       const result = await res.json()
 
-    if (res.error) setError(res.error)
+    if (result.error) setError(result.error)
     else {
       setSuccess(true)
-      setSuccessMessage(res.message || "Pronóstico publicado exitosamente")
+      setSuccessMessage(result.message || "Pronóstico publicado exitosamente")
       
       // Guardar información de la predicción publicada para visualización agrupada
       setLastPublishedPrediction({
@@ -411,17 +508,23 @@ const recommendedLotteries = availableLotteries
         numbers: numbers,
         lotteries: lotteryNames
       })
+      persistSelectionState({
+        lotteries: selectedLotteries,
+        digits: selectedDigits,
+        country: selectedCountry,
+      })
       
       formRef.current?.reset()
       setPredictedNumbers("")
-      setSelectedLotteries(new Set())
-      setSelectedDigits("3")
-      setConfidenceLevel("3")
       setDrawDate("")
-      setSelectedCountry(countryOptions[0]?.name || "")
       
       // Recargar combinaciones guardadas
       loadCombinations()
+      
+      // Refrescar datos del dashboard sin recargar toda la página
+      setTimeout(() => {
+        router.refresh()
+      }, 1500)
     }
 
     setLoading(false)
@@ -560,8 +663,7 @@ const recommendedLotteries = availableLotteries
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedLotteries(new Set())
-                        setSelectedDigits("3")
+                        clearAllLotteries()
                         setCombinationFilter("")
                       }}
                       className="text-xs ml-2"
@@ -604,11 +706,16 @@ const recommendedLotteries = availableLotteries
                     const digitType = combo.digit_type.split("_")[0]
                     const lotteryNames = combo.lottery_names.slice(0, 3).join(", ")
                     const moreCount = combo.lottery_names.length - 3
+                    const isActive = isCombinationSelected(combo)
                     
                     return (
                       <div
                         key={combo.id}
-                        className="group relative border border-blue-200 dark:border-blue-700 rounded-lg p-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+                        className={`group relative border rounded-lg p-3 transition-colors cursor-pointer ${
+                          isActive
+                            ? "border-emerald-400 bg-emerald-100 dark:border-emerald-500 dark:bg-emerald-900/40"
+                            : "border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                        }`}
                         onClick={() => applyLotteryCombination(combo)}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -623,6 +730,11 @@ const recommendedLotteries = availableLotteries
                               <Badge variant="outline" className="text-xs">
                                 {combo.lottery_names.length} loterías
                               </Badge>
+                              {isActive && (
+                                <Badge className="text-xs bg-emerald-600 hover:bg-emerald-600 text-white">
+                                  Selección activa
+                                </Badge>
+                              )}
                               {combo.usage_count > 0 && (
                                 <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950">
                                   ✓ {combo.usage_count} {combo.usage_count === 1 ? "uso" : "usos"}
@@ -739,7 +851,10 @@ const recommendedLotteries = availableLotteries
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>2. País</Label>
-              <Select value={selectedCountry} onValueChange={setSelectedCountry} disabled={loadingCountries || loading}>
+              <Select value={selectedCountry} onValueChange={(country) => {
+                setSelectedCountry(country)
+                persistSelectionState({ country })
+              }} disabled={loadingCountries || loading}>
                 <SelectTrigger className="w-full">
                   <SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -752,7 +867,10 @@ const recommendedLotteries = availableLotteries
 
             <div>
               <Label>Tipo de cifra</Label>
-              <Select value={selectedDigits} onValueChange={setSelectedDigits} disabled={loading}>
+              <Select value={selectedDigits} onValueChange={(digits) => {
+                setSelectedDigits(digits);
+                persistSelectionState({ digits });
+              }} disabled={loading}>
                 <SelectTrigger className="w-full">
                   <SelectValue /></SelectTrigger>
                 <SelectContent>

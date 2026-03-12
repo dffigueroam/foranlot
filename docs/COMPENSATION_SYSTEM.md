@@ -1,16 +1,22 @@
-# Sistema de Compensación con Scoring Multi-criterio
+# Sistema de Compensación por Acierto con Filtro de P&G
 
 ## Descripción General
 
-El sistema de compensación de ForanLot distribuye premios entre usuarios basándose en **tres criterios ponderados**:
+El sistema de compensación por acierto de ForanLot ahora sigue una regla simple:
 
-### Criterios de Scoring (Total: 100%)
+- Solo se remunera a los pronosticadores con **P&G positivo**.
+- El **ranking no define** quién cobra ni cuánto cobra en este flujo.
+- Entre los elegibles, el fondo de usuarios se reparte de forma uniforme.
 
-| Criterio | Peso | Descripción |
-|----------|------|-------------|
-| **Aporte Económico** | 50% | Proporción del capital total aportado por el usuario |
-| **Recurrencia** | 30% | Frecuencia con la que el usuario predice números ganadores |
-| **Consistencia** | 20% | Precisión histórica del usuario (accuracy) |
+### Regla actual de P&G
+
+Mientras no exista una tabla financiera de apuestas con `net_profit`, el sistema usa este proxy operativo:
+
+```typescript
+P&G = aciertos verificados - fallos verificados
+```
+
+Si el resultado es mayor que `0`, el pronosticador queda habilitado para remuneración.
 
 ### Distribución de Premio
 
@@ -19,30 +25,24 @@ Cuando un número gana:
 - **Fondo Usuarios** = 25% del premio bruto
 - **Plataforma** = 75% del premio bruto
 
-El **fondo de usuarios (25%)** se distribuye proporcionalmente según el score total de cada usuario.
+El **fondo de usuarios (25%)** se distribuye únicamente entre los elegibles con P&G positivo.
 
 ## Arquitectura Técnica
 
-### 1. Cálculo de Scores (`lib/compensation.ts`)
+### 1. Elegibilidad y distribución (`lib/compensation.ts`)
 
 ```typescript
-// Score de aporte (50%)
-contributionScore = amountUser / totalCapital
+profitAndLoss = correctPredictions - incorrectPredictions
 
-// Score de recurrencia (30%)
-recurrenceScore = predictionsUser / totalPredictions
+isEligible = profitAndLoss > 0
 
-// Score de consistencia (20%)
-consistencyScore = correctPredictions / totalPredictions
-
-// Score total ponderado
-totalScore = (contribution × 0.50) + (recurrence × 0.30) + (consistency × 0.20)
+compensationPerUser = userFund / eligibleUsers.length
 ```
 
 ### 2. Tablas de Base de Datos
 
 #### `user_ranking_scores`
-Almacena scores históricos para auditoría:
+Almacena scores históricos de ranking para auditoría independiente:
 - `user_id` - ID del usuario
 - `score_date` - Fecha del cálculo
 - `contribution_score` - Score de aporte (0-1)
@@ -62,15 +62,15 @@ Registro de pagos ejecutados:
 **Ruta**: `/admin` → Tab "Compensación"
 
 Funciones:
-- **Simular Compensación**: Calcula distribución sin ejecutar pagos
+- **Simular Compensación**: Calcula distribución solo para usuarios con P&G positivo
 - **Ejecutar Compensación**: Registra pagos reales en `compensation_log`
-- **Visualizar Distribución**: Muestra scores de cada usuario y monto asignado
+- **Visualizar Distribución**: Muestra usuarios elegibles y monto asignado
 
 ### 4. Componentes Clave
 
 | Archivo | Propósito |
 |---------|-----------|
-| `lib/compensation.ts` | Lógica de cálculo de scores y distribución |
+| `lib/compensation.ts` | Lógica de elegibilidad por P&G y distribución |
 | `app/actions/admin/compensation.ts` | Server actions para admin panel |
 | `components/admin/compensation-panel.tsx` | UI para simulación y ejecución |
 | `lib/ranking.ts` | Funciones de consulta de scores históricos |
@@ -92,7 +92,7 @@ Admin → Panel Compensación → Ingresar datos:
   - Premio Bruto: $40,000
   - Fondo Usuarios: $10,000 (25%)
   - Plataforma: $30,000 (75%)
-  - Distribución por usuario con scores
+  - Distribución por usuario elegible
 ```
 
 ### 2. Ejecución (Registra en DB)
@@ -106,15 +106,9 @@ Admin → Revisar simulación → Presionar "Ejecutar Compensación"
   3. Revalida caches (/admin, /ranking)
 ```
 
-### 3. Visualización de Scores
+### 3. Ranking y auditoría
 
-**Ranking con Scores Detallados**:
-- Los usuarios pueden ver sus scores en `/ranking`
-- Muestra badges de colores para cada criterio:
-  - 🎯 Aporte (azul)
-  - ⚡ Recurrencia (morado)
-  - 📈 Consistencia (verde)
-  - 🏆 Score Total (gradiente púrpura-rosa)
+El ranking sigue existiendo como vista analítica y auditoría, pero ya no es condición de pago dentro de la compensación por acierto.
 
 ## Ejemplo Real
 
@@ -127,15 +121,14 @@ Admin → Revisar simulación → Presionar "Ejecutar Compensación"
 
 ### Usuarios con Predicciones Correctas
 
-| Usuario | Aporte | Contribución (50%) | Recurrencia (30%) | Consistencia (20%) | Score Total | Pago |
-|---------|--------|-------------------|-------------------|-------------------|-------------|------|
-| Usuario A | $50 | 0.50 | 0.40 | 0.80 | 0.526 | $5,260 |
-| Usuario B | $30 | 0.30 | 0.35 | 0.65 | 0.340 | $3,400 |
-| Usuario C | $20 | 0.20 | 0.25 | 0.50 | 0.240 | $2,400 |
+| Usuario | Aciertos | Fallos | P&G | Elegible | Pago |
+|---------|----------|--------|-----|----------|------|
+| Usuario A | 12 | 8 | 4 | Sí | $3,333.34 |
+| Usuario B | 7 | 10 | -3 | No | $0 |
+| Usuario C | 9 | 6 | 3 | Sí | $3,333.33 |
+| Usuario D | 5 | 4 | 1 | Sí | $3,333.33 |
 
-**Validación**: $5,260 + $3,400 + $2,400 = $11,060 ❌
-
-*Nota*: Los scores se normalizan para que sumen exactamente 1.0, garantizando que el fondo se distribuya completamente.
+*Nota*: Si no hay usuarios con P&G positivo, no se ejecuta remuneración.
 
 ## API Reference
 
@@ -176,11 +169,11 @@ interface CompensationScenario {
 }
 ```
 
-### `calculateUserScores(scenario: CompensationScenario)`
-Calcula scores individuales de cada usuario.
+### `getEligiblePredictorsByPositivePnG(userIds: number[])`
+Obtiene los pronosticadores con P&G positivo.
 
 ### `saveRankingScores(userScores: UserScore[], date: string)`
-Guarda scores en `user_ranking_scores` para auditoría.
+Guarda scores en `user_ranking_scores` para auditoría del ranking.
 
 ## Consideraciones de Producción
 

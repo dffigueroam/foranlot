@@ -5,6 +5,7 @@ import { VerificationPanel } from "@/components/admin/verification-panel"
 import { ResultsVerificationButton } from "@/components/admin/results-verification-button"
 import { MarketingPanel } from "@/components/admin/marketing-panel"
 import { AdminNotificationsPanel } from "@/components/admin/notifications-panel"
+import PnGAuditPanel from "@/components/admin/pyg-audit-panel"
 import { MLClusteringSynthetics } from "@/components/admin/ml-clustering-synthetics"
 import { TableStructureChecker } from "@/components/admin/table-structure-checker"
 import { Suspense } from "react"
@@ -20,6 +21,7 @@ import AdminDashboardSummary from "@/components/admin/dashboard-summary"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/admin/admin-tabs-panel"
 import { getCurrentUser } from "@/lib/auth"
 import PostedPredictionsPanel from "@/components/admin/posted-predictions-panel"
+import ManualLiteRecommendationsButton from "@/components/admin/manual-lite-recommendations-button"
 
 export const metadata = {
   robots: { index: false, follow: false },
@@ -133,6 +135,7 @@ export default async function AdminPage() {
             <TabsTrigger value="ml">Machine Learning</TabsTrigger>
             <TabsTrigger value="sync">Sincronización</TabsTrigger>
             <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="pyg">P&G</TabsTrigger>
             <TabsTrigger value="marketing">Marketing</TabsTrigger>
             <TabsTrigger value="notificaciones">Notificaciones</TabsTrigger>
             <TabsTrigger value="debug">Debug</TabsTrigger>
@@ -258,6 +261,9 @@ export default async function AdminPage() {
           {/* Notificaciones */}
           <TabsContent value="notificaciones">
             <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <div className="mb-4 max-w-3xl">
+                <ManualLiteRecommendationsButton />
+              </div>
               <Suspense fallback={<Skeleton className="h-12 w-full" />}>
                 <AdminNotificationsPanel />
               </Suspense>
@@ -269,6 +275,16 @@ export default async function AdminPage() {
               <Suspense fallback={<Skeleton className="h-12 w-full" />}>
                 <div className="max-w-6xl space-y-4">
                   <RankingUpdatePanel />
+                </div>
+              </Suspense>
+            </div>
+          </TabsContent>
+          {/* P&G */}
+          <TabsContent value="pyg">
+            <div className="rounded-2xl border border-emerald-200/40 dark:border-emerald-700/30 bg-white/50 dark:bg-slate-900/25 backdrop-blur-sm p-4">
+              <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                <div className="max-w-6xl space-y-4">
+                  <PnGAuditPanel />
                 </div>
               </Suspense>
             </div>

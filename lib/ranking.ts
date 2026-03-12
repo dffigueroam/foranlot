@@ -4,6 +4,9 @@ const sql = neon(process.env.DATABASE_URL!);
 export interface LoteriaRankingRow {
   user_id: number;
   username: string;
+  avatar_type?: "suggested" | "custom" | null;
+  avatar_id?: string | null;
+  avatar_data?: string | null;
   score: number;
   aciertos: number;
   inversion: number;
@@ -23,22 +26,29 @@ export async function getLoteriaRanking(lotteryName: string, country: string, da
     // Obtener todos los pronósticos validados para esa lotería y fecha
     const rows = await sql`
       SELECT p.user_id, u.username,
+        ua.avatar_type,
+        ua.avatar_id,
+        ua.avatar_data,
         COUNT(*) FILTER (WHERE p.is_correct = true) AS aciertos,
         SUM(p.inversion) AS inversion,
         SUM(p.beneficio) AS beneficio
       FROM predictions p
       JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_avatars ua ON ua.user_id = u.id
       WHERE p.lottery_name = ${lotteryName}
         AND p.country = ${country}
         AND p.draw_date = ${today}
         AND p.is_validated = true
-      GROUP BY p.user_id, u.username
+      GROUP BY p.user_id, u.username, ua.avatar_type, ua.avatar_id, ua.avatar_data
       ORDER BY aciertos DESC, beneficio DESC
     `;
     // Calcular score usando función existente (simulación: score = aciertos * 10 + beneficio - inversion)
     const result = (rows as any[]).map((r) => ({
       user_id: r.user_id,
       username: r.username,
+      avatar_type: r.avatar_type || null,
+      avatar_id: r.avatar_id || null,
+      avatar_data: r.avatar_data || null,
       aciertos: Number(r.aciertos) || 0,
       inversion: Number(r.inversion) || 0,
       beneficio: Number(r.beneficio) || 0,
@@ -57,6 +67,9 @@ import { notifyRankingChange } from "./notifications"
 export interface RankingUser {
   user_id: number
   username: string
+  avatar_type?: "suggested" | "custom" | null
+  avatar_id?: string | null
+  avatar_data?: string | null
   total_predictions: number
   correct_predictions: number
   accuracy_percentage: number
@@ -100,6 +113,9 @@ export async function getRanking(limit = 50) {
       SELECT 
         us.*,
         u.username,
+        ua.avatar_type,
+        ua.avatar_id,
+        ua.avatar_data,
         (
           SELECT COUNT(*)::int
           FROM user_selections
@@ -107,6 +123,7 @@ export async function getRanking(limit = 50) {
         ) as subscribers_count
       FROM user_stats us
       JOIN users u ON us.user_id = u.id
+      LEFT JOIN user_avatars ua ON ua.user_id = u.id
       WHERE us.total_predictions > 0
       ORDER BY 
         us.accuracy_percentage DESC, 
@@ -134,6 +151,9 @@ export async function getRankingWithWaitlist(limit = 50) {
       SELECT 
         us.*,
         u.username,
+        ua.avatar_type,
+        ua.avatar_id,
+        ua.avatar_data,
         (
           SELECT COUNT(*)::int
           FROM user_selections
@@ -141,6 +161,7 @@ export async function getRankingWithWaitlist(limit = 50) {
         ) as subscribers_count
       FROM user_stats us
       JOIN users u ON us.user_id = u.id
+      LEFT JOIN user_avatars ua ON ua.user_id = u.id
       WHERE us.total_predictions > 0
       ORDER BY 
         us.accuracy_percentage DESC, 

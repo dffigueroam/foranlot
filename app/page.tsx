@@ -102,8 +102,8 @@ export default async function HomePage() {
             <div className="text-center max-w-5xl mx-auto relative z-10">
               <div className="space-y-4 mb-10">
                 <div className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-linear-to-r from-green-100 to-cyan-100 dark:from-green-900/40 dark:to-cyan-900/40 border border-green-400/50 dark:border-green-500/50 backdrop-blur">
-                  <span className="text-2xl">�</span>
-                  <span className="font-medium text-green-900 dark:text-green-200">Pronósticos Inteligentes. Dinero Real. Comunidad Confiable.</span>
+                  <span className="text-2xl">🎯</span>
+                  <span className="font-medium text-green-900 dark:text-green-200">Pronósticos validados por resultados. Comunidad con meritocracia real.</span>
                 </div>
               </div>
 
@@ -113,12 +113,12 @@ export default async function HomePage() {
                 </span>
                 <br />
                 <span className="bg-linear-to-r from-yellow-500 via-orange-500 to-red-500 dark:from-yellow-300 dark:via-orange-300 dark:to-red-300 bg-clip-text text-transparent">
-                  Dinero Real
+                  Resultados Reales
                 </span>
               </h1>
               
               <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-12 text-balance leading-relaxed max-w-3xl mx-auto">
-                Comparte tus predicciones de lotería con una comunidad de expertos. Sigue a los mejores pronosticadores, entiende patrones, y gana dinero por cada acierto. Sin comisiones ocultas. <span className="font-bold text-green-600 dark:text-green-400">100% transparente</span>.
+                Lot-IQ conecta pronosticadores y seguidores en un modelo transparente: publicar, verificar y recompensar el rendimiento real. Nuestra promesa de valor es ayudarte a encontrar los mejores números pronosticados por quienes sostienen resultados en el tiempo.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap mb-16">
@@ -136,19 +136,19 @@ export default async function HomePage() {
               {/* Stats - Mejorado */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12 border-t border-gray-300 dark:border-purple-700/50">
                 <div className="group">
-                  <div className="text-4xl font-black bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">15K+</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Pronosticadores Activos</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Mejorando cada día</div>
+                  <div className="text-4xl font-black bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">--</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Usuarios Activos</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Dato en consolidación</div>
                 </div>
                 <div className="group">
-                  <div className="text-4xl font-black bg-linear-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">$2.3M</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Distribuido a Usuarios</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">En 2025</div>
+                  <div className="text-4xl font-black bg-linear-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">--</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Compensaciones</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Dato en revisión</div>
                 </div>
                 <div className="group">
-                  <div className="text-4xl font-black bg-linear-to-r from-pink-600 to-red-600 dark:from-pink-400 dark:to-red-400 bg-clip-text text-transparent">98.2%</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tasa de Precisión</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Sistema auditado</div>
+                  <div className="text-4xl font-black bg-linear-to-r from-pink-600 to-red-600 dark:from-pink-400 dark:to-red-400 bg-clip-text text-transparent">--</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Rendimiento</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Próximamente publicaremos esta métrica</div>
                 </div>
               </div>
             </div>
@@ -163,10 +163,10 @@ export default async function HomePage() {
                 Solo los mejores pronosticadores se mantienen
               </h2>
               <p className="text-lg text-gray-700 dark:text-gray-300 font-medium mb-4">
-                En Lot-IQ, la comunidad califica y sigue a quienes demuestran resultados consistentes. El sistema de ranking premia la precisión, la recurrencia y la constancia, no los golpes de suerte. Así, la comunidad se beneficia de los verdaderos expertos y se filtran los "chispazos" de casualidad.
+                En Lot-IQ, la comunidad sigue a quienes demuestran resultados consistentes. El ranking premia precisión, recurrencia y constancia, no golpes de suerte. Así se priorizan perfiles confiables y se eleva la calidad de los números compartidos.
               </p>
               <p className="text-base text-gray-600 dark:text-gray-400">
-                Si eres bueno, tu historial lo demostrará y ganarás seguidores y recompensas reales. Si no, la comunidad lo notará. Aquí, la meritocracia es real y transparente.
+                Si pronosticas bien, tu historial te posiciona, atraes seguidores y accedes a compensación dentro del sistema. Si no hay consistencia, la misma comunidad lo refleja en el ranking.
               </p>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default async function HomePage() {
               <h2 className="text-4xl sm:text-5xl font-black mb-4 text-gray-900 dark:text-white">
                 Por qué <span className="bg-linear-to-r from-green-600 to-cyan-600 dark:from-green-400 dark:to-cyan-400 bg-clip-text text-transparent">Lot-IQ</span> es diferente
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 text-lg">Características diseñadas para maximizar tus ganancias</p>
+              <p className="text-gray-600 dark:text-gray-300 text-lg">Una propuesta enfocada en calidad de pronóstico, transparencia y compensación por desempeño</p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -185,25 +185,25 @@ export default async function HomePage() {
                 {
                   icon: "👥",
                   title: "Comunidad de Expertos",
-                  desc: "Conecta con miles de pronosticadores verificados en tiempo real",
+                  desc: "Sigue pronosticadores con historial verificable y enfoque por lotería",
                   color: "from-blue-500 to-cyan-500"
                 },
                 {
                   icon: "📊",
                   title: "Ranking Inteligente",
-                  desc: "Posiciónate según precisión, frecuencia y consistencia",
+                  desc: "La visibilidad se gana por resultados sostenidos, no por popularidad",
                   color: "from-purple-500 to-pink-500"
                 },
                 {
                   icon: "🎯",
                   title: "Análisis de Patrones",
-                  desc: "Herramientas para detectar números calientes y tendencias",
+                  desc: "Detecta tendencias y combina criterio humano con señales de comportamiento",
                   color: "from-green-500 to-emerald-500"
                 },
                 {
                   icon: "💰",
-                  title: "Gana Dinero Real",
-                  desc: "Recibe el 20% de membresías y 25% de premios verificados",
+                  title: "Compensación Transparente",
+                  desc: "Las recompensas se distribuyen según desempeño verificado y reglas claras de plataforma",
                   color: "from-yellow-500 to-orange-500"
                 },
               ].map((feature, idx) => (
@@ -242,7 +242,7 @@ export default async function HomePage() {
                 <h2 className="text-4xl sm:text-5xl font-black mb-4 text-gray-900 dark:text-white">
                   Comienza en 4 Pasos Simples
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300 text-lg">Desde cero a ganancias reales en minutos</p>
+                <p className="text-gray-600 dark:text-gray-300 text-lg">De publicar pronósticos a construir reputación y compensación</p>
               </div>
 
               <div className="relative">
@@ -253,8 +253,8 @@ export default async function HomePage() {
                   {[
                     { num: 1, title: "Regístrate", desc: "Crea tu cuenta en segundos con Gmail o email", icon: "🎯", color: "from-green-500 to-cyan-500" },
                     { num: 2, title: "Predice Números", desc: "Publica tus pronósticos de 3, 4 o 5 cifras", icon: "🎲", color: "from-cyan-500 to-blue-500" },
-                    { num: 3, title: "Sube en Ranking", desc: "Compite por posición según tus aciertos", icon: "📈", color: "from-blue-500 to-purple-500" },
-                    { num: 4, title: "Recibe Dinero", desc: "Gana por aciertos, membresías y seguidores", icon: "💰", color: "from-purple-500 to-pink-500" },
+                    { num: 3, title: "Sube en Ranking", desc: "Tu posición mejora con precisión, consistencia y recurrencia", icon: "📈", color: "from-blue-500 to-purple-500" },
+                    { num: 4, title: "Activa Compensación", desc: "Cuando tus resultados destacan, el sistema habilita beneficios por desempeño", icon: "💰", color: "from-purple-500 to-pink-500" },
                   ].map((step) => (
                     <div key={step.num} className="relative group">
                       {/* Card Gradient Background */}
@@ -294,10 +294,10 @@ export default async function HomePage() {
 
               <div className="bg-linear-to-br from-green-50 to-cyan-50 dark:from-gray-800/50 dark:to-gray-900/50 dark:backdrop-blur dark:border dark:border-green-500/30 rounded-3xl p-12 md:p-16 text-center border border-gray-200">
                 <h3 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-4">
-                  🚀 ¿Listo para Cambiar tu Vida?
+                  🚀 ¿Listo para pronosticar con ventaja?
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
-                  Miles de usuarios ya están ganando dinero con sus predicciones en Lot-IQ. <span className="font-bold text-green-600 dark:text-green-400">Sin comisiones ocultas</span>, sin promesas falsas. Solo predicciones inteligentes y dinero real.
+                  En Lot-IQ la promesa es clara: ayudarte a encontrar y publicar mejores números pronosticados en una comunidad donde el rendimiento se verifica y se recompensa con reglas transparentes.
                 </p>
                 <Button size="lg" className="bg-linear-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 text-white font-bold px-12 shadow-lg hover:shadow-xl transition-all text-base" asChild>
                   <Link href="/register">

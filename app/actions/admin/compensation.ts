@@ -67,6 +67,10 @@ export async function simulateCompensationAction(formData: FormData) {
 
     const result = await simulateCompensation(scenario)
 
+    if (result.distribution.length === 0) {
+      return { error: "No hay pronosticadores con P&G positivo para remunerar en este escenario" }
+    }
+
     return { 
       success: true, 
       simulation: result,
@@ -130,6 +134,10 @@ export async function executeCompensationAction(formData: FormData) {
 
     // Ejecutar compensación (registra en compensation_log)
     const result = await simulateCompensation(scenario)
+
+    if (result.distribution.length === 0) {
+      return { error: "No hay pronosticadores con P&G positivo para remunerar en este escenario" }
+    }
 
     // Calcular y guardar scores para auditoría
     const userScores = await calculateUserScores(scenario)

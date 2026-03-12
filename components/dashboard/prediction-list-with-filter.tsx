@@ -1,21 +1,27 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { PredictionList } from "@/components/predictions/prediction-list"
+import type { Prediction } from "@/lib/predictions"
 
 export function PredictionListWithFilter({
   initialPredictions,
   isPremium,
   fetchVerifiedCorrectPredictions
 }: {
-  initialPredictions: any[]
+  initialPredictions: Prediction[]
   isPremium: boolean
-  fetchVerifiedCorrectPredictions: () => Promise<any[]>
+  fetchVerifiedCorrectPredictions: () => Promise<Prediction[]>
 }) {
   const [showHits, setShowHits] = useState(false)
   const [predictions, setPredictions] = useState(initialPredictions)
   const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    setPredictions(initialPredictions)
+    setShowHits(false)
+  }, [initialPredictions])
 
   const handleToggle = () => {
     if (!showHits) {
